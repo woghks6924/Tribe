@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { NaverLoginButton } from "@/components/auth/naver-login-button";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -48,9 +49,18 @@ export default function SignupPage() {
 
   return (
     <div className="flex flex-1 items-center justify-center px-6 py-20">
-      <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-6">
+      <div className="flex w-full max-w-sm flex-col gap-6">
         <h1 className="font-sans text-2xl font-extrabold tracking-[0.02em]">Create Account</h1>
 
+        <NaverLoginButton />
+
+        <div className="flex items-center gap-4 text-[10px] tracking-[0.1em] text-ink-faint uppercase">
+          <span className="h-px flex-1 bg-line" />
+          or
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <div className="flex flex-col gap-4">
           <input
             required
@@ -104,6 +114,7 @@ export default function SignupPage() {
           </Link>
         </p>
       </form>
+      </div>
     </div>
   );
 }

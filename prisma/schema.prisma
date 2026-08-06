@@ -54,10 +54,12 @@ enum TokenType {
 model Customer {
   id            String    @id @default(cuid())
   email         String    @unique
-  passwordHash  String
+  passwordHash  String? // 소셜 로그인 전용 계정은 비밀번호가 없을 수 있다
   name          String
   phone         String?
   emailVerified DateTime?
+
+  naverId String? @unique // 네이버 로그인으로 가입/연동한 계정의 네이버 고유 ID
 
   orders Order[]
 
