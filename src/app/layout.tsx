@@ -3,7 +3,7 @@ import { Big_Shoulders } from "next/font/google";
 import localFont from "next/font/local";
 import { GrainFilterDefs } from "@/components/ui/grain-filter";
 import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
+import { ConditionalFooter } from "@/components/layout/conditional-footer";
 import "./globals.css";
 
 // 로고 워드마크("Tri.be")와 영문 히어로 카피에만 쓰는 콘덴스드 디스플레이체.
@@ -36,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <GrainFilterDefs />
         <Header />
         <main className="flex flex-1 flex-col pt-20 md:pt-24">{children}</main>
-        <Footer />
+        <ConditionalFooter />
       </body>
     </html>
   );
