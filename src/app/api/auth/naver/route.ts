@@ -7,7 +7,12 @@ export async function GET(request: Request) {
   const redirectUri = `${origin}/api/auth/naver/callback`;
   const state = randomUUID();
 
-  const authorizeUrl = getNaverAuthorizeUrl(state, redirectUri);
+  let authorizeUrl: string;
+  try {
+    authorizeUrl = getNaverAuthorizeUrl(state, redirectUri);
+  } catch {
+    return NextResponse.redirect(`${origin}/login?error=naver_not_configured`);
+  }
 
   const response = NextResponse.redirect(authorizeUrl);
   response.cookies.set(NAVER_STATE_COOKIE, state, {

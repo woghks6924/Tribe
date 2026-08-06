@@ -10,6 +10,7 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   naver_state: "The login request expired. Please try again.",
   naver_no_email: "Naver didn't share an email address, so we can't create an account.",
   naver_failed: "Naver login failed. Please try again.",
+  naver_not_configured: "Naver login isn't set up yet.",
 };
 
 function OAuthError() {
