@@ -157,6 +157,9 @@ model Order {
   orderNumber String      @unique // 포트원 paymentId로 사용
   status      OrderStatus @default(PENDING_PAYMENT)
 
+  customerId String? // 로그인 없이도 주문 가능하도록 nullable (게스트 주문 유지)
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
   customerName  String
   customerEmail String
   customerPhone String
@@ -165,6 +168,9 @@ model Order {
   address1     String
   address2     String?
   shippingMemo String?
+
+  trackingNumber String?
+  carrier        String?
 
   subtotal    Int
   shippingFee Int @default(0)
@@ -176,6 +182,8 @@ model Order {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([customerId])
 }
 
 model OrderItem {
