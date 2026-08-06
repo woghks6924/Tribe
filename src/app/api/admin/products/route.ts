@@ -6,6 +6,9 @@ type ProductInput = {
   name: string;
   slug: string;
   description: string;
+  infoContent?: string;
+  sizeContent?: string;
+  detailContent?: string;
   price: number;
   compareAtPrice?: number | null;
   categoryId: string;
@@ -63,6 +66,9 @@ export async function POST(request: Request) {
       name: body.name,
       slug: body.slug,
       description: body.description,
+      infoContent: body.infoContent || null,
+      sizeContent: body.sizeContent || null,
+      detailContent: body.detailContent || null,
       price: body.price,
       compareAtPrice: body.compareAtPrice || null,
       categoryId: body.categoryId,

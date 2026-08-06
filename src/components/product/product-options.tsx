@@ -57,7 +57,18 @@ export function ProductOptions({ product }: { product: ProductDetailData }) {
         <span className="font-sans text-2xl font-extrabold tracking-[0.01em]">
           {product.name}
         </span>
-        <span className="text-lg text-ink-muted">{formatKRW(unitPrice)}</span>
+        <div className="flex items-baseline gap-3 text-lg">
+          {product.compareAtPrice ? (
+            <>
+              <span className="text-base text-ink-faint line-through">
+                {formatKRW(product.compareAtPrice + (selectedOption?.priceDiff ?? 0))}
+              </span>
+              <span className="font-semibold text-red-500">{formatKRW(unitPrice)}</span>
+            </>
+          ) : (
+            <span className="text-ink-muted">{formatKRW(unitPrice)}</span>
+          )}
+        </div>
       </div>
 
       <p className="text-sm leading-relaxed text-ink-muted">

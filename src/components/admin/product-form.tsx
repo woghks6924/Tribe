@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 
 type ImageItem = { url: string; alt?: string };
 type OptionItem = {
@@ -37,6 +38,9 @@ export function ProductForm({
     name: string;
     slug: string;
     description: string;
+    infoContent?: string | null;
+    sizeContent?: string | null;
+    detailContent?: string | null;
     price: number;
     compareAtPrice: number | null;
     categoryId: string;
@@ -52,6 +56,9 @@ export function ProductForm({
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(!!initial);
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [infoContent, setInfoContent] = useState(initial?.infoContent ?? "");
+  const [sizeContent, setSizeContent] = useState(initial?.sizeContent ?? "");
+  const [detailContent, setDetailContent] = useState(initial?.detailContent ?? "");
   const [price, setPrice] = useState(String(initial?.price ?? ""));
   const [compareAtPrice, setCompareAtPrice] = useState(
     initial?.compareAtPrice ? String(initial.compareAtPrice) : "",
@@ -113,6 +120,9 @@ export function ProductForm({
         name,
         slug,
         description,
+        infoContent,
+        sizeContent,
+        detailContent,
         price: Number(price),
         compareAtPrice: compareAtPrice ? Number(compareAtPrice) : null,
         categoryId,
@@ -236,6 +246,14 @@ export function ProductForm({
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} disabled={uploading} className="text-xs" />
         {uploading && <span className="text-xs text-ink-muted">Uploading...</span>}
       </div>
+
+      <RichTextEditor label="Product Info" value={infoContent} onChange={setInfoContent} />
+      <RichTextEditor label="Size Guide" value={sizeContent} onChange={setSizeContent} />
+      <RichTextEditor
+        label="Detail Content (lookbook / product shots)"
+        value={detailContent}
+        onChange={setDetailContent}
+      />
 
       <div className="flex flex-col gap-3">
         <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">Options (Size / Color)</span>

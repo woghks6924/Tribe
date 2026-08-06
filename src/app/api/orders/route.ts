@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/order-number";
 import { calcShippingFee } from "@/lib/shipping";
 import { MIN_NAVERPAY_AMOUNT } from "@/lib/portone";
+import { validatePromoCode } from "@/lib/promo";
+import { getCurrentCustomer } from "@/lib/auth/session";
 
 type CreateOrderBody = {
   customer: { name: string; email: string; phone: string };
@@ -14,6 +16,7 @@ type CreateOrderBody = {
   };
   items: { productOptionId: string; quantity: number }[];
   pgProvider: "TOSSPAYMENTS" | "NAVERPAY";
+  promoCode?: string;
 };
 
 const CHANNEL_KEYS: Record<CreateOrderBody["pgProvider"], string | undefined> = {
@@ -81,7 +84,22 @@ export async function POST(request: Request) {
 
   const subtotal = lineItems.reduce((sum, i) => sum + i.lineTotal, 0);
   const shippingFee = calcShippingFee(subtotal);
-  const totalAmount = subtotal + shippingFee;
+
+  let discount = 0;
+  let appliedPromoId: string | null = null;
+  let appliedPromoCode: string | null = null;
+
+  if (body.promoCode) {
+    const result = await validatePromoCode(body.promoCode, subtotal);
+    if (!result.valid) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    discount = result.discountAmount;
+    appliedPromoId = result.promoCodeId;
+    appliedPromoCode = body.promoCode.trim().toUpperCase();
+  }
+
+  const totalAmount = Math.max(subtotal + shippingFee - discount, 0);
 
   if (body.pgProvider === "NAVERPAY" && totalAmount < MIN_NAVERPAY_AMOUNT) {
     return NextResponse.json(
@@ -91,34 +109,42 @@ export async function POST(request: Request) {
   }
 
   const orderNumber = generateOrderNumber();
+  const session = await getCurrentCustomer();
 
-  await prisma.order.create({
-    data: {
-      orderNumber,
-      status: "PENDING_PAYMENT",
-      customerName: body.customer.name,
-      customerEmail: body.customer.email,
-      customerPhone: body.customer.phone,
-      zipCode: body.shipping.zipCode,
-      address1: body.shipping.address1,
-      address2: body.shipping.address2,
-      shippingMemo: body.shipping.memo,
-      subtotal,
-      shippingFee,
-      discount: 0,
-      totalAmount,
-      items: { create: lineItems },
-      payment: {
-        create: {
-          pgProvider: body.pgProvider,
-          channelKey,
-          status: "READY",
-          paymentId: orderNumber,
-          requestedAmount: totalAmount,
+  await prisma.$transaction([
+    prisma.order.create({
+      data: {
+        orderNumber,
+        status: "PENDING_PAYMENT",
+        customerId: session?.sub,
+        customerName: body.customer.name,
+        customerEmail: body.customer.email,
+        customerPhone: body.customer.phone,
+        zipCode: body.shipping.zipCode,
+        address1: body.shipping.address1,
+        address2: body.shipping.address2,
+        shippingMemo: body.shipping.memo,
+        subtotal,
+        shippingFee,
+        discount,
+        promoCode: appliedPromoCode,
+        totalAmount,
+        items: { create: lineItems },
+        payment: {
+          create: {
+            pgProvider: body.pgProvider,
+            channelKey,
+            status: "READY",
+            paymentId: orderNumber,
+            requestedAmount: totalAmount,
+          },
         },
       },
-    },
-  });
+    }),
+    ...(appliedPromoId
+      ? [prisma.promoCode.update({ where: { id: appliedPromoId }, data: { usedCount: { increment: 1 } } })]
+      : []),
+  ]);
 
   return NextResponse.json({ orderNumber, totalAmount });
 }

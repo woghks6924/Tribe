@@ -71,6 +71,51 @@ export async function getProducts(options?: {
   return products.map(toCard);
 }
 
+export async function getSaleProducts(): Promise<ProductCardData[]> {
+  const products = await prisma.product.findMany({
+    where: { status: "ACTIVE", compareAtPrice: { not: null } },
+    orderBy: { createdAt: "desc" },
+    include: {
+      category: { select: { name: true, slug: true } },
+      images: { select: { url: true, sortOrder: true } },
+    },
+  });
+  return products.map(toCard);
+}
+
+export async function getRelatedProducts(
+  categorySlug: string,
+  excludeId: string,
+  limit = 4,
+): Promise<ProductCardData[]> {
+  const sameCategory = await prisma.product.findMany({
+    where: { status: "ACTIVE", id: { not: excludeId }, category: { slug: categorySlug } },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    include: {
+      category: { select: { name: true, slug: true } },
+      images: { select: { url: true, sortOrder: true } },
+    },
+  });
+
+  if (sameCategory.length >= limit) return sameCategory.map(toCard);
+
+  const fillers = await prisma.product.findMany({
+    where: {
+      status: "ACTIVE",
+      id: { notIn: [excludeId, ...sameCategory.map((p) => p.id)] },
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit - sameCategory.length,
+    include: {
+      category: { select: { name: true, slug: true } },
+      images: { select: { url: true, sortOrder: true } },
+    },
+  });
+
+  return [...sameCategory, ...fillers].map(toCard);
+}
+
 export async function getProductBySlug(
   slug: string,
 ): Promise<ProductDetailData | null> {
@@ -87,6 +132,9 @@ export async function getProductBySlug(
   return {
     ...toCard(product),
     description: product.description,
+    infoContent: product.infoContent,
+    sizeContent: product.sizeContent,
+    detailContent: product.detailContent,
     images: product.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt })),
     options: product.options.map((o) => ({
       id: o.id,

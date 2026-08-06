@@ -20,6 +20,9 @@ export type ProductOptionData = {
 
 export type ProductDetailData = ProductCardData & {
   description: string;
+  infoContent: string | null;
+  sizeContent: string | null;
+  detailContent: string | null;
   images: { id: string; url: string; alt: string | null }[];
   options: ProductOptionData[];
 };

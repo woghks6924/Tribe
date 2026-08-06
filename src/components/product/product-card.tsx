@@ -18,15 +18,19 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         </span>
       </div>
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-baseline justify-between text-[13px]">
-          <span className="uppercase">{product.name}</span>
-          <span className="text-ink-muted">{formatKRW(product.price)}</span>
+        <span className="text-[13px] uppercase">{product.name}</span>
+        <div className="flex items-baseline gap-2 text-[13px]">
+          {product.compareAtPrice ? (
+            <>
+              <span className="text-ink-faint line-through">
+                {formatKRW(product.compareAtPrice)}
+              </span>
+              <span className="font-semibold text-red-500">{formatKRW(product.price)}</span>
+            </>
+          ) : (
+            <span className="text-ink-muted">{formatKRW(product.price)}</span>
+          )}
         </div>
-        {product.compareAtPrice && (
-          <span className="text-[11px] text-ink-faint line-through">
-            {formatKRW(product.compareAtPrice)}
-          </span>
-        )}
       </div>
     </Link>
   );

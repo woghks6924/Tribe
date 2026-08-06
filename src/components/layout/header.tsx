@@ -5,6 +5,8 @@ import { getCurrentCustomer } from "@/lib/auth/session";
 
 const NAV_LINKS = [
   { href: "/products", label: "SHOP" },
+  { href: "/sale", label: "SALE" },
+  { href: "/lookbook", label: "LOOKBOOK" },
   { href: "/#story", label: "STORY" },
   { href: "/#crew", label: "CREW" },
   { href: "/instagram", label: "INSTAGRAM" },

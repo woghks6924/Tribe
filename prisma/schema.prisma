@@ -7,6 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
 enum ProductStatus {
   DRAFT
   ACTIVE
@@ -105,10 +110,15 @@ model Product {
   id             String        @id @default(cuid())
   name           String
   slug           String        @unique
-  description    String
+  description    String // 목록/카드용 짧은 요약
   price          Int // KRW, 원 단위 정수
   compareAtPrice Int?
   status         ProductStatus @default(ACTIVE)
+
+  // 상세페이지 탭 콘텐츠 (리치 텍스트 에디터로 작성, HTML 저장)
+  infoContent   String? // 제품 정보
+  sizeContent   String? // 사이즈 정보
+  detailContent String? // 상세 정보 (착용샷/제품컷 등 이미지 삽입 가능)
 
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
@@ -177,6 +187,7 @@ model Order {
   subtotal    Int
   shippingFee Int @default(0)
   discount    Int @default(0)
+  promoCode   String?
   totalAmount Int
 
   items   OrderItem[]
@@ -238,5 +249,29 @@ model Payment {
   raw Json? // 포트원 응답 원본 저장(감사/디버깅용)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PromoCode {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  discountType  DiscountType
+  discountValue Int // PERCENTAGE: 1-100, FIXED: 원 단위 정액 할인
+  active        Boolean      @default(true)
+  expiresAt     DateTime?
+  minOrderAmount Int?
+  usageLimit    Int?
+  usedCount     Int          @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 상품별이 아닌 사이트 전체에 한 번만 적용되는 콘텐츠(배송/교환 정책 등).
+// 항상 단일 행만 존재한다고 가정하고 upsert로 관리한다.
+model SiteSettings {
+  id                     String @id @default("singleton")
+  shippingReturnsContent String @default("")
+
   updatedAt DateTime @updatedAt
 }

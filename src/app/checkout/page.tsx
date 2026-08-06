@@ -39,9 +39,47 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [promoInput, setPromoInput] = useState("");
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [discount, setDiscount] = useState(0);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [applyingPromo, setApplyingPromo] = useState(false);
+
   const subtotal = hydrated ? cartSubtotal(items) : 0;
   const shippingFee = calcShippingFee(subtotal);
-  const total = subtotal + shippingFee;
+  const total = Math.max(subtotal + shippingFee - discount, 0);
+
+  async function handleApplyPromo() {
+    setPromoError(null);
+    setApplyingPromo(true);
+    try {
+      const res = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoInput, subtotal }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPromoError(data.error ?? "Invalid promo code.");
+        setPromoCode(null);
+        setDiscount(0);
+        return;
+      }
+      setPromoCode(promoInput.trim().toUpperCase());
+      setDiscount(data.discountAmount);
+    } catch {
+      setPromoError("Something went wrong.");
+    } finally {
+      setApplyingPromo(false);
+    }
+  }
+
+  function handleRemovePromo() {
+    setPromoCode(null);
+    setDiscount(0);
+    setPromoInput("");
+    setPromoError(null);
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -65,6 +103,7 @@ export default function CheckoutPage() {
             quantity: i.quantity,
           })),
           pgProvider,
+          promoCode: promoCode || undefined,
         }),
       });
 
@@ -236,6 +275,45 @@ export default function CheckoutPage() {
           <span>Shipping</span>
           <span>{shippingFee === 0 ? "Free" : formatKRW(shippingFee)}</span>
         </div>
+
+        {promoCode ? (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-ink-muted">
+              Promo <span className="text-ink">{promoCode}</span>
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-red-500">-{formatKRW(discount)}</span>
+              <button
+                type="button"
+                onClick={handleRemovePromo}
+                className="cursor-pointer text-xs text-ink-faint hover:text-ink"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <input
+                placeholder="Promo code"
+                value={promoInput}
+                onChange={(e) => setPromoInput(e.target.value)}
+                className="flex-1 border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleApplyPromo}
+                disabled={!promoInput || applyingPromo}
+              >
+                {applyingPromo ? "..." : "Apply"}
+              </Button>
+            </div>
+            {promoError && <p className="text-xs text-red-400">{promoError}</p>}
+          </div>
+        )}
+
         <div className="flex justify-between border-t border-line pt-5 text-base">
           <span>Total</span>
           <span>{formatKRW(total)}</span>
