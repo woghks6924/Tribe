@@ -275,3 +275,20 @@ model SiteSettings {
 
   updatedAt DateTime @updatedAt
 }
+
+// 사이트 공지사항. popupEnabled인 항목은 고객단 첫 진입 시 팝업으로 노출된다.
+model Notice {
+  id            String    @id @default(cuid())
+  title         String
+  content       String // 리치 텍스트 에디터로 작성한 HTML
+  imageUrl      String?
+  linkUrl       String?
+  popupEnabled  Boolean   @default(true)
+  active        Boolean   @default(true)
+  startAt       DateTime?
+  endAt         DateTime?
+  sortOrder     Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

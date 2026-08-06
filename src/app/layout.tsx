@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { GrainFilterDefs } from "@/components/ui/grain-filter";
 import { Header } from "@/components/layout/header";
 import { SiteChrome } from "@/components/layout/site-chrome";
+import { getActivePopupNotices } from "@/lib/notices";
 import "./globals.css";
 
 // 로고 워드마크("Tri.be")와 영문 히어로 카피에만 쓰는 콘덴스드 디스플레이체.
@@ -26,7 +27,9 @@ export const metadata: Metadata = {
   description: "Not the perfect run. The endless next one. Tri.be running apparel.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const notices = await getActivePopupNotices();
+
   return (
     <html
       lang="ko"
@@ -34,7 +37,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-base text-ink">
         <GrainFilterDefs />
-        <SiteChrome header={<Header />}>{children}</SiteChrome>
+        <SiteChrome header={<Header />} notices={notices}>
+          {children}
+        </SiteChrome>
       </body>
     </html>
   );
