@@ -7,6 +7,9 @@ import { Crew } from "@/components/home/crew";
 import { Newsletter } from "@/components/home/newsletter";
 import { getFeaturedProducts, getCategories } from "@/lib/products";
 
+// DB에서 매번 최신 재고/가격을 읽어야 하므로 빌드 시점 정적 렌더링을 하지 않는다.
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const [products, categories] = await Promise.all([
     getFeaturedProducts(4),
