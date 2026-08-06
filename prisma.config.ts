@@ -9,7 +9,9 @@ export default defineConfig({
     path: "prisma/migrations",
     seed: "tsx prisma/seed.ts",
   },
+  // CLI(migrate/studio 등)는 direct 연결을 사용한다. 앱 런타임은
+  // src/lib/prisma.ts에서 별도로 DATABASE_URL(pooler)을 사용한다.
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });
