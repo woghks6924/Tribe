@@ -1,0 +1,100 @@
+import { prisma } from "@/lib/prisma";
+import type {
+  CategoryData,
+  ProductCardData,
+  ProductDetailData,
+} from "@/types";
+
+function toCard(product: {
+  id: string;
+  slug: string;
+  name: string;
+  price: number;
+  compareAtPrice: number | null;
+  category: { name: string; slug: string };
+  images: { url: string; sortOrder: number }[];
+}): ProductCardData {
+  const cover = [...product.images].sort((a, b) => a.sortOrder - b.sortOrder)[0];
+  return {
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    price: product.price,
+    compareAtPrice: product.compareAtPrice,
+    categoryName: product.category.name,
+    categorySlug: product.category.slug,
+    imageUrl: cover?.url ?? null,
+  };
+}
+
+export async function getFeaturedProducts(limit = 4): Promise<ProductCardData[]> {
+  const products = await prisma.product.findMany({
+    where: { status: "ACTIVE" },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    include: {
+      category: { select: { name: true, slug: true } },
+      images: { select: { url: true, sortOrder: true } },
+    },
+  });
+  return products.map(toCard);
+}
+
+export async function getCategories(): Promise<CategoryData[]> {
+  const categories = await prisma.category.findMany({
+    orderBy: { sortOrder: "asc" },
+  });
+  return categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    imageUrl: c.imageUrl,
+  }));
+}
+
+export async function getProducts(options?: {
+  categorySlug?: string;
+}): Promise<ProductCardData[]> {
+  const products = await prisma.product.findMany({
+    where: {
+      status: "ACTIVE",
+      category: options?.categorySlug
+        ? { slug: options.categorySlug }
+        : undefined,
+    },
+    orderBy: { createdAt: "desc" },
+    include: {
+      category: { select: { name: true, slug: true } },
+      images: { select: { url: true, sortOrder: true } },
+    },
+  });
+  return products.map(toCard);
+}
+
+export async function getProductBySlug(
+  slug: string,
+): Promise<ProductDetailData | null> {
+  const product = await prisma.product.findUnique({
+    where: { slug },
+    include: {
+      category: { select: { name: true, slug: true } },
+      images: { orderBy: { sortOrder: "asc" } },
+      options: true,
+    },
+  });
+  if (!product) return null;
+
+  return {
+    ...toCard(product),
+    description: product.description,
+    images: product.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt })),
+    options: product.options.map((o) => ({
+      id: o.id,
+      size: o.size,
+      color: o.color,
+      colorHex: o.colorHex,
+      stock: o.stock,
+      priceDiff: o.priceDiff,
+    })),
+  };
+}

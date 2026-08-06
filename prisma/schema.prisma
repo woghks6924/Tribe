@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  SOLD_OUT
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  PARTIALLY_CANCELLED
+  FAILED
+}
+
+enum PaymentStatus {
+  READY
+  PAID
+  FAILED
+  CANCELLED
+  PARTIALLY_CANCELLED
+}
+
+enum PgProvider {
+  TOSSPAYMENTS
+  NAVERPAY
+}
+
+enum PaymentMethod {
+  CARD
+  EASY_PAY
+  VIRTUAL_ACCOUNT
+  TRANSFER
+  NAVER_PAY
+}
+
+enum TokenType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+}
+
+model Customer {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  phone         String?
+  emailVerified DateTime?
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminUser {
+  id           String @id @default(cuid())
+  email        String @unique
+  passwordHash String
+  name         String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  id        String    @id @default(cuid())
+  email     String
+  token     String    @unique
+  type      TokenType
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([email, type])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  imageUrl  String?
+  sortOrder Int       @default(0)
+  products  Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id             String        @id @default(cuid())
+  name           String
+  slug           String        @unique
+  description    String
+  price          Int // KRW, 원 단위 정수
+  compareAtPrice Int?
+  status         ProductStatus @default(ACTIVE)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  images     ProductImage[]
+  options    ProductOption[]
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String // Supabase Storage public URL
+  alt       String?
+  sortOrder Int     @default(0)
+
+  @@index([productId])
+}
+
+model ProductOption {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  size      String // 예: S, M, L, XL
+  color     String // 예: Black
+  colorHex  String? // 스와치 표시용
+  sku       String  @unique
+  stock     Int     @default(0)
+  priceDiff Int     @default(0) // 옵션별 추가금액
+
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, size, color])
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber String      @unique // 포트원 paymentId로 사용
+  status      OrderStatus @default(PENDING_PAYMENT)
+
+  customerName  String
+  customerEmail String
+  customerPhone String
+
+  zipCode      String
+  address1     String
+  address2     String?
+  shippingMemo String?
+
+  subtotal    Int
+  shippingFee Int @default(0)
+  discount    Int @default(0)
+  totalAmount Int
+
+  items   OrderItem[]
+  payment Payment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id])
+  productOptionId String
+  productOption   ProductOption @relation(fields: [productOptionId], references: [id])
+
+  // 주문 시점 스냅샷 (상품 정보가 나중에 바뀌어도 주문 내역 유지)
+  productName String
+  optionLabel String // 예: "L / Black"
+  unitPrice   Int
+  quantity    Int
+  lineTotal   Int
+
+  @@index([orderId])
+}
+
+model Payment {
+  id      String @id @default(cuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  pgProvider PgProvider
+  channelKey String // 포트원 채널키 (토스/네이버페이 구분)
+  method     PaymentMethod?
+  status     PaymentStatus  @default(READY)
+
+  paymentId String  @unique // 포트원 결제 요청 시 사용한 고유 ID (=orderNumber)
+  pgTxId    String? // 포트원/PG사 내부 거래 ID (취소 API 호출 시 필요)
+
+  requestedAmount Int
+  paidAmount      Int?
+  currency        String @default("KRW")
+
+  receiptUrl String?
+  approvedAt DateTime?
+
+  failReason String?
+
+  cancelledAmount Int       @default(0)
+  cancelReason    String?
+  cancelRequester String? // extra.requester (네이버페이 취소 시 필수)
+  cancelledAt     DateTime?
+
+  raw Json? // 포트원 응답 원본 저장(감사/디버깅용)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
