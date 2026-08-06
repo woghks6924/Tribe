@@ -3,7 +3,7 @@ import { Big_Shoulders } from "next/font/google";
 import localFont from "next/font/local";
 import { GrainFilterDefs } from "@/components/ui/grain-filter";
 import { Header } from "@/components/layout/header";
-import { ConditionalFooter } from "@/components/layout/conditional-footer";
+import { SiteChrome } from "@/components/layout/site-chrome";
 import "./globals.css";
 
 // 로고 워드마크("Tri.be")와 영문 히어로 카피에만 쓰는 콘덴스드 디스플레이체.
@@ -34,9 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-base text-ink">
         <GrainFilterDefs />
-        <Header />
-        <main className="flex flex-1 flex-col pt-20 md:pt-24">{children}</main>
-        <ConditionalFooter />
+        <SiteChrome header={<Header />}>{children}</SiteChrome>
       </body>
     </html>
   );

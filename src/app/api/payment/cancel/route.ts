@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cancelPortonePayment } from "@/lib/portone";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 type CancelBody = {
   orderNumber: string;
@@ -9,7 +10,12 @@ type CancelBody = {
   amount?: number;
 };
 
+// 현재는 관리자 패널에서만 취소를 트리거하므로 관리자 세션을 요구한다.
+// 고객 셀프서비스 취소를 추가하게 되면 이 라우트를 분리해야 한다.
 export async function POST(request: Request) {
+  const { response } = await requireAdmin();
+  if (response) return response;
+
   const body = (await request.json()) as CancelBody;
 
   if (!body.orderNumber || !body.reason) {
