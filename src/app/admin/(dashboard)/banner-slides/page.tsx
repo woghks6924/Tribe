@@ -11,8 +11,8 @@ export default async function AdminBannerSlidesPage() {
       <div className="flex flex-col gap-1">
         <h1 className="font-sans text-2xl font-extrabold tracking-[0.02em]">Banner Slides</h1>
         <p className="text-sm text-ink-muted">
-          The first active slide is the homepage hero background; all active slides play in
-          order in the slideshow section below it.
+          All active slides rotate through the homepage hero banner, in order — video slides
+          advance when they finish, photo slides advance after 5 seconds.
         </p>
       </div>
       <BannerSlideManager slides={slides} />

@@ -2,7 +2,6 @@ import { Hero } from "@/components/home/hero";
 import { NewArrivals } from "@/components/home/new-arrivals";
 import { BrandStory } from "@/components/home/brand-story";
 import { CategoryGrid } from "@/components/home/category-grid";
-import { BannerSlideshow } from "@/components/home/banner-slideshow";
 import { Crew } from "@/components/home/crew";
 import { Newsletter } from "@/components/home/newsletter";
 import { getFeaturedProducts, getCategories } from "@/lib/products";
@@ -20,11 +19,10 @@ export default async function Home() {
 
   return (
     <>
-      <Hero slide={bannerSlides[0] ?? null} />
+      <Hero slides={bannerSlides} />
       <NewArrivals products={products} />
       <BrandStory />
       <CategoryGrid categories={categories} />
-      <BannerSlideshow slides={bannerSlides} />
       <Crew />
       <Newsletter />
     </>

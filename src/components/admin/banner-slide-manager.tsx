@@ -119,6 +119,16 @@ export function BannerSlideManager({ slides }: { slides: BannerSlide[] }) {
     router.refresh();
   }
 
+  async function moveToTop(id: string) {
+    const minOrder = Math.min(...slides.map((s) => s.sortOrder));
+    await fetch(`/api/admin/banner-slides/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sortOrder: minOrder - 1, active: true }),
+    });
+    router.refresh();
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
@@ -140,6 +150,14 @@ export function BannerSlideManager({ slides }: { slides: BannerSlide[] }) {
               </span>
             </div>
             <span className="flex-1 truncate text-ink-muted">{slide.label || "—"}</span>
+            {i !== 0 && (
+              <button
+                onClick={() => moveToTop(slide.id)}
+                className="cursor-pointer text-xs whitespace-nowrap text-ink-muted hover:text-ink"
+              >
+                Move to Top
+              </button>
+            )}
             <div className="flex items-center gap-1">
               <button
                 onClick={() => move(slide.id, slide.sortOrder, -1)}
