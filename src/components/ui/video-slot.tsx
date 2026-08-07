@@ -23,9 +23,12 @@ export function VideoSlot({
         className="absolute inset-0 h-full w-full object-cover"
         style={{
           filter: `brightness(${brightness}) contrast(${contrast}) saturate(0.92)`,
-          // 고정(fixed) 헤더 아래로 영상이 이어질 때 그 영역만 검게 그려지는
-          // 크롬 컴포지팅 버그 방지 — 영상을 별도 GPU 레이어로 승격시킨다.
-          transform: "translateZ(0)",
+          // 원본 영상 상단에 얇은 블랙 레터박스가 박혀 있어, object-cover가
+          // 세로로 크롭하지 않는(좁고 긴) 화면 비율에서는 그대로 노출된다.
+          // 살짝 확대해 모든 화면 비율에서 가장자리가 잘려나가도록 한다.
+          // translateZ(0)은 고정 헤더 아래로 영상이 이어질 때 그 영역만 검게
+          // 그려지는 크롬 컴포지팅 버그 방지용으로 함께 유지한다.
+          transform: "scale(1.3) translateZ(0)",
           willChange: "transform",
         }}
       />

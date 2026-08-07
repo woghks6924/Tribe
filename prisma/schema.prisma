@@ -306,15 +306,21 @@ model LookbookPhoto {
   updatedAt DateTime @updatedAt
 }
 
-// 메인 페이지 히어로/영상 슬라이드쇼가 공유하는 영상 풀.
-// 히어로는 sortOrder가 가장 앞선 active 영상 1개를, 슬라이드쇼는 active 전체를 순서대로 사용한다.
-model BannerVideo {
-  id         String  @id @default(cuid())
-  videoUrl   String
+enum BannerMediaType {
+  VIDEO
+  IMAGE
+}
+
+// 메인 페이지 히어로/배너 슬라이드쇼가 공유하는 미디어 풀 (영상·사진 혼합 가능).
+// 히어로는 sortOrder가 가장 앞선 active 슬라이드 1개를, 슬라이드쇼는 active 전체를 순서대로 사용한다.
+model BannerSlide {
+  id         String          @id @default(cuid())
+  mediaType  BannerMediaType
+  mediaUrl   String
   label      String?
-  brightness Float   @default(1.3)
-  active     Boolean @default(true)
-  sortOrder  Int     @default(0)
+  brightness Float           @default(1.3)
+  active     Boolean         @default(true)
+  sortOrder  Int             @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

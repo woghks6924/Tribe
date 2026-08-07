@@ -41,6 +41,9 @@ export function VideoSlideshow() {
           style={{
             opacity: i === active ? 1 : 0,
             filter: `brightness(${slide.brightness}) contrast(1.1) saturate(0.92)`,
+            // 원본 영상 상단의 얇은 블랙 레터박스를 모든 화면 비율에서 잘라내기 위한 확대
+            transform: "scale(1.3) translateZ(0)",
+            willChange: "transform",
           }}
         />
       ))}
