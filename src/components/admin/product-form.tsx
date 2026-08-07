@@ -50,6 +50,7 @@ export function ProductForm({
     categoryId: string;
     status: (typeof STATUSES)[number];
     images: ImageItem[];
+    thumbnailUrl?: string | null;
     options: OptionItem[];
     fitType?: string | null;
     pocketing?: string | null;
@@ -82,6 +83,9 @@ export function ProductForm({
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? categories[0]?.id ?? "");
   const [status, setStatus] = useState<(typeof STATUSES)[number]>(initial?.status ?? "ACTIVE");
   const [images, setImages] = useState<ImageItem[]>(initial?.images ?? []);
+  const [thumbnailUrl, setThumbnailUrl] = useState(initial?.thumbnailUrl ?? "");
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const [options, setOptions] = useState<OptionItem[]>(
     initial?.options ?? [{ size: "", color: "", colorHex: "", sku: "", stock: 0, priceDiff: 0 }],
   );
@@ -142,6 +146,29 @@ export function ProductForm({
     }
   }
 
+  async function handleThumbnailUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setThumbnailUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Upload failed.");
+        return;
+      }
+      setThumbnailUrl(data.url);
+    } catch {
+      setError("Upload failed.");
+    } finally {
+      setThumbnailUploading(false);
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
+    }
+  }
+
   function updateOption(index: number, patch: Partial<OptionItem>) {
     setOptions((prev) => prev.map((o, i) => (i === index ? { ...o, ...patch } : o)));
   }
@@ -169,6 +196,7 @@ export function ProductForm({
         categoryId,
         status,
         images,
+        thumbnailUrl: thumbnailUrl || null,
         options: options
           .filter((o) => o.size && o.color && o.sku)
           .map((o) => ({ ...o, colorHex: o.colorHex || undefined })),
@@ -280,6 +308,36 @@ export function ProductForm({
       </div>
 
       <div className="flex flex-col gap-3">
+        <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">Thumbnail</span>
+        <p className="text-xs text-ink-faint">
+          Used for product cards and listings. Falls back to the first gallery image below if
+          left empty.
+        </p>
+        {thumbnailUrl && (
+          <div className="relative h-24 w-24 overflow-hidden border border-line">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => setThumbnailUrl("")}
+              className="absolute top-1 right-1 h-5 w-5 cursor-pointer bg-base/80 text-xs text-ink hover:bg-base"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <input
+          ref={thumbnailInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleThumbnailUpload}
+          disabled={thumbnailUploading}
+          className="text-xs"
+        />
+        {thumbnailUploading && <span className="text-xs text-ink-muted">Uploading...</span>}
+      </div>
+
+      <div className="flex flex-col gap-3">
         <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">Images</span>
         <div className="flex flex-wrap gap-3">
           {images.map((img, i) => (
@@ -328,7 +386,7 @@ export function ProductForm({
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs text-ink-faint">Temperature range (°F, 0–95)</span>
+            <span className="text-xs text-ink-faint">Temperature range (°C, -10–35)</span>
             <div className="flex gap-2">
               <input
                 type="number"

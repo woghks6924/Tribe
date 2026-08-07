@@ -39,7 +39,7 @@ export function TechSpecsSection({ product }: { product: ProductDetailData }) {
                 <div className="flex flex-col gap-1">
                   <span className="font-semibold">Temperature</span>
                   <span className="text-xs text-ink-muted">
-                    Designed for {product.tempMin}° to {product.tempMax}° temperatures.
+                    Designed for {product.tempMin}°C to {product.tempMax}°C temperatures.
                   </span>
                 </div>
                 <SpecGauge
@@ -48,7 +48,7 @@ export function TechSpecsSection({ product }: { product: ProductDetailData }) {
                   scaleMin={TEMP_SCALE.min}
                   scaleMax={TEMP_SCALE.max}
                   labels={TEMP_SCALE.labels}
-                  unit="°"
+                  unit="°C"
                 />
               </div>
             )}

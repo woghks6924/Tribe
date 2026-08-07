@@ -11,6 +11,7 @@ function toCard(product: {
   name: string;
   price: number;
   compareAtPrice: number | null;
+  thumbnailUrl: string | null;
   category: { name: string; slug: string };
   images: { url: string; sortOrder: number }[];
 }): ProductCardData {
@@ -23,7 +24,7 @@ function toCard(product: {
     compareAtPrice: product.compareAtPrice,
     categoryName: product.category.name,
     categorySlug: product.category.slug,
-    imageUrl: cover?.url ?? null,
+    imageUrl: product.thumbnailUrl ?? cover?.url ?? null,
   };
 }
 

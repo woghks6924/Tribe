@@ -14,6 +14,7 @@ type ProductInput = {
   categoryId: string;
   status: "DRAFT" | "ACTIVE" | "SOLD_OUT" | "ARCHIVED";
   images: { url: string; alt?: string }[];
+  thumbnailUrl?: string | null;
   options: {
     size: string;
     color: string;
@@ -93,6 +94,7 @@ export async function PATCH(
         images: {
           create: body.images.map((img, i) => ({ url: img.url, alt: img.alt, sortOrder: i })),
         },
+        thumbnailUrl: body.thumbnailUrl || null,
         options: {
           create: body.options.map((o) => ({
             size: o.size,

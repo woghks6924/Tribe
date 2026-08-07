@@ -9,5 +9,6 @@ export const CARE_OPTIONS = [
   "Do Not Dry Clean",
 ] as const;
 
-export const TEMP_SCALE = { min: 0, max: 95, labels: [0, 32, 50, 70, 85, 95] } as const;
+// 한국 기온 표시 관례에 맞춰 섭씨(°C) 기준, 사계절 범위(-10°C ~ 35°C)로 표시한다.
+export const TEMP_SCALE = { min: -10, max: 35, labels: [-10, 0, 10, 20, 30, 35] } as const;
 export const EFFORT_SCALE = { min: 0, max: 100, labels: [0, 25, 50, 75, 100] } as const;

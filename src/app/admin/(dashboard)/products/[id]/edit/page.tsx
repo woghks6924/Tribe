@@ -45,6 +45,7 @@ export default async function EditProductPage({
           categoryId: product.categoryId,
           status: product.status,
           images: product.images.map((img) => ({ url: img.url, alt: img.alt ?? undefined })),
+          thumbnailUrl: product.thumbnailUrl,
           options: product.options.map((o) => ({
             size: o.size,
             color: o.color,

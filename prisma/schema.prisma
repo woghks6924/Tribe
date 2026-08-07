@@ -120,10 +120,13 @@ model Product {
   sizeContent   String? // 사이즈 정보
   detailContent String? // 상세 정보 (착용샷/제품컷 등 이미지 삽입 가능)
 
+  // 목록/카드 전용 썸네일. 비어 있으면 images의 첫 번째 사진으로 대체된다.
+  thumbnailUrl String?
+
   // 기능성 스펙 (Bandit Running류 "Tech Specs" 블록)
   fitType          String? // 예: Compression, Relaxed
   pocketing        String? // 예: "4 gel, 3 phone"
-  tempMin          Int? // 착용 권장 온도 범위(°F), 0~95 스케일 위에 표시
+  tempMin          Int? // 착용 권장 온도 범위(°C), -10~35 스케일 위에 표시
   tempMax          Int?
   effortMin        Int? // 착용 권장 운동 강도 범위(%), 0~100 스케일 위에 표시
   effortMax        Int?

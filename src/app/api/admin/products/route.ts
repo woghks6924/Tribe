@@ -14,6 +14,7 @@ type ProductInput = {
   categoryId: string;
   status: "DRAFT" | "ACTIVE" | "SOLD_OUT" | "ARCHIVED";
   images: { url: string; alt?: string }[];
+  thumbnailUrl?: string | null;
   options: {
     size: string;
     color: string;
@@ -53,7 +54,7 @@ export async function GET() {
       price: p.price,
       status: p.status,
       categoryName: p.category.name,
-      imageUrl: p.images[0]?.url ?? null,
+      imageUrl: p.thumbnailUrl ?? p.images[0]?.url ?? null,
     })),
   );
 }
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
       images: {
         create: body.images.map((img, i) => ({ url: img.url, alt: img.alt, sortOrder: i })),
       },
+      thumbnailUrl: body.thumbnailUrl || null,
       options: {
         create: body.options.map((o) => ({
           size: o.size,
