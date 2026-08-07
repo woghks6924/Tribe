@@ -2,17 +2,18 @@ import Link from "next/link";
 import { LookbookHero } from "@/components/lookbook/lookbook-hero";
 import { LookbookGrid } from "@/components/lookbook/lookbook-grid";
 import { LookbookScroll } from "@/components/lookbook/lookbook-scroll";
-import { LOOKBOOK_PHOTOS, FIELD_NOTE_NUMBERS } from "@/lib/lookbook-data";
+import { getActiveLookbookPhotos } from "@/lib/lookbook";
 
-export default function LookbookPage() {
-  const fieldNotes = FIELD_NOTE_NUMBERS.map((n) =>
-    LOOKBOOK_PHOTOS.find((p) => p.number === n),
-  ).filter((p): p is (typeof LOOKBOOK_PHOTOS)[number] => !!p);
+export const dynamic = "force-dynamic";
+
+export default async function LookbookPage() {
+  const photos = await getActiveLookbookPhotos();
+  const fieldNotes = photos.slice(0, 6);
 
   return (
     <>
       <LookbookHero />
-      <LookbookGrid photos={LOOKBOOK_PHOTOS} />
+      <LookbookGrid photos={photos} />
       <LookbookScroll photos={fieldNotes} />
 
       <div className="flex flex-col items-center gap-5 px-6 py-24 text-center md:py-32">

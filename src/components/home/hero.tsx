@@ -1,23 +1,29 @@
 import { Badge } from "@/components/ui/badge";
 import { VideoSlot } from "@/components/ui/video-slot";
+import { ImageSlot } from "@/components/ui/image-slot";
+import type { BannerSlideData } from "@/lib/banner";
 
-export function Hero() {
+export function Hero({ slide }: { slide: BannerSlideData | null }) {
   return (
     <section className="relative -mt-20 h-[720px] overflow-hidden md:-mt-24 md:h-[876px]">
       <div className="absolute inset-0">
-        <VideoSlot
-          src="/videos/hero-night-run.mp4"
-          className="h-full w-full"
-          brightness={2.1}
-          contrast={1.15}
-        />
+        {slide?.mediaType === "IMAGE" ? (
+          <ImageSlot src={slide.mediaUrl} alt="" className="h-full w-full" />
+        ) : (
+          <VideoSlot
+            src={slide?.mediaUrl ?? "/videos/hero-night-run.mp4"}
+            className="h-full w-full"
+            brightness={slide?.brightness ?? 2.1}
+            contrast={1.15}
+          />
+        )}
       </div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-base/90 via-transparent to-transparent" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-base/55 via-transparent to-transparent" />
 
       <div className="absolute top-28 left-6 flex gap-2.5 md:top-32 md:left-14">
         <Badge>#TRIBERUN</Badge>
-        <Badge>SEOUL NIGHT LOOP</Badge>
+        <Badge>{slide?.label ?? "SEOUL NIGHT LOOP"}</Badge>
       </div>
 
       <div className="absolute bottom-14 left-6 flex max-w-xl flex-col gap-7 md:bottom-16 md:left-14">

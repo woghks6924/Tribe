@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { ScrollReveal } from "@/components/lookbook/scroll-reveal";
 import { GrainOverlay } from "@/components/ui/grain-filter";
-import type { LookbookPhoto } from "@/lib/lookbook-data";
+import type { LookbookPhotoData } from "@/lib/lookbook";
 
 const SPAN_PATTERNS = [
   "md:col-span-4 md:row-span-2",
@@ -12,7 +12,7 @@ const SPAN_PATTERNS = [
   "md:col-span-6 md:row-span-1",
 ];
 
-export function LookbookGrid({ photos }: { photos: LookbookPhoto[] }) {
+export function LookbookGrid({ photos }: { photos: LookbookPhotoData[] }) {
   if (photos.length === 0) return null;
 
   return (
@@ -29,13 +29,13 @@ export function LookbookGrid({ photos }: { photos: LookbookPhoto[] }) {
       <div className="grid auto-rows-[220px] grid-cols-2 gap-3 md:auto-rows-[260px] md:grid-cols-6 md:gap-4">
         {photos.map((photo, i) => (
           <ScrollReveal
-            key={photo.number}
+            key={photo.id}
             delay={(i % 6) * 90}
             className={`group relative col-span-2 row-span-1 overflow-hidden ${SPAN_PATTERNS[i % SPAN_PATTERNS.length]}`}
           >
             <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-105">
               <Image
-                src={photo.src}
+                src={photo.imageUrl}
                 alt={photo.caption}
                 fill
                 sizes="(min-width: 768px) 50vw, 100vw"
@@ -50,7 +50,7 @@ export function LookbookGrid({ photos }: { photos: LookbookPhoto[] }) {
                 {photo.caption}
               </span>
               <span className="font-display shrink-0 text-lg font-extrabold tracking-[0.04em] text-ink">
-                LOOK {photo.number}
+                LOOK {String(i + 1).padStart(2, "0")}
               </span>
             </div>
           </ScrollReveal>
