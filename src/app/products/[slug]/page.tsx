@@ -26,7 +26,6 @@ export default async function ProductDetailPage({
   const tabs = [
     product.infoContent && { label: "Product Info", html: product.infoContent },
     product.sizeContent && { label: "Size Guide", html: product.sizeContent },
-    product.detailContent && { label: "Details", html: product.detailContent },
     shippingReturnsContent && { label: "Shipping & Returns", html: shippingReturnsContent },
   ].filter((t): t is { label: string; html: string } => !!t);
 
@@ -53,6 +52,13 @@ export default async function ProductDetailPage({
         </div>
 
         <ProductTabs tabs={tabs} />
+
+        {product.detailContent && (
+          <div
+            className="prose-content border-t border-line pt-10 text-sm text-ink-muted"
+            dangerouslySetInnerHTML={{ __html: product.detailContent }}
+          />
+        )}
       </div>
 
       <RelatedProducts products={related} />
