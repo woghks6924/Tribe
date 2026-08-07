@@ -11,6 +11,7 @@ type BannerSlide = {
   mediaUrl: string;
   label: string | null;
   brightness: number;
+  durationSec: number | null;
   active: boolean;
   sortOrder: number;
 };
@@ -23,6 +24,7 @@ export function BannerSlideManager({ slides }: { slides: BannerSlide[] }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const [label, setLabel] = useState("");
   const [brightness, setBrightness] = useState("1.3");
+  const [durationSec, setDurationSec] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,6 +71,7 @@ export function BannerSlideManager({ slides }: { slides: BannerSlide[] }) {
           mediaUrl,
           label: label || undefined,
           brightness: Number(brightness) || 1.3,
+          durationSec: durationSec ? Number(durationSec) : undefined,
         }),
       });
       const data = await res.json();
@@ -79,6 +82,7 @@ export function BannerSlideManager({ slides }: { slides: BannerSlide[] }) {
       setMediaUrl("");
       setLabel("");
       setBrightness("1.3");
+      setDurationSec("");
       router.refresh();
     } catch {
       setError("Something went wrong.");
@@ -119,6 +123,16 @@ export function BannerSlideManager({ slides }: { slides: BannerSlide[] }) {
     router.refresh();
   }
 
+  async function setDuration(id: string, value: string) {
+    const parsed = value ? Number(value) : null;
+    await fetch(`/api/admin/banner-slides/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ durationSec: parsed }),
+    });
+    router.refresh();
+  }
+
   async function moveToTop(id: string) {
     const minOrder = Math.min(...slides.map((s) => s.sortOrder));
     await fetch(`/api/admin/banner-slides/${id}`, {
@@ -150,6 +164,17 @@ export function BannerSlideManager({ slides }: { slides: BannerSlide[] }) {
               </span>
             </div>
             <span className="flex-1 truncate text-ink-muted">{slide.label || "—"}</span>
+            <label className="flex shrink-0 items-center gap-1 text-xs whitespace-nowrap text-ink-faint">
+              <input
+                type="number"
+                min="1"
+                defaultValue={slide.durationSec ?? ""}
+                placeholder={slide.mediaType === "VIDEO" ? "auto" : "5"}
+                onBlur={(e) => setDuration(slide.id, e.target.value)}
+                className="w-12 border border-line-strong bg-transparent px-1.5 py-1 text-center text-ink outline-none"
+              />
+              sec
+            </label>
             {i !== 0 && (
               <button
                 onClick={() => moveToTop(slide.id)}
@@ -265,6 +290,17 @@ export function BannerSlideManager({ slides }: { slides: BannerSlide[] }) {
             step="0.05"
             value={brightness}
             onChange={(e) => setBrightness(e.target.value)}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
+          Duration in seconds (optional — video defaults to its own length, photo to 5s)
+          <input
+            type="number"
+            min="1"
+            placeholder="auto"
+            value={durationSec}
+            onChange={(e) => setDurationSec(e.target.value)}
+            className="border border-line-strong bg-transparent px-4 py-3 text-sm text-ink normal-case outline-none"
           />
         </label>
 

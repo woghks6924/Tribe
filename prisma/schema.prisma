@@ -120,17 +120,54 @@ model Product {
   sizeContent   String? // 사이즈 정보
   detailContent String? // 상세 정보 (착용샷/제품컷 등 이미지 삽입 가능)
 
+  // 기능성 스펙 (Bandit Running류 "Tech Specs" 블록)
+  fitType          String? // 예: Compression, Relaxed
+  pocketing        String? // 예: "4 gel, 3 phone"
+  tempMin          Int? // 착용 권장 온도 범위(°F), 0~95 스케일 위에 표시
+  tempMax          Int?
+  effortMin        Int? // 착용 권장 운동 강도 범위(%), 0~100 스케일 위에 표시
+  effortMax        Int?
+  materials        String? // 예: "78% Polyester, 24% Spandex"
+  careInstructions String[] @default([]) // 고정 보기 목록 중 다중 선택
+  careNote         String?
+  madeIn           String?
+  purposeTags      String[] @default([]) // 예: Running, Road Race, Competition, Daily Wear, Gym Training
+
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
-  images     ProductImage[]
-  options    ProductOption[]
-  orderItems OrderItem[]
+  images          ProductImage[]
+  options         ProductOption[]
+  orderItems      OrderItem[]
+  functionalities ProductFunctionality[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([categoryId])
+}
+
+// 상품마다 반복 사용되는 "기능성" 카드 라이브러리 (아이콘 + 제목 + 설명).
+// 관리자는 여기서 미리 만들어두고, 상품별로 해당하는 항목만 선택해서 노출한다.
+model Functionality {
+  id          String  @id @default(cuid())
+  title       String
+  description String
+  icon        String? // Supabase Storage에 업로드한 아이콘 이미지 URL
+
+  products ProductFunctionality[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductFunctionality {
+  productId       String
+  functionalityId String
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  functionality   Functionality @relation(fields: [functionalityId], references: [id], onDelete: Cascade)
+
+  @@id([productId, functionalityId])
 }
 
 model ProductImage {
@@ -273,6 +310,23 @@ model SiteSettings {
   id                     String @id @default("singleton")
   shippingReturnsContent String @default("")
 
+  // 메인 페이지 각 섹션에 들어가는 문구. 줄바꿈(\n)은 렌더링 시 <br/>로 표시한다.
+  heroBadgeText  String @default("#TRIBERUN")
+  heroHeadline   String @default("One Tribe.\nEndless Tries.")
+  heroSubtext    String @default("Runningwear for those who run the city at night. Tri.be — one tribe, built by runners who believe in the repeat, not the record.")
+
+  storyLabel    String @default("FIG. 01 — Philosophy")
+  storyHeadline String @default("Not the perfect run.\nThe endless next one.")
+  storyBody     String @default("Runners forged by repetition, not perfection, on the street. Tri.be was built for runners who believe in the repeat over the record — one tribe, running the same pace together.")
+
+  crewLabel    String @default("FIG. 02 — Crew")
+  crewHeadline String @default("Run alone, it's a jog.\nRun together, it's a tribe.")
+  crewBody     String @default("Every Tuesday night, the Tri.be run club crosses the city. Every pace is different — the finish line is always together.")
+  crewCta      String @default("JOIN THE TRIBE")
+
+  newsletterHeadline String @default("Join the Tribe")
+  newsletterBody     String @default("Every Tuesday, get run club news and new product previews first.")
+
   updatedAt DateTime @updatedAt
 }
 
@@ -319,6 +373,7 @@ model BannerSlide {
   mediaUrl   String
   label      String?
   brightness Float           @default(1.3)
+  durationSec Int? // 비워두면 영상은 끝날 때, 사진은 5초 후 자동으로 다음 슬라이드로 전환
   active     Boolean         @default(true)
   sortOrder  Int             @default(0)
 

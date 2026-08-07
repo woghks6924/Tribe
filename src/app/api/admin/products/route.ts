@@ -22,6 +22,18 @@ type ProductInput = {
     stock: number;
     priceDiff: number;
   }[];
+  fitType?: string | null;
+  pocketing?: string | null;
+  tempMin?: number | null;
+  tempMax?: number | null;
+  effortMin?: number | null;
+  effortMax?: number | null;
+  materials?: string | null;
+  careInstructions?: string[];
+  careNote?: string | null;
+  madeIn?: string | null;
+  purposeTags?: string[];
+  functionalityIds?: string[];
 };
 
 export async function GET() {
@@ -85,6 +97,20 @@ export async function POST(request: Request) {
           stock: o.stock,
           priceDiff: o.priceDiff,
         })),
+      },
+      fitType: body.fitType || null,
+      pocketing: body.pocketing || null,
+      tempMin: body.tempMin ?? null,
+      tempMax: body.tempMax ?? null,
+      effortMin: body.effortMin ?? null,
+      effortMax: body.effortMax ?? null,
+      materials: body.materials || null,
+      careInstructions: body.careInstructions ?? [],
+      careNote: body.careNote || null,
+      madeIn: body.madeIn || null,
+      purposeTags: body.purposeTags ?? [],
+      functionalities: {
+        create: (body.functionalityIds ?? []).map((functionalityId) => ({ functionalityId })),
       },
     },
   });

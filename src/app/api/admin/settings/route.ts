@@ -15,16 +15,32 @@ export async function GET() {
   return NextResponse.json(settings);
 }
 
+type SettingsBody = {
+  shippingReturnsContent?: string;
+  heroBadgeText?: string;
+  heroHeadline?: string;
+  heroSubtext?: string;
+  storyLabel?: string;
+  storyHeadline?: string;
+  storyBody?: string;
+  crewLabel?: string;
+  crewHeadline?: string;
+  crewBody?: string;
+  crewCta?: string;
+  newsletterHeadline?: string;
+  newsletterBody?: string;
+};
+
 export async function PATCH(request: Request) {
   const { response } = await requireAdmin();
   if (response) return response;
 
-  const body = (await request.json()) as { shippingReturnsContent: string };
+  const body = (await request.json()) as SettingsBody;
 
   const settings = await prisma.siteSettings.upsert({
     where: { id: "singleton" },
-    update: { shippingReturnsContent: body.shippingReturnsContent },
-    create: { id: "singleton", shippingReturnsContent: body.shippingReturnsContent },
+    update: body,
+    create: { id: "singleton", ...body },
   });
 
   return NextResponse.json(settings);

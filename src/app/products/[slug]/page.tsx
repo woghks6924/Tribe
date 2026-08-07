@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ImageSlot } from "@/components/ui/image-slot";
 import { ProductOptions } from "@/components/product/product-options";
 import { ProductTabs } from "@/components/product/product-tabs";
+import { TechSpecsSection } from "@/components/product/tech-specs-section";
 import { RelatedProducts } from "@/components/product/related-products";
 import { getProductBySlug, getRelatedProducts } from "@/lib/products";
 import { getShippingReturnsContent } from "@/lib/site-settings";
@@ -50,6 +51,8 @@ export default async function ProductDetailPage({
             <ProductOptions product={product} />
           </div>
         </div>
+
+        <TechSpecsSection product={product} />
 
         <ProductTabs tabs={tabs} />
 

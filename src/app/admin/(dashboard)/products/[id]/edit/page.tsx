@@ -11,12 +11,17 @@ export default async function EditProductPage({
 }) {
   const { id } = await params;
 
-  const [product, categories] = await Promise.all([
+  const [product, categories, functionalities] = await Promise.all([
     prisma.product.findUnique({
       where: { id },
-      include: { images: { orderBy: { sortOrder: "asc" } }, options: true },
+      include: {
+        images: { orderBy: { sortOrder: "asc" } },
+        options: true,
+        functionalities: { select: { functionalityId: true } },
+      },
     }),
     prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
+    prisma.functionality.findMany({ orderBy: { createdAt: "asc" } }),
   ]);
 
   if (!product) notFound();
@@ -26,6 +31,7 @@ export default async function EditProductPage({
       <h1 className="font-sans text-2xl font-extrabold tracking-[0.02em]">Edit Product</h1>
       <ProductForm
         categories={categories}
+        functionalities={functionalities}
         productId={product.id}
         initial={{
           name: product.name,
@@ -47,6 +53,18 @@ export default async function EditProductPage({
             stock: o.stock,
             priceDiff: o.priceDiff,
           })),
+          fitType: product.fitType,
+          pocketing: product.pocketing,
+          tempMin: product.tempMin,
+          tempMax: product.tempMax,
+          effortMin: product.effortMin,
+          effortMax: product.effortMax,
+          materials: product.materials,
+          careInstructions: product.careInstructions,
+          careNote: product.careNote,
+          madeIn: product.madeIn,
+          purposeTags: product.purposeTags,
+          functionalityIds: product.functionalities.map((f) => f.functionalityId),
         }}
       />
     </div>

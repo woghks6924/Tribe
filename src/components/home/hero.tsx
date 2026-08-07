@@ -5,10 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { GrainOverlay } from "@/components/ui/grain-filter";
 import type { BannerSlideData } from "@/lib/banner";
 
-const IMAGE_DURATION_MS = 5000;
+const DEFAULT_IMAGE_DURATION_SEC = 5;
 const FALLBACK_VIDEO = "/videos/hero-night-run.mp4";
 
-export function Hero({ slides }: { slides: BannerSlideData[] }) {
+export function Hero({
+  slides,
+  badgeText,
+  headline,
+  subtext,
+}: {
+  slides: BannerSlideData[];
+  badgeText: string;
+  headline: string;
+  subtext: string;
+}) {
   const [active, setActive] = useState(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -24,11 +34,16 @@ export function Hero({ slides }: { slides: BannerSlideData[] }) {
 
     if (current.mediaType === "VIDEO") {
       videoRefs.current[active]?.play().catch(() => {});
-    } else {
+    }
+
+    const duration =
+      current.durationSec ?? (current.mediaType === "IMAGE" ? DEFAULT_IMAGE_DURATION_SEC : null);
+    if (duration != null) {
       timerRef.current = setTimeout(() => {
         setActive((a) => (a + 1) % slides.length);
-      }, IMAGE_DURATION_MS);
+      }, duration * 1000);
     }
+
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
@@ -54,7 +69,7 @@ export function Hero({ slides }: { slides: BannerSlideData[] }) {
                 muted
                 playsInline
                 autoPlay={i === 0}
-                onEnded={i === active ? handleEnded : undefined}
+                onEnded={i === active && slide.durationSec == null ? handleEnded : undefined}
                 className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
                 style={{
                   opacity: i === active ? 1 : 0,
@@ -99,19 +114,21 @@ export function Hero({ slides }: { slides: BannerSlideData[] }) {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-base/55 via-transparent to-transparent" />
 
       <div className="absolute top-28 left-6 flex gap-2.5 md:top-32 md:left-14">
-        <Badge>#TRIBERUN</Badge>
-        <Badge>{slides[active]?.label ?? "SEOUL NIGHT LOOP"}</Badge>
+        <Badge>{badgeText}</Badge>
+        {slides[active]?.label && <Badge>{slides[active].label}</Badge>}
       </div>
 
       <div className="absolute bottom-14 left-6 flex max-w-xl flex-col gap-7 md:bottom-16 md:left-14">
         <h1 className="font-display text-[13vw] leading-[0.98] font-extrabold tracking-[0.02em] uppercase sm:text-6xl md:text-7xl">
-          One Tribe.
-          <br />
-          Endless Tries.
+          {headline.split("\n").map((line, i) => (
+            <span key={i}>
+              {i > 0 && <br />}
+              {line}
+            </span>
+          ))}
         </h1>
         <p className="max-w-md text-sm leading-relaxed tracking-[0.01em] text-ink-muted">
-          Runningwear for those who run the city at night. Tri.be — one
-          tribe, built by runners who believe in the repeat, not the record.
+          {subtext}
         </p>
       </div>
 

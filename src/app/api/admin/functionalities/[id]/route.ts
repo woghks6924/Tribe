@@ -11,25 +11,21 @@ export async function PATCH(
 
   const { id } = await params;
   const body = (await request.json()) as {
-    label?: string | null;
-    brightness?: number;
-    durationSec?: number | null;
-    active?: boolean;
-    sortOrder?: number;
+    title?: string;
+    description?: string;
+    icon?: string | null;
   };
 
-  const slide = await prisma.bannerSlide.update({
+  const functionality = await prisma.functionality.update({
     where: { id },
     data: {
-      ...(body.label !== undefined && { label: body.label || null }),
-      ...(body.brightness !== undefined && { brightness: body.brightness }),
-      ...(body.durationSec !== undefined && { durationSec: body.durationSec || null }),
-      ...(body.active !== undefined && { active: body.active }),
-      ...(body.sortOrder !== undefined && { sortOrder: body.sortOrder }),
+      ...(body.title !== undefined && { title: body.title }),
+      ...(body.description !== undefined && { description: body.description }),
+      ...(body.icon !== undefined && { icon: body.icon || null }),
     },
   });
 
-  return NextResponse.json(slide);
+  return NextResponse.json(functionality);
 }
 
 export async function DELETE(
@@ -40,6 +36,6 @@ export async function DELETE(
   if (response) return response;
 
   const { id } = await params;
-  await prisma.bannerSlide.delete({ where: { id } });
+  await prisma.functionality.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

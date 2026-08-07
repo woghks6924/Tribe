@@ -6,6 +6,7 @@ export type BannerSlideData = {
   mediaUrl: string;
   label: string | null;
   brightness: number;
+  durationSec: number | null;
 };
 
 export async function getActiveBannerSlides(): Promise<BannerSlideData[]> {
@@ -19,5 +20,6 @@ export async function getActiveBannerSlides(): Promise<BannerSlideData[]> {
     mediaUrl: s.mediaUrl,
     label: s.label,
     brightness: s.brightness,
+    durationSec: s.durationSec,
   }));
 }

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { PURPOSE_TAGS, CARE_OPTIONS } from "@/lib/product-specs";
 
 type ImageItem = { url: string; alt?: string };
 type OptionItem = {
@@ -16,6 +17,7 @@ type OptionItem = {
 };
 
 type Category = { id: string; name: string };
+type FunctionalityOption = { id: string; title: string; icon: string | null };
 
 const STATUSES = ["DRAFT", "ACTIVE", "SOLD_OUT", "ARCHIVED"] as const;
 
@@ -29,10 +31,12 @@ function slugify(text: string) {
 
 export function ProductForm({
   categories,
+  functionalities,
   productId,
   initial,
 }: {
   categories: Category[];
+  functionalities: FunctionalityOption[];
   productId?: string;
   initial?: {
     name: string;
@@ -47,6 +51,18 @@ export function ProductForm({
     status: (typeof STATUSES)[number];
     images: ImageItem[];
     options: OptionItem[];
+    fitType?: string | null;
+    pocketing?: string | null;
+    tempMin?: number | null;
+    tempMax?: number | null;
+    effortMin?: number | null;
+    effortMax?: number | null;
+    materials?: string | null;
+    careInstructions?: string[];
+    careNote?: string | null;
+    madeIn?: string | null;
+    purposeTags?: string[];
+    functionalityIds?: string[];
   };
 }) {
   const router = useRouter();
@@ -72,6 +88,31 @@ export function ProductForm({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const [fitType, setFitType] = useState(initial?.fitType ?? "");
+  const [pocketing, setPocketing] = useState(initial?.pocketing ?? "");
+  const [tempMin, setTempMin] = useState(initial?.tempMin != null ? String(initial.tempMin) : "");
+  const [tempMax, setTempMax] = useState(initial?.tempMax != null ? String(initial.tempMax) : "");
+  const [effortMin, setEffortMin] = useState(
+    initial?.effortMin != null ? String(initial.effortMin) : "",
+  );
+  const [effortMax, setEffortMax] = useState(
+    initial?.effortMax != null ? String(initial.effortMax) : "",
+  );
+  const [materials, setMaterials] = useState(initial?.materials ?? "");
+  const [careInstructions, setCareInstructions] = useState<string[]>(
+    initial?.careInstructions ?? [],
+  );
+  const [careNote, setCareNote] = useState(initial?.careNote ?? "");
+  const [madeIn, setMadeIn] = useState(initial?.madeIn ?? "");
+  const [purposeTags, setPurposeTags] = useState<string[]>(initial?.purposeTags ?? []);
+  const [functionalityIds, setFunctionalityIds] = useState<string[]>(
+    initial?.functionalityIds ?? [],
+  );
+
+  function toggleInArray(list: string[], value: string, setter: (v: string[]) => void) {
+    setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+  }
 
   function handleNameChange(value: string) {
     setName(value);
@@ -131,6 +172,18 @@ export function ProductForm({
         options: options
           .filter((o) => o.size && o.color && o.sku)
           .map((o) => ({ ...o, colorHex: o.colorHex || undefined })),
+        fitType: fitType || null,
+        pocketing: pocketing || null,
+        tempMin: tempMin ? Number(tempMin) : null,
+        tempMax: tempMax ? Number(tempMax) : null,
+        effortMin: effortMin ? Number(effortMin) : null,
+        effortMax: effortMax ? Number(effortMax) : null,
+        materials: materials || null,
+        careInstructions,
+        careNote: careNote || null,
+        madeIn: madeIn || null,
+        purposeTags,
+        functionalityIds,
       };
 
       const res = await fetch(
@@ -254,6 +307,142 @@ export function ProductForm({
         value={detailContent}
         onChange={setDetailContent}
       />
+
+      <div className="flex flex-col gap-4 border border-line p-5">
+        <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">Tech Specs</span>
+
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            placeholder="Fit (e.g. Compression)"
+            value={fitType}
+            onChange={(e) => setFitType(e.target.value)}
+            className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
+          />
+          <input
+            placeholder="Pocketing (e.g. 4 gel, 3 phone)"
+            value={pocketing}
+            onChange={(e) => setPocketing(e.target.value)}
+            className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs text-ink-faint">Temperature range (°F, 0–95)</span>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                value={tempMin}
+                onChange={(e) => setTempMin(e.target.value)}
+                className="w-full border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                value={tempMax}
+                onChange={(e) => setTempMax(e.target.value)}
+                className="w-full border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs text-ink-faint">Effort range (%, 0–100)</span>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                value={effortMin}
+                onChange={(e) => setEffortMin(e.target.value)}
+                className="w-full border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                value={effortMax}
+                onChange={(e) => setEffortMax(e.target.value)}
+                className="w-full border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+              />
+            </div>
+          </div>
+        </div>
+
+        <input
+          placeholder="Materials (e.g. 78% Polyester, 24% Spandex)"
+          value={materials}
+          onChange={(e) => setMaterials(e.target.value)}
+          className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
+        />
+
+        <div className="flex flex-col gap-2">
+          <span className="text-xs text-ink-faint">Care instructions</span>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {CARE_OPTIONS.map((option) => (
+              <label key={option} className="flex items-center gap-1.5 text-xs text-ink-muted">
+                <input
+                  type="checkbox"
+                  checked={careInstructions.includes(option)}
+                  onChange={() => toggleInArray(careInstructions, option, setCareInstructions)}
+                />
+                {option}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            placeholder="Care note (optional)"
+            value={careNote}
+            onChange={(e) => setCareNote(e.target.value)}
+            className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
+          />
+          <input
+            placeholder="Made in (e.g. China)"
+            value={madeIn}
+            onChange={(e) => setMadeIn(e.target.value)}
+            className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-xs text-ink-faint">Purpose</span>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {PURPOSE_TAGS.map((tag) => (
+              <label key={tag} className="flex items-center gap-1.5 text-xs text-ink-muted">
+                <input
+                  type="checkbox"
+                  checked={purposeTags.includes(tag)}
+                  onChange={() => toggleInArray(purposeTags, tag, setPurposeTags)}
+                />
+                {tag}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-xs text-ink-faint">Functionality</span>
+          {functionalities.length === 0 ? (
+            <p className="text-xs text-ink-faint">
+              No functionality cards yet — add some in Functionality Library first.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {functionalities.map((f) => (
+                <label key={f.id} className="flex items-center gap-1.5 text-xs text-ink-muted">
+                  <input
+                    type="checkbox"
+                    checked={functionalityIds.includes(f.id)}
+                    onChange={() => toggleInArray(functionalityIds, f.id, setFunctionalityIds)}
+                  />
+                  {f.title}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="flex flex-col gap-3">
         <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">Options (Size / Color)</span>

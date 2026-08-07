@@ -19,6 +19,7 @@ export async function POST(request: Request) {
     mediaUrl: string;
     label?: string;
     brightness?: number;
+    durationSec?: number;
   };
 
   if (!body.mediaType || !body.mediaUrl) {
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
       mediaUrl: body.mediaUrl,
       label: body.label || null,
       brightness: body.brightness ?? 1.3,
+      durationSec: body.durationSec || null,
       sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
     },
   });

@@ -125,6 +125,7 @@ export async function getProductBySlug(
       category: { select: { name: true, slug: true } },
       images: { orderBy: { sortOrder: "asc" } },
       options: true,
+      functionalities: { include: { functionality: true } },
     },
   });
   if (!product) return null;
@@ -143,6 +144,23 @@ export async function getProductBySlug(
       colorHex: o.colorHex,
       stock: o.stock,
       priceDiff: o.priceDiff,
+    })),
+    fitType: product.fitType,
+    pocketing: product.pocketing,
+    tempMin: product.tempMin,
+    tempMax: product.tempMax,
+    effortMin: product.effortMin,
+    effortMax: product.effortMax,
+    materials: product.materials,
+    careInstructions: product.careInstructions,
+    careNote: product.careNote,
+    madeIn: product.madeIn,
+    purposeTags: product.purposeTags,
+    functionalities: product.functionalities.map((pf) => ({
+      id: pf.functionality.id,
+      title: pf.functionality.title,
+      description: pf.functionality.description,
+      icon: pf.functionality.icon,
     })),
   };
 }

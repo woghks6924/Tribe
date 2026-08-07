@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 
-export function Newsletter() {
+export function Newsletter({ headline, body }: { headline: string; body: string }) {
   const [submitted, setSubmitted] = useState(false);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -15,11 +15,9 @@ export function Newsletter() {
     <section className="flex flex-col items-start gap-8 bg-base-elevated px-6 py-20 md:flex-row md:items-center md:justify-between md:px-14">
       <div className="flex max-w-md flex-col gap-3">
         <h2 className="font-display text-xl font-extrabold tracking-[0.02em] uppercase">
-          Join the Tribe
+          {headline}
         </h2>
-        <p className="text-sm leading-relaxed text-ink-muted">
-          Every Tuesday, get run club news and new product previews first.
-        </p>
+        <p className="text-sm leading-relaxed text-ink-muted">{body}</p>
       </div>
       {submitted ? (
         <p className="text-sm text-ink-muted">Thanks for subscribing.</p>

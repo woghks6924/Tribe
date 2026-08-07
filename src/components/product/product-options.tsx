@@ -69,6 +69,19 @@ export function ProductOptions({ product }: { product: ProductDetailData }) {
             <span className="text-ink-muted">{formatKRW(unitPrice)}</span>
           )}
         </div>
+        {product.purposeTags.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {product.purposeTags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1.5 border border-line-strong px-2.5 py-1 text-[10px] font-medium tracking-[0.1em] text-ink-muted uppercase"
+              >
+                <span className="h-1 w-1 rounded-full bg-accent" />
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <p className="text-sm leading-relaxed text-ink-muted">
