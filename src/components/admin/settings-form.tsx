@@ -18,6 +18,9 @@ type SettingsData = {
   crewCta: string;
   newsletterHeadline: string;
   newsletterBody: string;
+  showStudioTab: boolean;
+  studioTheme: "LIGHT" | "DARK";
+  studioHeroHeadline: string;
 };
 
 export function SettingsForm({ initial }: { initial: SettingsData }) {
@@ -88,6 +91,47 @@ export function SettingsForm({ initial }: { initial: SettingsData }) {
           onChange={(v) => set("newsletterHeadline", v)}
         />
         <TextAreaField label="Body" value={form.newsletterBody} onChange={(v) => set("newsletterBody", v)} rows={2} />
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xs tracking-[0.08em] text-ink-muted uppercase">Studio</h2>
+        <p className="text-xs text-ink-muted">
+          Content production service pitch, separate from the shop — direction isn&apos;t final
+          yet, so it&apos;s hidden by default.
+        </p>
+        <label className="flex items-center gap-2 text-sm text-ink-muted">
+          <input
+            type="checkbox"
+            checked={form.showStudioTab}
+            onChange={(e) => set("showStudioTab", e.target.checked)}
+          />
+          Show STUDIO tab in navigation (unchecked = /studio pages 404)
+        </label>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">Theme</span>
+          <div className="flex gap-4">
+            {(["LIGHT", "DARK"] as const).map((t) => (
+              <label key={t} className="flex items-center gap-1.5 text-sm text-ink-muted">
+                <input
+                  type="radio"
+                  name="studioTheme"
+                  checked={form.studioTheme === t}
+                  onChange={() => set("studioTheme", t)}
+                />
+                {t === "LIGHT" ? "Light" : "Dark"}
+              </label>
+            ))}
+          </div>
+          <span className="text-xs text-ink-faint">
+            Applies the same way for every visitor — not based on their browser/OS setting.
+          </span>
+        </div>
+        <TextAreaField
+          label="Hero Headline"
+          value={form.studioHeroHeadline}
+          onChange={(v) => set("studioHeroHeadline", v)}
+          rows={2}
+        />
       </section>
 
       <section className="flex flex-col gap-4">

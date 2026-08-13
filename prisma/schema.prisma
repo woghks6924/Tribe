@@ -56,6 +56,17 @@ enum TokenType {
   PASSWORD_RESET
 }
 
+enum StudioTheme {
+  LIGHT
+  DARK
+}
+
+enum StudioInquiryStatus {
+  NEW
+  CONTACTED
+  CLOSED
+}
+
 model Customer {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -330,6 +341,11 @@ model SiteSettings {
   newsletterHeadline String @default("Join the Tribe")
   newsletterBody     String @default("Every Tuesday, get run club news and new product previews first.")
 
+  // STUDIO(콘텐츠 프로덕션 서비스) 섹션 — 아직 방향 미확정이라 기본값은 비노출.
+  showStudioTab      Boolean     @default(false)
+  studioTheme        StudioTheme @default(LIGHT)
+  studioHeroHeadline String      @default("We shoot the sessions that make people want to run.")
+
   updatedAt DateTime @updatedAt
 }
 
@@ -382,4 +398,30 @@ model BannerSlide {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// STUDIO 섹션 포트폴리오 그리드에 노출되는 콘텐츠 항목.
+model StudioPortfolioItem {
+  id        String  @id @default(cuid())
+  title     String
+  imageUrl  String
+  videoUrl  String?
+  category  String // 예: 트랙 WOD, HYROX, VO2max, Run & Swim
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// STUDIO 문의 폼 제출 내역.
+model StudioInquiry {
+  id              String              @id @default(cuid())
+  brandName       String
+  contactName     String
+  contactInfo     String // 이메일 또는 전화번호
+  packageInterest String?
+  message         String
+  status          StudioInquiryStatus @default(NEW)
+
+  createdAt DateTime @default(now())
 }

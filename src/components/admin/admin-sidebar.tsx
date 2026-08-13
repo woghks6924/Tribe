@@ -14,6 +14,8 @@ const NAV_ITEMS = [
   { href: "/admin/notices", label: "Notices" },
   { href: "/admin/banner-slides", label: "Banner Slides" },
   { href: "/admin/lookbook", label: "Lookbook" },
+  { href: "/admin/studio-portfolio", label: "Studio Portfolio" },
+  { href: "/admin/studio-inquiries", label: "Studio Inquiries" },
   { href: "/admin/settings", label: "Settings" },
 ];
 

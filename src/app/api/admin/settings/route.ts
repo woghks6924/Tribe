@@ -29,6 +29,9 @@ type SettingsBody = {
   crewCta?: string;
   newsletterHeadline?: string;
   newsletterBody?: string;
+  showStudioTab?: boolean;
+  studioTheme?: "LIGHT" | "DARK";
+  studioHeroHeadline?: string;
 };
 
 export async function PATCH(request: Request) {

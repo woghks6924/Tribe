@@ -28,6 +28,9 @@ export default async function AdminSettingsPage() {
           crewCta: settings.crewCta,
           newsletterHeadline: settings.newsletterHeadline,
           newsletterBody: settings.newsletterBody,
+          showStudioTab: settings.showStudioTab,
+          studioTheme: settings.studioTheme,
+          studioHeroHeadline: settings.studioHeroHeadline,
         }}
       />
     </div>

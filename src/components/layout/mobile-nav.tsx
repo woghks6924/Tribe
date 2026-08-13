@@ -3,19 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 
-const NAV_LINKS = [
-  { href: "/products", label: "SHOP" },
-  { href: "/sale", label: "SALE" },
-  { href: "/lookbook", label: "LOOKBOOK" },
-  { href: "/#story", label: "STORY" },
-  { href: "/#crew", label: "CREW" },
-  { href: "/instagram", label: "INSTAGRAM" },
-];
-
 export function MobileNav({
+  navLinks,
   accountHref,
   accountLabel,
 }: {
+  navLinks: { href: string; label: string }[];
   accountHref: string;
   accountLabel: string;
 }) {
@@ -39,7 +32,7 @@ export function MobileNav({
 
       {open && (
         <div className="fixed inset-x-0 top-20 bottom-0 z-40 flex flex-col gap-1 overflow-y-auto bg-base px-6 py-8 md:top-24 lg:hidden">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}

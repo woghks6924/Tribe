@@ -9,11 +9,12 @@ export async function POST(request: Request) {
   const { response } = await requireAdmin();
   if (response) return response;
 
-  const body = (await request.json()) as { filename: string; folder?: string };
+  const body = (await request.json()) as { filename: string; folder?: string; bucket?: string };
   if (!body.filename) {
     return NextResponse.json({ error: "filename is required." }, { status: 400 });
   }
 
+  const bucket = body.bucket || STORAGE_BUCKET;
   const ext = body.filename.split(".").pop() ?? "mp4";
   const path = `${body.folder ?? "videos"}/${randomUUID()}.${ext}`;
 
@@ -24,12 +25,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: (err as Error).message }, { status: 503 });
   }
 
-  const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUploadUrl(path);
+  const { data, error } = await supabase.storage.from(bucket).createSignedUploadUrl(path);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
 
   return NextResponse.json({ token: data.token, path: data.path, publicUrl: pub.publicUrl });
 }

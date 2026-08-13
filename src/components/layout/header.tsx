@@ -3,8 +3,9 @@ import Image from "next/image";
 import { CartBadge } from "@/components/layout/cart-badge";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { getCurrentCustomer } from "@/lib/auth/session";
+import { getStudioSettings } from "@/lib/studio";
 
-const NAV_LINKS = [
+const BASE_NAV_LINKS = [
   { href: "/products", label: "SHOP" },
   { href: "/sale", label: "SALE" },
   { href: "/lookbook", label: "LOOKBOOK" },
@@ -14,9 +15,16 @@ const NAV_LINKS = [
 ];
 
 export async function Header() {
-  const session = await getCurrentCustomer();
+  const [session, { showStudioTab }] = await Promise.all([
+    getCurrentCustomer(),
+    getStudioSettings(),
+  ]);
   const accountHref = session ? "/account" : "/login";
   const accountLabel = session ? session.name.split(" ")[0] : "LOGIN";
+
+  const navLinks = showStudioTab
+    ? [...BASE_NAV_LINKS, { href: "/studio", label: "STUDIO" }]
+    : BASE_NAV_LINKS;
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 flex h-20 items-center justify-between px-6 md:h-24 md:px-14">
@@ -32,7 +40,7 @@ export async function Header() {
       </Link>
 
       <nav className="hidden gap-8 text-[13px] tracking-[0.12em] text-ink-muted uppercase lg:flex xl:gap-10">
-        {NAV_LINKS.map((link) => (
+        {navLinks.map((link) => (
           <Link key={link.href} href={link.href} className="whitespace-nowrap hover:text-ink">
             {link.label}
           </Link>
@@ -52,7 +60,7 @@ export async function Header() {
         <Link href="/cart" className="whitespace-nowrap hover:text-ink">
           <CartBadge />
         </Link>
-        <MobileNav accountHref={accountHref} accountLabel={accountLabel} />
+        <MobileNav navLinks={navLinks} accountHref={accountHref} accountLabel={accountLabel} />
       </div>
     </header>
   );

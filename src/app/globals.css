@@ -17,6 +17,10 @@
 
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
+
+  --color-studio-bg: var(--studio-bg);
+  --color-studio-fg: var(--studio-fg);
+  --color-studio-line: var(--studio-line);
 }
 
 body {
@@ -27,6 +31,24 @@ body {
 
 a {
   color: inherit;
+}
+
+/* STUDIO 섹션 전용 테마 — 관리자가 정한 값이 모든 방문자에게 동일하게 적용되는
+   전역 설정이며, 브라우저의 prefers-color-scheme는 관여하지 않는다. */
+:root {
+  --studio-bg: #f1f1ee;
+  --studio-fg: #2a2b2e;
+  --studio-line: rgba(42, 43, 46, 0.14);
+}
+[data-theme="dark"] {
+  --studio-bg: #2a2b2e;
+  --studio-fg: #f1f1ee;
+  --studio-line: rgba(241, 241, 238, 0.14);
+}
+
+.studio-root {
+  background: var(--studio-bg);
+  color: var(--studio-fg);
 }
 
 /* 그레인 텍스처 — 실제 이미지를 담는 컨테이너 위에 겹쳐서 필름 노이즈를 표현 */

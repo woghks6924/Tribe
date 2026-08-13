@@ -12,6 +12,8 @@ export async function POST(request: Request) {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "No file provided." }, { status: 400 });
   }
+  const bucket = (formData.get("bucket") as string) || STORAGE_BUCKET;
+  const folder = (formData.get("folder") as string) || "products";
 
   let supabase;
   try {
@@ -21,17 +23,17 @@ export async function POST(request: Request) {
   }
 
   const ext = file.name.split(".").pop() ?? "jpg";
-  const path = `products/${randomUUID()}.${ext}`;
+  const path = `${folder}/${randomUUID()}.${ext}`;
 
   const { error } = await supabase.storage
-    .from(STORAGE_BUCKET)
+    .from(bucket)
     .upload(path, file, { contentType: file.type });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
 
   return NextResponse.json({ url: data.publicUrl });
 }
