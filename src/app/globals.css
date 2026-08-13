@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-base: #121316;
-  --color-base-elevated: #1c1e22;
-  --color-base-deep: #0b0c0e;
+  --color-base: var(--site-base);
+  --color-base-elevated: var(--site-base-elevated);
+  --color-base-deep: var(--site-base-deep);
 
-  --color-ink: #f0f1ee;
-  --color-ink-muted: #a8acb1;
-  --color-ink-faint: #6f7379;
+  --color-ink: var(--site-ink);
+  --color-ink-muted: var(--site-ink-muted);
+  --color-ink-faint: var(--site-ink-faint);
 
-  --color-line: #2c2f34;
-  --color-line-strong: #3a3d43;
+  --color-line: var(--site-line);
+  --color-line-strong: var(--site-line-strong);
 
-  --color-accent: #4f8f86;
-  --color-accent-ink: #0b0c0e;
+  --color-accent: var(--site-accent);
+  --color-accent-ink: var(--site-accent-ink);
 
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
@@ -33,14 +33,44 @@ a {
   color: inherit;
 }
 
-/* STUDIO 섹션 전용 테마 — 관리자가 정한 값이 모든 방문자에게 동일하게 적용되는
-   전역 설정이며, 브라우저의 prefers-color-scheme는 관여하지 않는다. */
+/* 쇼핑몰 전체(스튜디오 제외) 테마 — 관리자가 정한 값이 모든 방문자에게 동일하게
+   적용되는 전역 설정이며, 브라우저의 prefers-color-scheme는 관여하지 않는다. */
+:root {
+  --site-base: #121316;
+  --site-base-elevated: #1c1e22;
+  --site-base-deep: #0b0c0e;
+
+  --site-ink: #f0f1ee;
+  --site-ink-muted: #a8acb1;
+  --site-ink-faint: #6f7379;
+
+  --site-line: #2c2f34;
+  --site-line-strong: #3a3d43;
+
+  --site-accent: #4f8f86;
+  --site-accent-ink: #0b0c0e;
+}
+
+:root[data-theme="light"] {
+  --site-base: #f1f1ee;
+  --site-base-elevated: #e6e5e0;
+  --site-base-deep: #dedcd5;
+
+  --site-ink: #2a2b2e;
+  --site-ink-muted: #6b6d70;
+  --site-ink-faint: #98999b;
+
+  --site-line: #dcdad4;
+  --site-line-strong: #c9c6bd;
+}
+
+/* STUDIO 섹션 전용 테마 — 쇼핑몰 전체 테마와 별개로 관리자가 독립 설정한다. */
 :root {
   --studio-bg: #f1f1ee;
   --studio-fg: #2a2b2e;
   --studio-line: rgba(42, 43, 46, 0.14);
 }
-[data-theme="dark"] {
+.studio-root[data-theme="dark"] {
   --studio-bg: #2a2b2e;
   --studio-fg: #f1f1ee;
   --studio-line: rgba(241, 241, 238, 0.14);

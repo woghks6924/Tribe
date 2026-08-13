@@ -32,6 +32,7 @@ type SettingsBody = {
   showStudioTab?: boolean;
   studioTheme?: "LIGHT" | "DARK";
   studioHeroHeadline?: string;
+  siteTheme?: "LIGHT" | "DARK";
 };
 
 export async function PATCH(request: Request) {

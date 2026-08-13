@@ -20,6 +20,15 @@ export async function getShippingReturnsContent(): Promise<string> {
   return settings?.shippingReturnsContent ?? "";
 }
 
+export async function getSiteTheme(): Promise<"light" | "dark"> {
+  const settings = await prisma.siteSettings.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: { id: "singleton" },
+  });
+  return settings.siteTheme === "LIGHT" ? "light" : "dark";
+}
+
 export async function getHomeContent(): Promise<HomeContent> {
   const settings = await prisma.siteSettings.upsert({
     where: { id: "singleton" },

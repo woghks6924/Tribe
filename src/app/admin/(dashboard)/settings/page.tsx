@@ -31,6 +31,7 @@ export default async function AdminSettingsPage() {
           showStudioTab: settings.showStudioTab,
           studioTheme: settings.studioTheme,
           studioHeroHeadline: settings.studioHeroHeadline,
+          siteTheme: settings.siteTheme,
         }}
       />
     </div>

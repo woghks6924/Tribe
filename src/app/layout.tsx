@@ -5,6 +5,7 @@ import { GrainFilterDefs } from "@/components/ui/grain-filter";
 import { Header } from "@/components/layout/header";
 import { SiteChrome } from "@/components/layout/site-chrome";
 import { getActivePopupNotices } from "@/lib/notices";
+import { getSiteTheme } from "@/lib/site-settings";
 import "./globals.css";
 
 // 로고 워드마크("Tri.be")와 영문 히어로 카피에만 쓰는 콘덴스드 디스플레이체.
@@ -28,11 +29,12 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const notices = await getActivePopupNotices();
+  const [notices, siteTheme] = await Promise.all([getActivePopupNotices(), getSiteTheme()]);
 
   return (
     <html
       lang="ko"
+      data-theme={siteTheme}
       className={`${bigShoulders.variable} ${pretendard.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-base text-ink">

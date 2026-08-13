@@ -346,6 +346,9 @@ model SiteSettings {
   studioTheme        StudioTheme @default(LIGHT)
   studioHeroHeadline String      @default("We shoot the sessions that make people want to run.")
 
+  // 쇼핑몰 전체(스튜디오 제외) 테마. 방문자 브라우저 설정과 무관하게 관리자가 정한 값이 전역 적용된다.
+  siteTheme StudioTheme @default(DARK)
+
   updatedAt DateTime @updatedAt
 }
 

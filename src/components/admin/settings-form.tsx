@@ -21,6 +21,7 @@ type SettingsData = {
   showStudioTab: boolean;
   studioTheme: "LIGHT" | "DARK";
   studioHeroHeadline: string;
+  siteTheme: "LIGHT" | "DARK";
 };
 
 export function SettingsForm({ initial }: { initial: SettingsData }) {
@@ -46,6 +47,27 @@ export function SettingsForm({ initial }: { initial: SettingsData }) {
 
   return (
     <div className="flex max-w-2xl flex-col gap-12">
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xs tracking-[0.08em] text-ink-muted uppercase">Site Theme</h2>
+        <p className="text-xs text-ink-muted">
+          Applies to the whole shop (not the Studio section, which has its own theme below) — the
+          same for every visitor, regardless of their browser/OS setting.
+        </p>
+        <div className="flex gap-4">
+          {(["DARK", "LIGHT"] as const).map((t) => (
+            <label key={t} className="flex items-center gap-1.5 text-sm text-ink-muted">
+              <input
+                type="radio"
+                name="siteTheme"
+                checked={form.siteTheme === t}
+                onChange={() => set("siteTheme", t)}
+              />
+              {t === "LIGHT" ? "Light" : "Dark"}
+            </label>
+          ))}
+        </div>
+      </section>
+
       <section className="flex flex-col gap-4">
         <h2 className="text-xs tracking-[0.08em] text-ink-muted uppercase">Hero</h2>
         <TextField label="Badge Text" value={form.heroBadgeText} onChange={(v) => set("heroBadgeText", v)} />
