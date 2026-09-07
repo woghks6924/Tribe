@@ -428,3 +428,32 @@ model StudioInquiry {
 
   createdAt DateTime @default(now())
 }
+
+// WOD(Workout of the Day) 타이머 시스템 — /wod-admin에서 코치가 세션을 만들고,
+// /wod-display 태블릿 화면이 활성화된 세션 하나를 읽어 라운드를 순서대로 진행한다.
+// 두 라우트 모두 URL 비공개로만 보호되며(별도 로그인 없음) 쇼핑몰 admin 인증과는 무관하다.
+model WodSession {
+  id       String @id @default(cuid())
+  name     String
+  isActive Boolean @default(false)
+
+  rounds WodRound[]
+
+  createdAt DateTime @default(now())
+}
+
+model WodRound {
+  id        String     @id @default(cuid())
+  sessionId String
+  session   WodSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  roundNumber   Int
+  roundName     String? // 예: "R1"
+  runDistance   String? // 예: "500m × 2 (트랙 1바퀴)"
+  exercises     Json    @default("[]") // [{ name: "스쿼트", reps: "60개 A/B 30+30" }, ...]
+  timeCapSec    Int? // 타임캡 (초)
+  restTimeSec   Int? // 라운드 사이 휴식 (초)
+  bonusExercise String?
+
+  @@index([sessionId])
+}

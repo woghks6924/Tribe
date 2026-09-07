@@ -19,8 +19,9 @@ export function SiteChrome({
 }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
+  const isStandaloneTool = pathname.startsWith("/wod-admin") || pathname.startsWith("/wod-display");
 
-  if (isAdmin) {
+  if (isAdmin || isStandaloneTool) {
     return <div className="flex flex-1 flex-col">{children}</div>;
   }
 
