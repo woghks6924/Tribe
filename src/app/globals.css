@@ -15,8 +15,8 @@
   --color-accent: var(--site-accent);
   --color-accent-ink: var(--site-accent-ink);
 
-  --font-display: var(--font-display);
-  --font-sans: var(--font-sans);
+  --font-display: var(--font-bricolage), var(--font-pretendard), sans-serif;
+  --font-sans: var(--font-bricolage), var(--font-pretendard), sans-serif;
 
   --color-studio-bg: var(--studio-bg);
   --color-studio-fg: var(--studio-fg);

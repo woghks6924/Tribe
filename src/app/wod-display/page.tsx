@@ -50,11 +50,10 @@ function roundPreview(round: WodSessionData["rounds"][number]): string {
 }
 
 // 세그먼트(런닝+운동) 개수가 많아질수록 화면에 다 들어가도록 글자 크기를 단계적으로 줄인다.
-// 세그먼트가 1~2개인 기본 케이스는 스펙 그대로(56px/48px)를 쓴다.
 function exerciseSizes(exerciseCount: number) {
-  if (exerciseCount <= 1) return { name: 56, reps: 48 };
-  if (exerciseCount === 2) return { name: 44, reps: 38 };
-  return { name: 34, reps: 30 };
+  if (exerciseCount <= 1) return { name: 88, reps: 76 };
+  if (exerciseCount === 2) return { name: 68, reps: 60 };
+  return { name: 48, reps: 42 };
 }
 
 export default function WodDisplayPage() {
@@ -237,7 +236,7 @@ export default function WodDisplayPage() {
           <div className="flex flex-col items-center gap-5">
             {round.segments.map((seg, i) =>
               seg.type === "run" ? (
-                <span key={i} className="text-[36px] text-gray-400">
+                <span key={i} className="text-[48px] text-gray-400">
                   {seg.distance}
                 </span>
               ) : (

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Big_Shoulders } from "next/font/google";
 import localFont from "next/font/local";
 import { GrainFilterDefs } from "@/components/ui/grain-filter";
 import { Header } from "@/components/layout/header";
@@ -8,17 +7,19 @@ import { getActivePopupNotices } from "@/lib/notices";
 import { getSiteTheme } from "@/lib/site-settings";
 import "./globals.css";
 
-// 로고 워드마크("Tri.be")와 영문 히어로 카피에만 쓰는 콘덴스드 디스플레이체.
-const bigShoulders = Big_Shoulders({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["600", "700", "800", "900"],
+// 사이트 전체(본문+헤드라인+디스플레이) 기본 서체. 가변폰트(opsz/wdth/wght).
+const bricolage = localFont({
+  src: "../fonts/BricolageGrotesqueVariable.ttf",
+  variable: "--font-bricolage",
+  weight: "200 800",
+  display: "swap",
 });
 
-// 한글 본문/헤드라인 전반에 쓰는 기본 서체. SIL OFL 1.1 라이선스로 상업적 사용이 자유롭다.
+// 브리콜라주는 라틴 전용이라 한글 글리프가 없음 — 한글 문자만 이 폴백으로 자동 대체됨.
+// SIL OFL 1.1 라이선스로 상업적 사용이 자유롭다.
 const pretendard = localFont({
   src: "../fonts/PretendardVariable.woff2",
-  variable: "--font-sans",
+  variable: "--font-pretendard",
   weight: "45 920",
   display: "swap",
 });
@@ -35,7 +36,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="ko"
       data-theme={siteTheme}
-      className={`${bigShoulders.variable} ${pretendard.variable} h-full antialiased`}
+      className={`${bricolage.variable} ${pretendard.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-base text-ink">
         <GrainFilterDefs />
