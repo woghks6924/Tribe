@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import type { WodSessionData } from "@/lib/wod";
 
 type Phase = "idle" | "exercise" | "rest" | "complete";
@@ -41,6 +42,19 @@ function advanceToNextRound(prev: TimerState, session: WodSessionData): TimerSta
     phase: "exercise",
     phaseEndAt: Date.now() + (nextRound.timeCapSec ?? 0) * 1000,
   };
+}
+
+function roundPreview(round: WodSessionData["rounds"][number]): string {
+  const runs = round.segments.filter((s) => s.type === "run");
+  return runs.map((s) => s.distance).join(", ");
+}
+
+// 세그먼트(런닝+운동) 개수가 많아질수록 화면에 다 들어가도록 글자 크기를 단계적으로 줄인다.
+// 세그먼트가 1~2개인 기본 케이스는 스펙 그대로(56px/48px)를 쓴다.
+function exerciseSizes(exerciseCount: number) {
+  if (exerciseCount <= 1) return { name: 56, reps: 48 };
+  if (exerciseCount === 2) return { name: 44, reps: 38 };
+  return { name: 34, reps: 30 };
 }
 
 export default function WodDisplayPage() {
@@ -161,9 +175,16 @@ export default function WodDisplayPage() {
     });
   }
 
+  const logo = (
+    <div className="pointer-events-none absolute top-6 left-6 z-10">
+      <Image src="/logo/tribe-logo-white.png" alt="Tri.be" width={473} height={100} className="h-6 w-auto opacity-80" />
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black text-xl text-white">
+        {logo}
         Loading...
       </div>
     );
@@ -172,6 +193,7 @@ export default function WodDisplayPage() {
   if (!session) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-black text-center text-white">
+        {logo}
         <span className="text-3xl font-bold">No active WOD session</span>
         <span className="text-lg text-gray-400">Activate one from /wod-admin</span>
       </div>
@@ -180,9 +202,12 @@ export default function WodDisplayPage() {
 
   const round = session.rounds[timer?.roundIndex ?? 0];
   const phase = timer?.phase ?? "idle";
+  const exerciseSegments = round?.segments.filter((s) => s.type === "exercise") ?? [];
+  const sizes = exerciseSizes(exerciseSegments.length);
 
   return (
     <div className="fixed inset-0 flex flex-col items-center overflow-hidden bg-black px-6 py-10 text-center text-white select-none">
+      {logo}
       {phase === "idle" && (
         <div className="flex h-full w-full flex-col items-center justify-center gap-10">
           <span className="text-4xl font-bold tracking-wide">{session.name}</span>
@@ -190,7 +215,7 @@ export default function WodDisplayPage() {
             {session.rounds.map((r, i) => (
               <div key={r.id} className="text-2xl text-gray-300">
                 {r.roundName || `R${i + 1}`}
-                {r.runDistance ? ` — ${r.runDistance}` : ""}
+                {roundPreview(r) ? ` — ${roundPreview(r)}` : ""}
               </div>
             ))}
           </div>
@@ -204,23 +229,52 @@ export default function WodDisplayPage() {
       )}
 
       {phase === "exercise" && round && timer && (
-        <div className="flex h-full w-full flex-col items-center justify-between py-6">
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-[120px] leading-none font-bold text-[#c8b89a]">
-              {round.roundName || `R${timer.roundIndex + 1}`}
-            </span>
-            {round.runDistance && (
-              <span className="text-[36px] text-gray-400">{round.runDistance}</span>
-            )}
-          </div>
+        <div className="flex h-full w-full flex-col items-center justify-between overflow-y-auto py-6">
+          <span className="text-[120px] leading-none font-bold text-[#c8b89a]">
+            {round.roundName || `R${timer.roundIndex + 1}`}
+          </span>
 
-          <div className="flex flex-col items-center gap-3">
-            {round.exercises.map((ex, i) => (
-              <div key={i} className="flex flex-col items-center gap-1">
-                <span className="text-[56px] leading-none font-bold text-white">{ex.name}</span>
-                <span className="text-[48px] leading-none font-bold text-[#c8b89a]">{ex.reps}</span>
-              </div>
-            ))}
+          <div className="flex flex-col items-center gap-5">
+            {round.segments.map((seg, i) =>
+              seg.type === "run" ? (
+                <span key={i} className="text-[36px] text-gray-400">
+                  {seg.distance}
+                </span>
+              ) : (
+                <div key={i} className="flex flex-col items-center gap-1.5">
+                  <span
+                    className="leading-none font-bold text-white"
+                    style={{ fontSize: sizes.name }}
+                  >
+                    {seg.name}
+                  </span>
+                  {seg.reps.length <= 1 ? (
+                    <span
+                      className="leading-none font-bold text-[#c8b89a]"
+                      style={{ fontSize: sizes.reps }}
+                    >
+                      {seg.reps[0]?.reps ?? ""}
+                    </span>
+                  ) : (
+                    <div className="flex flex-wrap items-baseline justify-center gap-x-6 gap-y-1">
+                      {seg.reps.map((g, k) => (
+                        <span key={k} className="leading-none font-bold text-[#c8b89a]">
+                          {g.group && (
+                            <span
+                              className="mr-1.5 text-white/70"
+                              style={{ fontSize: sizes.reps * 0.55 }}
+                            >
+                              {g.group}
+                            </span>
+                          )}
+                          <span style={{ fontSize: sizes.reps }}>{g.reps}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ),
+            )}
           </div>
 
           {round.bonusExercise && (

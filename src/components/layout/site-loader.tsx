@@ -54,8 +54,8 @@ export function SiteLoader() {
         <Image
           src="/logo/tribe-logo-white.png"
           alt="Tri.be"
-          width={2357}
-          height={615}
+          width={473}
+          height={100}
           priority
           className="glitch-base h-9 w-auto sm:h-12"
         />
@@ -63,16 +63,16 @@ export function SiteLoader() {
           src="/logo/tribe-logo-white.png"
           alt=""
           aria-hidden
-          width={2357}
-          height={615}
+          width={473}
+          height={100}
           className="glitch-layer glitch-red h-9 w-auto sm:h-12"
         />
         <Image
           src="/logo/tribe-logo-white.png"
           alt=""
           aria-hidden
-          width={2357}
-          height={615}
+          width={473}
+          height={100}
           className="glitch-layer glitch-cyan h-9 w-auto sm:h-12"
         />
       </div>

@@ -449,8 +449,11 @@ model WodRound {
 
   roundNumber   Int
   roundName     String? // 예: "R1"
-  runDistance   String? // 예: "500m × 2 (트랙 1바퀴)"
-  exercises     Json    @default("[]") // [{ name: "스쿼트", reps: "60개 A/B 30+30" }, ...]
+  // 한 라운드 안에 런닝/운동이 여러 번 번갈아 나올 수 있어(런닝→운동→런닝→운동…),
+  // 순서가 있는 세그먼트 배열로 저장한다: WodSegment(WodRunSegment | WodExerciseSegment) 참고.
+  // 운동 세그먼트의 reps는 그룹별로 다른 개수를 줄 수 있도록 항상 배열 형태로 저장한다
+  // (그룹 구분이 없으면 group: "" 항목 하나만 담는다).
+  segments      Json    @default("[]")
   timeCapSec    Int? // 타임캡 (초)
   restTimeSec   Int? // 라운드 사이 휴식 (초)
   bonusExercise String?

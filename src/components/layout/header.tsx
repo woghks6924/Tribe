@@ -32,8 +32,8 @@ export async function Header() {
         <Image
           src="/logo/tribe-logo-white.png"
           alt="Tri.be"
-          width={2357}
-          height={615}
+          width={473}
+          height={100}
           priority
           className="h-7 w-auto"
         />

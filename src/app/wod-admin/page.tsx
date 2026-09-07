@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { WodSegment } from "@/lib/wod";
 
-type ExerciseInput = { name: string; reps: string };
+type GroupRepsInput = { group: string; reps: string };
+
+type SegmentInput =
+  | { type: "run"; distance: string }
+  | { type: "exercise"; name: string; repsByGroup: GroupRepsInput[] };
 
 type RoundInput = {
   roundName: string;
-  runDistance: string;
-  exercises: ExerciseInput[];
+  segments: SegmentInput[];
   timeCapMin: string;
   timeCapSec: string;
   restMin: string;
@@ -26,8 +30,10 @@ type SessionSummary = {
 function emptyRound(): RoundInput {
   return {
     roundName: "",
-    runDistance: "",
-    exercises: [{ name: "", reps: "" }],
+    segments: [
+      { type: "run", distance: "" },
+      { type: "exercise", name: "", repsByGroup: [{ group: "", reps: "" }] },
+    ],
     timeCapMin: "",
     timeCapSec: "",
     restMin: "",
@@ -71,32 +77,6 @@ export default function WodAdminPage() {
     setRounds((prev) => prev.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   }
 
-  function updateExercise(roundIndex: number, exIndex: number, patch: Partial<ExerciseInput>) {
-    setRounds((prev) =>
-      prev.map((r, i) =>
-        i === roundIndex
-          ? { ...r, exercises: r.exercises.map((e, j) => (j === exIndex ? { ...e, ...patch } : e)) }
-          : r,
-      ),
-    );
-  }
-
-  function addExercise(roundIndex: number) {
-    setRounds((prev) =>
-      prev.map((r, i) =>
-        i === roundIndex ? { ...r, exercises: [...r.exercises, { name: "", reps: "" }] } : r,
-      ),
-    );
-  }
-
-  function removeExercise(roundIndex: number, exIndex: number) {
-    setRounds((prev) =>
-      prev.map((r, i) =>
-        i === roundIndex ? { ...r, exercises: r.exercises.filter((_, j) => j !== exIndex) } : r,
-      ),
-    );
-  }
-
   function addRound() {
     setRounds((prev) => [...prev, emptyRound()]);
   }
@@ -113,6 +93,136 @@ export default function WodAdminPage() {
       [next[index], next[target]] = [next[target], next[index]];
       return next;
     });
+  }
+
+  function addSegment(roundIndex: number, type: "run" | "exercise") {
+    setRounds((prev) =>
+      prev.map((r, i) =>
+        i === roundIndex
+          ? {
+              ...r,
+              segments: [
+                ...r.segments,
+                type === "run"
+                  ? { type: "run", distance: "" }
+                  : { type: "exercise", name: "", repsByGroup: [{ group: "", reps: "" }] },
+              ],
+            }
+          : r,
+      ),
+    );
+  }
+
+  function removeSegment(roundIndex: number, segIndex: number) {
+    setRounds((prev) =>
+      prev.map((r, i) =>
+        i === roundIndex ? { ...r, segments: r.segments.filter((_, j) => j !== segIndex) } : r,
+      ),
+    );
+  }
+
+  function moveSegment(roundIndex: number, segIndex: number, direction: -1 | 1) {
+    setRounds((prev) =>
+      prev.map((r, i) => {
+        if (i !== roundIndex) return r;
+        const target = segIndex + direction;
+        if (target < 0 || target >= r.segments.length) return r;
+        const segments = [...r.segments];
+        [segments[segIndex], segments[target]] = [segments[target], segments[segIndex]];
+        return { ...r, segments };
+      }),
+    );
+  }
+
+  function updateRunSegment(roundIndex: number, segIndex: number, distance: string) {
+    setRounds((prev) =>
+      prev.map((r, i) =>
+        i === roundIndex
+          ? {
+              ...r,
+              segments: r.segments.map((s, j) =>
+                j === segIndex && s.type === "run" ? { ...s, distance } : s,
+              ),
+            }
+          : r,
+      ),
+    );
+  }
+
+  function updateExerciseName(roundIndex: number, segIndex: number, name: string) {
+    setRounds((prev) =>
+      prev.map((r, i) =>
+        i === roundIndex
+          ? {
+              ...r,
+              segments: r.segments.map((s, j) =>
+                j === segIndex && s.type === "exercise" ? { ...s, name } : s,
+              ),
+            }
+          : r,
+      ),
+    );
+  }
+
+  function updateGroupRow(
+    roundIndex: number,
+    segIndex: number,
+    groupIndex: number,
+    patch: Partial<GroupRepsInput>,
+  ) {
+    setRounds((prev) =>
+      prev.map((r, i) =>
+        i === roundIndex
+          ? {
+              ...r,
+              segments: r.segments.map((s, j) =>
+                j === segIndex && s.type === "exercise"
+                  ? {
+                      ...s,
+                      repsByGroup: s.repsByGroup.map((g, k) =>
+                        k === groupIndex ? { ...g, ...patch } : g,
+                      ),
+                    }
+                  : s,
+              ),
+            }
+          : r,
+      ),
+    );
+  }
+
+  function addGroupRow(roundIndex: number, segIndex: number) {
+    setRounds((prev) =>
+      prev.map((r, i) =>
+        i === roundIndex
+          ? {
+              ...r,
+              segments: r.segments.map((s, j) =>
+                j === segIndex && s.type === "exercise"
+                  ? { ...s, repsByGroup: [...s.repsByGroup, { group: "", reps: "" }] }
+                  : s,
+              ),
+            }
+          : r,
+      ),
+    );
+  }
+
+  function removeGroupRow(roundIndex: number, segIndex: number, groupIndex: number) {
+    setRounds((prev) =>
+      prev.map((r, i) =>
+        i === roundIndex
+          ? {
+              ...r,
+              segments: r.segments.map((s, j) =>
+                j === segIndex && s.type === "exercise"
+                  ? { ...s, repsByGroup: s.repsByGroup.filter((_, k) => k !== groupIndex) }
+                  : s,
+              ),
+            }
+          : r,
+      ),
+    );
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -135,8 +245,17 @@ export default function WodAdminPage() {
           rounds: rounds.map((r, i) => ({
             roundNumber: i + 1,
             roundName: r.roundName || undefined,
-            runDistance: r.runDistance || undefined,
-            exercises: r.exercises.filter((e) => e.name || e.reps),
+            segments: r.segments
+              .map((s): WodSegment | null => {
+                if (s.type === "run") {
+                  if (!s.distance) return null;
+                  return { type: "run", distance: s.distance };
+                }
+                const reps = s.repsByGroup.filter((g) => g.group || g.reps);
+                if (!s.name && reps.length === 0) return null;
+                return { type: "exercise", name: s.name, reps };
+              })
+              .filter((s): s is WodSegment => s !== null),
             timeCapSec: toSeconds(r.timeCapMin, r.timeCapSec),
             restTimeSec: toSeconds(r.restMin, r.restSec),
             bonusExercise: r.bonusExercise || undefined,
@@ -288,54 +407,115 @@ export default function WodAdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  placeholder="Round name (e.g. R1)"
-                  value={round.roundName}
-                  onChange={(e) => updateRound(i, { roundName: e.target.value })}
-                  className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
-                />
-                <input
-                  placeholder="Run distance (e.g. 500m × 2)"
-                  value={round.runDistance}
-                  onChange={(e) => updateRound(i, { runDistance: e.target.value })}
-                  className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
-                />
-              </div>
+              <input
+                placeholder="Round name (e.g. R1)"
+                value={round.roundName}
+                onChange={(e) => updateRound(i, { roundName: e.target.value })}
+                className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
+              />
 
-              <div className="flex flex-col gap-2">
-                <span className="text-xs text-ink-faint">Exercises</span>
-                {round.exercises.map((ex, j) => (
-                  <div key={j} className="flex gap-2">
-                    <input
-                      placeholder="Exercise (e.g. 스쿼트)"
-                      value={ex.name}
-                      onChange={(e) => updateExercise(i, j, { name: e.target.value })}
-                      className="flex-1 border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
-                    />
-                    <input
-                      placeholder="Reps (e.g. 60개 A/B 30+30)"
-                      value={ex.reps}
-                      onChange={(e) => updateExercise(i, j, { reps: e.target.value })}
-                      className="flex-1 border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeExercise(i, j)}
-                      disabled={round.exercises.length === 1}
-                      className="cursor-pointer px-2 text-ink-faint hover:text-red-400 disabled:opacity-30"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => addExercise(i)}
-                  className="w-fit cursor-pointer border border-line-strong px-3 py-1.5 text-xs text-ink-muted hover:border-ink hover:text-ink"
-                >
-                  + Add Exercise
-                </button>
+              <div className="flex flex-col gap-3">
+                <span className="text-xs text-ink-faint">
+                  Segments (run + exercise, in order — repeat as many times as needed)
+                </span>
+                {round.segments.map((seg, j) =>
+                  seg.type === "run" ? (
+                    <div key={j} className="flex items-center gap-2 border border-line-strong p-3">
+                      <span className="shrink-0 text-xs tracking-[0.08em] text-ink-faint uppercase">
+                        Run
+                      </span>
+                      <input
+                        placeholder="Distance (e.g. 500m x 2)"
+                        value={seg.distance}
+                        onChange={(e) => updateRunSegment(i, j, e.target.value)}
+                        className="flex-1 border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+                      />
+                      <SegmentMoveRemove
+                        onUp={() => moveSegment(i, j, -1)}
+                        onDown={() => moveSegment(i, j, 1)}
+                        onRemove={() => removeSegment(i, j)}
+                        upDisabled={j === 0}
+                        downDisabled={j === round.segments.length - 1}
+                      />
+                    </div>
+                  ) : (
+                    <div key={j} className="flex flex-col gap-2 border border-line-strong p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="shrink-0 text-xs tracking-[0.08em] text-ink-faint uppercase">
+                          Exercise
+                        </span>
+                        <input
+                          placeholder="Exercise name (e.g. 스쿼트)"
+                          value={seg.name}
+                          onChange={(e) => updateExerciseName(i, j, e.target.value)}
+                          className="flex-1 border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+                        />
+                        <SegmentMoveRemove
+                          onUp={() => moveSegment(i, j, -1)}
+                          onDown={() => moveSegment(i, j, 1)}
+                          onRemove={() => removeSegment(i, j)}
+                          upDisabled={j === 0}
+                          downDisabled={j === round.segments.length - 1}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5 pl-4">
+                        <span className="text-[11px] text-ink-faint">
+                          Reps — leave group blank if everyone does the same count, or add a row
+                          per group (A/B/C...) for different counts
+                        </span>
+                        {seg.repsByGroup.map((g, k) => (
+                          <div key={k} className="flex gap-2">
+                            <input
+                              placeholder="Group (optional, e.g. A)"
+                              value={g.group}
+                              onChange={(e) =>
+                                updateGroupRow(i, j, k, { group: e.target.value })
+                              }
+                              className="w-32 border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+                            />
+                            <input
+                              placeholder="Reps (e.g. 60개)"
+                              value={g.reps}
+                              onChange={(e) => updateGroupRow(i, j, k, { reps: e.target.value })}
+                              className="flex-1 border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeGroupRow(i, j, k)}
+                              disabled={seg.repsByGroup.length === 1}
+                              className="cursor-pointer px-2 text-ink-faint hover:text-red-400 disabled:opacity-30"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => addGroupRow(i, j)}
+                          className="w-fit cursor-pointer border border-line-strong px-2.5 py-1 text-[11px] text-ink-muted hover:border-ink hover:text-ink"
+                        >
+                          + Add Group
+                        </button>
+                      </div>
+                    </div>
+                  ),
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => addSegment(i, "run")}
+                    className="cursor-pointer border border-line-strong px-3 py-1.5 text-xs text-ink-muted hover:border-ink hover:text-ink"
+                  >
+                    + Add Run
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => addSegment(i, "exercise")}
+                    className="cursor-pointer border border-line-strong px-3 py-1.5 text-xs text-ink-muted hover:border-ink hover:text-ink"
+                  >
+                    + Add Exercise
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -414,6 +594,48 @@ export default function WodAdminPage() {
           {saving ? "Saving..." : "Save Session"}
         </button>
       </form>
+    </div>
+  );
+}
+
+function SegmentMoveRemove({
+  onUp,
+  onDown,
+  onRemove,
+  upDisabled,
+  downDisabled,
+}: {
+  onUp: () => void;
+  onDown: () => void;
+  onRemove: () => void;
+  upDisabled: boolean;
+  downDisabled: boolean;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <button
+        type="button"
+        onClick={onUp}
+        disabled={upDisabled}
+        className="cursor-pointer px-1 text-ink-faint hover:text-ink disabled:opacity-30"
+      >
+        ↑
+      </button>
+      <button
+        type="button"
+        onClick={onDown}
+        disabled={downDisabled}
+        className="cursor-pointer px-1 text-ink-faint hover:text-ink disabled:opacity-30"
+      >
+        ↓
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="cursor-pointer px-1.5 text-xs text-ink-faint hover:text-red-400"
+      >
+        ×
+      </button>
     </div>
   );
 }

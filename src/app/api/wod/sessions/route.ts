@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { WodExercise } from "@/lib/wod";
+import type { WodSegment } from "@/lib/wod";
 
 // /wod-admin, /wod-display 모두 별도 로그인 없이 URL 비공개로만 보호되는 독립 도구라
 // 이 라우트들도 쇼핑몰 admin 인증(requireAdmin)을 쓰지 않는다.
@@ -25,8 +25,7 @@ export async function GET() {
 type RoundInput = {
   roundNumber: number;
   roundName?: string;
-  runDistance?: string;
-  exercises: WodExercise[];
+  segments: WodSegment[];
   timeCapSec?: number | null;
   restTimeSec?: number | null;
   bonusExercise?: string;
@@ -49,8 +48,7 @@ export async function POST(request: Request) {
         create: body.rounds.map((r) => ({
           roundNumber: r.roundNumber,
           roundName: r.roundName || null,
-          runDistance: r.runDistance || null,
-          exercises: r.exercises ?? [],
+          segments: r.segments ?? [],
           timeCapSec: r.timeCapSec ?? null,
           restTimeSec: r.restTimeSec ?? null,
           bonusExercise: r.bonusExercise || null,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { WodSessionData } from "@/lib/wod";
+import type { WodSegment, WodSessionData } from "@/lib/wod";
 
 export async function GET() {
   const session = await prisma.wodSession.findFirst({
@@ -21,8 +21,7 @@ export async function GET() {
       id: r.id,
       roundNumber: r.roundNumber,
       roundName: r.roundName,
-      runDistance: r.runDistance,
-      exercises: Array.isArray(r.exercises) ? (r.exercises as { name: string; reps: string }[]) : [],
+      segments: Array.isArray(r.segments) ? (r.segments as unknown as WodSegment[]) : [],
       timeCapSec: r.timeCapSec,
       restTimeSec: r.restTimeSec,
       bonusExercise: r.bonusExercise,
