@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import type { WodSegment, WodSessionData } from "@/lib/wod";
+import type { WodRepsByGroup, WodSegment, WodSessionData } from "@/lib/wod";
 
 type Phase = "idle" | "exercise" | "rest" | "complete";
 
@@ -44,32 +44,52 @@ function advanceToNextRound(prev: TimerState, session: WodSessionData): TimerSta
   };
 }
 
-function formatReps(reps: { group: string; reps: string }[]): string {
-  if (reps.length <= 1) return reps[0]?.reps ?? "";
-  return reps.map((g) => (g.group ? `${g.group} ${g.reps}` : g.reps)).join("   ");
-}
+type PairedLine =
+  | { kind: "run+exercise"; distance: string; name: string; reps: WodRepsByGroup[] }
+  | { kind: "run"; distance: string }
+  | { kind: "exercise"; name: string; reps: WodRepsByGroup[] };
 
-// "500M RUN + SQUAT 60"처럼 런닝-운동 세그먼트를 순서대로 짝지어 한 줄로 합친다.
-function pairedSegmentLines(segments: WodSegment[]): string[] {
-  const lines: string[] = [];
+// 런닝-운동 세그먼트를 순서대로 짝지어 "500M RUN + SQUAT 60"처럼 한 줄로 묶는다.
+function pairSegments(segments: WodSegment[]): PairedLine[] {
+  const lines: PairedLine[] = [];
   let i = 0;
   while (i < segments.length) {
     const seg = segments[i];
     if (seg.type === "run") {
       const next = segments[i + 1];
       if (next?.type === "exercise") {
-        lines.push(`${seg.distance} RUN + ${next.name} ${formatReps(next.reps)}`.trim());
+        lines.push({ kind: "run+exercise", distance: seg.distance, name: next.name, reps: next.reps });
         i += 2;
         continue;
       }
-      lines.push(`${seg.distance} RUN`);
+      lines.push({ kind: "run", distance: seg.distance });
       i += 1;
       continue;
     }
-    lines.push(`${seg.name} ${formatReps(seg.reps)}`.trim());
+    lines.push({ kind: "exercise", name: seg.name, reps: seg.reps });
     i += 1;
   }
   return lines;
+}
+
+function RepsBadges({ reps }: { reps: WodRepsByGroup[] }) {
+  if (reps.length === 0) return null;
+  if (reps.length === 1 && !reps[0].group) {
+    return <span className="text-[#c8b89a]">{reps[0].reps}</span>;
+  }
+  return (
+    <span className="flex flex-wrap items-center gap-1.5 normal-case">
+      {reps.map((g, i) => (
+        <span
+          key={i}
+          className="inline-flex items-center gap-1 rounded-full border border-[#c8b89a]/50 bg-[#c8b89a]/10 px-2.5 py-0.5"
+        >
+          {g.group && <span className="text-[0.6em] font-bold text-[#c8b89a]">{g.group}</span>}
+          <span className="font-bold text-[#f2ece0]">{g.reps}</span>
+        </span>
+      ))}
+    </span>
+  );
 }
 
 function formatCapLabel(totalSec: number): string {
@@ -277,24 +297,33 @@ export default function WodDisplayPage() {
                 <span className="w-16 shrink-0 text-3xl leading-none font-extrabold text-[#c8b89a] sm:w-20 sm:text-4xl">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <div className="flex flex-col gap-1.5">
-                  {pairedSegmentLines(r.segments).map((line, k) => (
-                    <span
+                <div className="flex flex-col gap-2">
+                  {pairSegments(r.segments).map((line, k) => (
+                    <div
                       key={k}
-                      className="text-xl leading-tight font-extrabold text-[#f2ece0] uppercase sm:text-2xl"
+                      className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-xl leading-tight font-extrabold uppercase sm:text-2xl"
                     >
-                      {line}
-                    </span>
-                  ))}
-                  {(r.timeCapSec != null || r.restTimeSec != null) && (
-                    <div className="mt-1.5 flex flex-wrap gap-x-4 text-xs font-medium tracking-wide text-white/55 uppercase sm:text-sm">
-                      {r.timeCapSec != null && (
-                        <span>
-                          Time cap : {formatCapLabel(r.timeCapSec)}
-                          {r.bonusExercise ? ` | ${r.bonusExercise}` : ""}
-                        </span>
+                      {(line.kind === "run" || line.kind === "run+exercise") && (
+                        <span className="text-[#7e8aa8]">{line.distance} RUN</span>
                       )}
-                      {r.restTimeSec != null && <span>Rest : {formatRestLabel(r.restTimeSec)}</span>}
+                      {line.kind === "run+exercise" && <span className="text-white/25">+</span>}
+                      {(line.kind === "exercise" || line.kind === "run+exercise") && (
+                        <span className="text-[#f2ece0]">{line.name}</span>
+                      )}
+                      {(line.kind === "exercise" || line.kind === "run+exercise") && (
+                        <RepsBadges reps={line.reps} />
+                      )}
+                    </div>
+                  ))}
+                  {(r.timeCapSec != null || r.restTimeSec != null || r.bonusExercise) && (
+                    <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-bold tracking-wide uppercase sm:text-sm">
+                      {r.timeCapSec != null && (
+                        <span className="text-[#e0a05f]">Time cap : {formatCapLabel(r.timeCapSec)}</span>
+                      )}
+                      {r.bonusExercise && <span className="text-[#8fbf8a]">{r.bonusExercise}</span>}
+                      {r.restTimeSec != null && (
+                        <span className="text-[#7ec8c9]">Rest : {formatRestLabel(r.restTimeSec)}</span>
+                      )}
                     </div>
                   )}
                 </div>
