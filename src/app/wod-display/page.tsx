@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import type { WodSessionData } from "@/lib/wod";
+import type { WodSegment, WodSessionData } from "@/lib/wod";
 
 type Phase = "idle" | "exercise" | "rest" | "complete";
 
@@ -47,6 +47,43 @@ function advanceToNextRound(prev: TimerState, session: WodSessionData): TimerSta
 function formatReps(reps: { group: string; reps: string }[]): string {
   if (reps.length <= 1) return reps[0]?.reps ?? "";
   return reps.map((g) => (g.group ? `${g.group} ${g.reps}` : g.reps)).join("   ");
+}
+
+// "500M RUN + SQUAT 60"처럼 런닝-운동 세그먼트를 순서대로 짝지어 한 줄로 합친다.
+function pairedSegmentLines(segments: WodSegment[]): string[] {
+  const lines: string[] = [];
+  let i = 0;
+  while (i < segments.length) {
+    const seg = segments[i];
+    if (seg.type === "run") {
+      const next = segments[i + 1];
+      if (next?.type === "exercise") {
+        lines.push(`${seg.distance} RUN + ${next.name} ${formatReps(next.reps)}`.trim());
+        i += 2;
+        continue;
+      }
+      lines.push(`${seg.distance} RUN`);
+      i += 1;
+      continue;
+    }
+    lines.push(`${seg.name} ${formatReps(seg.reps)}`.trim());
+    i += 1;
+  }
+  return lines;
+}
+
+function formatCapLabel(totalSec: number): string {
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return s === 0 ? `${m}MIN` : `${m}MIN ${s}SEC`;
+}
+
+function formatRestLabel(totalSec: number): string {
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  if (m === 0) return `${s}SEC`;
+  if (s === 0) return `${m}MIN`;
+  return `${m}MIN ${s}SEC`;
 }
 
 // 세그먼트(런닝+운동) 개수가 많아질수록 태블릿 화면에 스크롤 없이 다 들어가도록
@@ -209,58 +246,70 @@ export default function WodDisplayPage() {
   const exerciseSegments = round?.segments.filter((s) => s.type === "exercise") ?? [];
   const sizes = phaseSizes(exerciseSegments.length);
 
+  const isIdle = phase === "idle";
+
   return (
-    <div className="fixed inset-0 flex flex-col items-center overflow-hidden bg-black px-6 py-10 text-center text-white select-none">
+    <div
+      className={`fixed inset-0 flex flex-col items-center overflow-hidden text-white select-none ${
+        isIdle ? "" : "bg-black px-6 py-10 text-center"
+      }`}
+      style={
+        isIdle
+          ? { background: "linear-gradient(165deg, #171c29 0%, #211f22 45%, #7a3a1a 78%, #c2651f 100%)" }
+          : undefined
+      }
+    >
       {logo}
       {phase === "idle" && (
-        <div className="flex h-full w-full flex-col items-center gap-8 overflow-y-auto py-4">
-          <span className="mt-2 text-4xl font-bold tracking-wide">{session.name}</span>
+        <div className="flex h-full w-full flex-col overflow-y-auto px-10 py-10 text-left sm:px-16">
+          <div className="mt-14 flex flex-wrap items-baseline gap-x-6 gap-y-2">
+            <span className="font-display text-6xl leading-none font-extrabold tracking-tight text-[#f2ece0] sm:text-7xl">
+              WOD
+            </span>
+            <span className="text-lg font-bold tracking-[0.08em] text-[#c8b89a] uppercase">
+              {session.name}
+            </span>
+          </div>
 
-          <div className="grid w-full max-w-6xl grid-cols-1 gap-5 px-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-1 flex-col justify-center gap-9 py-14">
             {session.rounds.map((r, i) => (
-              <div
-                key={r.id}
-                className="flex flex-col gap-3 rounded-lg border border-white/15 bg-white/[0.03] px-6 py-5 text-left"
-              >
-                <span className="text-2xl font-bold text-[#c8b89a]">{r.roundName || `R${i + 1}`}</span>
-
+              <div key={r.id} className="flex items-start gap-6">
+                <span className="w-16 shrink-0 text-3xl leading-none font-extrabold text-[#c8b89a] sm:w-20 sm:text-4xl">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
                 <div className="flex flex-col gap-1.5">
-                  {r.segments.map((seg, k) =>
-                    seg.type === "run" ? (
-                      <span key={k} className="text-lg text-gray-400">
-                        {seg.distance}
-                      </span>
-                    ) : (
-                      <div key={k} className="flex items-baseline justify-between gap-4">
-                        <span className="text-lg font-semibold text-white">{seg.name}</span>
-                        <span className="text-lg font-semibold text-[#c8b89a]">
-                          {formatReps(seg.reps)}
+                  {pairedSegmentLines(r.segments).map((line, k) => (
+                    <span
+                      key={k}
+                      className="text-xl leading-tight font-extrabold text-[#f2ece0] uppercase sm:text-2xl"
+                    >
+                      {line}
+                    </span>
+                  ))}
+                  {(r.timeCapSec != null || r.restTimeSec != null) && (
+                    <div className="mt-1.5 flex flex-wrap gap-x-4 text-xs font-medium tracking-wide text-white/55 uppercase sm:text-sm">
+                      {r.timeCapSec != null && (
+                        <span>
+                          Time cap : {formatCapLabel(r.timeCapSec)}
+                          {r.bonusExercise ? ` | ${r.bonusExercise}` : ""}
                         </span>
-                      </div>
-                    ),
+                      )}
+                      {r.restTimeSec != null && <span>Rest : {formatRestLabel(r.restTimeSec)}</span>}
+                    </div>
                   )}
                 </div>
-
-                {(r.timeCapSec || r.restTimeSec) && (
-                  <div className="flex gap-4 text-sm text-white/50">
-                    {r.timeCapSec ? <span>Cap {formatTime(r.timeCapSec)}</span> : null}
-                    {r.restTimeSec ? <span>Rest {formatTime(r.restTimeSec)}</span> : null}
-                  </div>
-                )}
-
-                {r.bonusExercise && (
-                  <span className="text-sm font-semibold text-[#22c55e]">{r.bonusExercise}</span>
-                )}
               </div>
             ))}
           </div>
 
-          <button
-            onClick={handleStart}
-            className="mb-2 cursor-pointer rounded bg-[#c8b89a] px-16 py-8 text-4xl font-bold text-black"
-          >
-            시작
-          </button>
+          <div className="mb-6 flex justify-center">
+            <button
+              onClick={handleStart}
+              className="cursor-pointer rounded bg-[#f2ece0] px-16 py-6 text-3xl font-bold text-black"
+            >
+              시작
+            </button>
+          </div>
         </div>
       )}
 
