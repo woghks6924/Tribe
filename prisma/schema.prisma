@@ -436,6 +436,8 @@ model WodSession {
   id       String @id @default(cuid())
   name     String
   isActive Boolean @default(false)
+  // null이면 솔로, 값이 있으면 팀 와드(숫자는 팀 인원 수).
+  teamSize Int?
 
   rounds WodRound[]
 

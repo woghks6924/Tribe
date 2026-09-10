@@ -107,15 +107,16 @@ function formatRestLabel(totalSec: number): string {
 }
 
 // 세그먼트(런닝+운동) 개수가 많아질수록 태블릿 화면에 스크롤 없이 다 들어가도록
-// 운동 이름/횟수뿐 아니라 라운드명·타이머·간격까지 함께 단계적으로 줄인다.
+// 운동 이름/횟수(name/reps, 원거리 가시성이 중요한 부분)를 최대한 키우고
+// 대신 라운드명·타이머·간격을 줄여서 공간을 맞춘다.
 function phaseSizes(exerciseCount: number) {
   if (exerciseCount <= 1) {
-    return { roundName: 120, timer: 140, name: 80, reps: 68, run: 44, bonus: 28, gap: 20, innerGap: 6 };
+    return { roundName: 110, timer: 130, name: 100, reps: 88, run: 46, bonus: 26, gap: 18, innerGap: 6 };
   }
   if (exerciseCount === 2) {
-    return { roundName: 100, timer: 120, name: 56, reps: 48, run: 36, bonus: 24, gap: 12, innerGap: 4 };
+    return { roundName: 90, timer: 110, name: 72, reps: 62, run: 34, bonus: 22, gap: 10, innerGap: 4 };
   }
-  return { roundName: 80, timer: 100, name: 38, reps: 32, run: 28, bonus: 20, gap: 8, innerGap: 3 };
+  return { roundName: 70, timer: 90, name: 50, reps: 42, run: 28, bonus: 18, gap: 8, innerGap: 3 };
 }
 
 export default function WodDisplayPage() {
@@ -286,9 +287,14 @@ export default function WodDisplayPage() {
             <span className="font-display text-6xl leading-none font-extrabold tracking-tight text-[#f2ece0] sm:text-7xl">
               WOD
             </span>
-            <span className="text-lg font-bold tracking-[0.08em] text-[#c8b89a] uppercase">
-              {session.name}
-            </span>
+            <div className="flex flex-col gap-1">
+              <span className="text-lg font-bold tracking-[0.08em] text-[#c8b89a] uppercase">
+                {session.name}
+              </span>
+              <span className="text-sm font-bold tracking-[0.08em] text-white/50 uppercase">
+                {session.teamSize != null ? `Team of ${session.teamSize}` : "Solo"}
+              </span>
+            </div>
           </div>
 
           <div className="flex flex-1 flex-col justify-center gap-9 py-14">

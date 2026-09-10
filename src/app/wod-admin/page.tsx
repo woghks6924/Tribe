@@ -23,6 +23,7 @@ type SessionSummary = {
   id: string;
   name: string;
   isActive: boolean;
+  teamSize: number | null;
   createdAt: string;
   roundCount: number;
 };
@@ -79,6 +80,8 @@ export default function WodAdminPage() {
   const [loadingSessions, setLoadingSessions] = useState(true);
 
   const [name, setName] = useState("");
+  const [format, setFormat] = useState<"solo" | "team">("solo");
+  const [teamSize, setTeamSize] = useState("");
   const [rounds, setRounds] = useState<RoundInput[]>([emptyRound()]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +112,8 @@ export default function WodAdminPage() {
     }
     const data = (await res.json()) as WodSessionData;
     setName(mode === "copy" ? `${data.name} (사본)` : data.name);
+    setFormat(data.teamSize != null ? "team" : "solo");
+    setTeamSize(data.teamSize != null ? String(data.teamSize) : "");
     setRounds(data.rounds.length ? data.rounds.map(roundToInput) : [emptyRound()]);
     setEditingId(mode === "edit" ? data.id : null);
     document.getElementById("session-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -117,6 +122,8 @@ export default function WodAdminPage() {
   function cancelEdit() {
     setEditingId(null);
     setName("");
+    setFormat("solo");
+    setTeamSize("");
     setRounds([emptyRound()]);
     setError(null);
     setMessage(null);
@@ -293,6 +300,7 @@ export default function WodAdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
+          teamSize: format === "team" && teamSize ? Number(teamSize) : null,
           rounds: rounds.map((r, i) => ({
             roundNumber: i + 1,
             roundName: r.roundName || undefined,
@@ -320,6 +328,8 @@ export default function WodAdminPage() {
       }
       setMessage(editingId ? "Updated." : "Saved. Activate it below to show it on the display.");
       setName("");
+      setFormat("solo");
+      setTeamSize("");
       setRounds([emptyRound()]);
       setEditingId(null);
       loadSessions();
@@ -379,7 +389,8 @@ export default function WodAdminPage() {
                 <div className="flex flex-col">
                   <span className="font-semibold">{s.name}</span>
                   <span className="text-xs text-ink-faint">
-                    {s.roundCount} rounds · {new Date(s.createdAt).toLocaleString()}
+                    {s.teamSize != null ? `Team of ${s.teamSize}` : "Solo"} · {s.roundCount} rounds ·{" "}
+                    {new Date(s.createdAt).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -448,6 +459,39 @@ export default function WodAdminPage() {
           onChange={(e) => setName(e.target.value)}
           className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
         />
+
+        <div className="flex items-center gap-4">
+          <div className="flex border border-line-strong">
+            <button
+              type="button"
+              onClick={() => setFormat("solo")}
+              className={`cursor-pointer px-4 py-2 text-xs uppercase tracking-[0.08em] ${
+                format === "solo" ? "bg-ink text-base" : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              Solo
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormat("team")}
+              className={`cursor-pointer border-l border-line-strong px-4 py-2 text-xs uppercase tracking-[0.08em] ${
+                format === "team" ? "bg-ink text-base" : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              Team
+            </button>
+          </div>
+          {format === "team" && (
+            <input
+              type="number"
+              min="2"
+              placeholder="Team size (e.g. 2)"
+              value={teamSize}
+              onChange={(e) => setTeamSize(e.target.value)}
+              className="w-40 border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+            />
+          )}
+        </div>
 
         <div className="flex flex-col gap-6">
           {rounds.map((round, i) => (

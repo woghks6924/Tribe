@@ -16,6 +16,7 @@ export async function GET() {
     id: session.id,
     name: session.name,
     isActive: session.isActive,
+    teamSize: session.teamSize,
     createdAt: session.createdAt.toISOString(),
     rounds: session.rounds.map((r) => ({
       id: r.id,

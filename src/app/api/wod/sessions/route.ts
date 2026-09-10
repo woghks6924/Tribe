@@ -16,6 +16,7 @@ export async function GET() {
       id: s.id,
       name: s.name,
       isActive: s.isActive,
+      teamSize: s.teamSize,
       createdAt: s.createdAt.toISOString(),
       roundCount: s._count.rounds,
     })),
@@ -23,7 +24,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { name: string; rounds: WodRoundInput[] };
+  const body = (await request.json()) as {
+    name: string;
+    teamSize?: number | null;
+    rounds: WodRoundInput[];
+  };
 
   if (!body.name || !body.rounds || body.rounds.length === 0) {
     return NextResponse.json(
@@ -35,6 +40,7 @@ export async function POST(request: Request) {
   const session = await prisma.wodSession.create({
     data: {
       name: body.name,
+      teamSize: body.teamSize ?? null,
       rounds: {
         create: body.rounds.map((r) => ({
           roundNumber: r.roundNumber,

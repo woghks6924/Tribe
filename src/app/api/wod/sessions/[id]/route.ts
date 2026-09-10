@@ -17,6 +17,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     id: session.id,
     name: session.name,
     isActive: session.isActive,
+    teamSize: session.teamSize,
     createdAt: session.createdAt.toISOString(),
     rounds: session.rounds.map((r) => ({
       id: r.id,
@@ -35,7 +36,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 // 라운드 내용 전체 교체 — 세션은 유지한 채 기존 라운드를 지우고 새로 받은 라운드로 다시 만든다.
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = (await request.json()) as { name: string; rounds: WodRoundInput[] };
+  const body = (await request.json()) as {
+    name: string;
+    teamSize?: number | null;
+    rounds: WodRoundInput[];
+  };
 
   if (!body.name || !body.rounds || body.rounds.length === 0) {
     return NextResponse.json(
@@ -50,6 +55,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       where: { id },
       data: {
         name: body.name,
+        teamSize: body.teamSize ?? null,
         rounds: {
           create: body.rounds.map((r) => ({
             roundNumber: r.roundNumber,

@@ -30,6 +30,7 @@ export type WodSessionData = {
   id: string;
   name: string;
   isActive: boolean;
+  teamSize: number | null; // null이면 솔로, 값이 있으면 팀 와드(팀 인원 수)
   createdAt: string;
   rounds: WodRoundData[];
 };
