@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { WodSegment } from "@/lib/wod";
+import type { WodRepsByGroup, WodRoundData, WodSegment, WodSessionData } from "@/lib/wod";
 
 type GroupRepsInput = { group: string; reps: string };
 
@@ -49,6 +49,31 @@ function toSeconds(min: string, sec: string): number | null {
   return m * 60 + s;
 }
 
+function toMinSec(totalSec: number | null): { min: string; sec: string } {
+  if (totalSec == null) return { min: "", sec: "" };
+  return { min: String(Math.floor(totalSec / 60)), sec: String(totalSec % 60) };
+}
+
+function segmentToInput(seg: WodSegment): SegmentInput {
+  if (seg.type === "run") return { type: "run", distance: seg.distance };
+  const repsByGroup: WodRepsByGroup[] = seg.reps.length ? seg.reps : [{ group: "", reps: "" }];
+  return { type: "exercise", name: seg.name, repsByGroup };
+}
+
+function roundToInput(r: WodRoundData): RoundInput {
+  const cap = toMinSec(r.timeCapSec);
+  const rest = toMinSec(r.restTimeSec);
+  return {
+    roundName: r.roundName ?? "",
+    segments: r.segments.length ? r.segments.map(segmentToInput) : emptyRound().segments,
+    timeCapMin: cap.min,
+    timeCapSec: cap.sec,
+    restMin: rest.min,
+    restSec: rest.sec,
+    bonusExercise: r.bonusExercise ?? "",
+  };
+}
+
 export default function WodAdminPage() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
@@ -58,6 +83,7 @@ export default function WodAdminPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   async function loadSessions() {
     setLoadingSessions(true);
@@ -72,6 +98,29 @@ export default function WodAdminPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSessions();
   }, []);
+
+  async function loadForEdit(id: string, mode: "edit" | "copy") {
+    setError(null);
+    setMessage(null);
+    const res = await fetch(`/api/wod/sessions/${id}`);
+    if (!res.ok) {
+      setError("Failed to load session.");
+      return;
+    }
+    const data = (await res.json()) as WodSessionData;
+    setName(mode === "copy" ? `${data.name} (사본)` : data.name);
+    setRounds(data.rounds.length ? data.rounds.map(roundToInput) : [emptyRound()]);
+    setEditingId(mode === "edit" ? data.id : null);
+    document.getElementById("session-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setName("");
+    setRounds([emptyRound()]);
+    setError(null);
+    setMessage(null);
+  }
 
   function updateRound(index: number, patch: Partial<RoundInput>) {
     setRounds((prev) => prev.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -237,8 +286,10 @@ export default function WodAdminPage() {
 
     setSaving(true);
     try {
-      const res = await fetch("/api/wod/sessions", {
-        method: "POST",
+      const url = editingId ? `/api/wod/sessions/${editingId}` : "/api/wod/sessions";
+      const method = editingId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
@@ -267,9 +318,10 @@ export default function WodAdminPage() {
         setError(data.error ?? "Failed to save session.");
         return;
       }
-      setMessage("Saved. Activate it below to show it on the display.");
+      setMessage(editingId ? "Updated." : "Saved. Activate it below to show it on the display.");
       setName("");
       setRounds([emptyRound()]);
+      setEditingId(null);
       loadSessions();
     } catch {
       setError("Something went wrong.");
@@ -350,6 +402,18 @@ export default function WodAdminPage() {
                     </button>
                   )}
                   <button
+                    onClick={() => loadForEdit(s.id, "edit")}
+                    className="cursor-pointer text-xs text-ink-muted hover:text-ink"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => loadForEdit(s.id, "copy")}
+                    className="cursor-pointer text-xs text-ink-muted hover:text-ink"
+                  >
+                    Copy
+                  </button>
+                  <button
                     onClick={() => deleteSession(s.id)}
                     className="cursor-pointer text-xs text-ink-faint hover:text-red-400"
                   >
@@ -362,8 +426,21 @@ export default function WodAdminPage() {
         )}
       </section>
 
-      <form onSubmit={handleSave} className="flex flex-col gap-8">
-        <h2 className="text-xs tracking-[0.08em] text-ink-muted uppercase">New Session</h2>
+      <form id="session-form" onSubmit={handleSave} className="flex flex-col gap-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs tracking-[0.08em] text-ink-muted uppercase">
+            {editingId ? "Edit Session" : "New Session"}
+          </h2>
+          {editingId && (
+            <button
+              type="button"
+              onClick={cancelEdit}
+              className="cursor-pointer text-xs text-ink-faint hover:text-ink"
+            >
+              Cancel edit
+            </button>
+          )}
+        </div>
         <input
           required
           placeholder="Session name (e.g. 2026-08-19 Morning WOD)"
@@ -591,7 +668,7 @@ export default function WodAdminPage() {
           disabled={saving}
           className="w-fit cursor-pointer bg-ink px-6 py-3 text-xs font-semibold tracking-[0.08em] text-base uppercase hover:bg-ink/85 disabled:opacity-40"
         >
-          {saving ? "Saving..." : "Save Session"}
+          {saving ? "Saving..." : editingId ? "Update Session" : "Save Session"}
         </button>
       </form>
     </div>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { WodSegment } from "@/lib/wod";
+import type { WodRoundInput } from "@/lib/wod";
 
 // /wod-admin, /wod-display 모두 별도 로그인 없이 URL 비공개로만 보호되는 독립 도구라
 // 이 라우트들도 쇼핑몰 admin 인증(requireAdmin)을 쓰지 않는다.
@@ -22,17 +22,8 @@ export async function GET() {
   );
 }
 
-type RoundInput = {
-  roundNumber: number;
-  roundName?: string;
-  segments: WodSegment[];
-  timeCapSec?: number | null;
-  restTimeSec?: number | null;
-  bonusExercise?: string;
-};
-
 export async function POST(request: Request) {
-  const body = (await request.json()) as { name: string; rounds: RoundInput[] };
+  const body = (await request.json()) as { name: string; rounds: WodRoundInput[] };
 
   if (!body.name || !body.rounds || body.rounds.length === 0) {
     return NextResponse.json(

@@ -33,3 +33,12 @@ export type WodSessionData = {
   createdAt: string;
   rounds: WodRoundData[];
 };
+
+export type WodRoundInput = {
+  roundNumber: number;
+  roundName?: string;
+  segments: WodSegment[];
+  timeCapSec?: number | null;
+  restTimeSec?: number | null;
+  bonusExercise?: string;
+};
