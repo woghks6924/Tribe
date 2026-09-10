@@ -44,16 +44,21 @@ function advanceToNextRound(prev: TimerState, session: WodSessionData): TimerSta
   };
 }
 
-function roundPreview(round: WodSessionData["rounds"][number]): string {
-  const runs = round.segments.filter((s) => s.type === "run");
-  return runs.map((s) => s.distance).join(", ");
+function formatReps(reps: { group: string; reps: string }[]): string {
+  if (reps.length <= 1) return reps[0]?.reps ?? "";
+  return reps.map((g) => (g.group ? `${g.group} ${g.reps}` : g.reps)).join("   ");
 }
 
-// 세그먼트(런닝+운동) 개수가 많아질수록 화면에 다 들어가도록 글자 크기를 단계적으로 줄인다.
-function exerciseSizes(exerciseCount: number) {
-  if (exerciseCount <= 1) return { name: 88, reps: 76 };
-  if (exerciseCount === 2) return { name: 68, reps: 60 };
-  return { name: 48, reps: 42 };
+// 세그먼트(런닝+운동) 개수가 많아질수록 태블릿 화면에 스크롤 없이 다 들어가도록
+// 운동 이름/횟수뿐 아니라 라운드명·타이머·간격까지 함께 단계적으로 줄인다.
+function phaseSizes(exerciseCount: number) {
+  if (exerciseCount <= 1) {
+    return { roundName: 120, timer: 140, name: 80, reps: 68, run: 44, bonus: 28, gap: 20, innerGap: 6 };
+  }
+  if (exerciseCount === 2) {
+    return { roundName: 100, timer: 120, name: 56, reps: 48, run: 36, bonus: 24, gap: 12, innerGap: 4 };
+  }
+  return { roundName: 80, timer: 100, name: 38, reps: 32, run: 28, bonus: 20, gap: 8, innerGap: 3 };
 }
 
 export default function WodDisplayPage() {
@@ -202,25 +207,57 @@ export default function WodDisplayPage() {
   const round = session.rounds[timer?.roundIndex ?? 0];
   const phase = timer?.phase ?? "idle";
   const exerciseSegments = round?.segments.filter((s) => s.type === "exercise") ?? [];
-  const sizes = exerciseSizes(exerciseSegments.length);
+  const sizes = phaseSizes(exerciseSegments.length);
 
   return (
     <div className="fixed inset-0 flex flex-col items-center overflow-hidden bg-black px-6 py-10 text-center text-white select-none">
       {logo}
       {phase === "idle" && (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-10">
-          <span className="text-4xl font-bold tracking-wide">{session.name}</span>
-          <div className="flex flex-col gap-4">
+        <div className="flex h-full w-full flex-col items-center gap-8 overflow-y-auto py-4">
+          <span className="mt-2 text-4xl font-bold tracking-wide">{session.name}</span>
+
+          <div className="grid w-full max-w-6xl grid-cols-1 gap-5 px-2 sm:grid-cols-2 lg:grid-cols-3">
             {session.rounds.map((r, i) => (
-              <div key={r.id} className="text-2xl text-gray-300">
-                {r.roundName || `R${i + 1}`}
-                {roundPreview(r) ? ` — ${roundPreview(r)}` : ""}
+              <div
+                key={r.id}
+                className="flex flex-col gap-3 rounded-lg border border-white/15 bg-white/[0.03] px-6 py-5 text-left"
+              >
+                <span className="text-2xl font-bold text-[#c8b89a]">{r.roundName || `R${i + 1}`}</span>
+
+                <div className="flex flex-col gap-1.5">
+                  {r.segments.map((seg, k) =>
+                    seg.type === "run" ? (
+                      <span key={k} className="text-lg text-gray-400">
+                        {seg.distance}
+                      </span>
+                    ) : (
+                      <div key={k} className="flex items-baseline justify-between gap-4">
+                        <span className="text-lg font-semibold text-white">{seg.name}</span>
+                        <span className="text-lg font-semibold text-[#c8b89a]">
+                          {formatReps(seg.reps)}
+                        </span>
+                      </div>
+                    ),
+                  )}
+                </div>
+
+                {(r.timeCapSec || r.restTimeSec) && (
+                  <div className="flex gap-4 text-sm text-white/50">
+                    {r.timeCapSec ? <span>Cap {formatTime(r.timeCapSec)}</span> : null}
+                    {r.restTimeSec ? <span>Rest {formatTime(r.restTimeSec)}</span> : null}
+                  </div>
+                )}
+
+                {r.bonusExercise && (
+                  <span className="text-sm font-semibold text-[#22c55e]">{r.bonusExercise}</span>
+                )}
               </div>
             ))}
           </div>
+
           <button
             onClick={handleStart}
-            className="cursor-pointer rounded bg-[#c8b89a] px-16 py-8 text-4xl font-bold text-black"
+            className="mb-2 cursor-pointer rounded bg-[#c8b89a] px-16 py-8 text-4xl font-bold text-black"
           >
             시작
           </button>
@@ -229,18 +266,21 @@ export default function WodDisplayPage() {
 
       {phase === "exercise" && round && timer && (
         <div className="flex h-full w-full flex-col items-center justify-between overflow-y-auto py-6">
-          <span className="text-[120px] leading-none font-bold text-[#c8b89a]">
+          <span
+            className="leading-none font-bold text-[#c8b89a]"
+            style={{ fontSize: sizes.roundName }}
+          >
             {round.roundName || `R${timer.roundIndex + 1}`}
           </span>
 
-          <div className="flex flex-col items-center gap-5">
+          <div className="flex flex-col items-center" style={{ gap: sizes.gap }}>
             {round.segments.map((seg, i) =>
               seg.type === "run" ? (
-                <span key={i} className="text-[48px] text-gray-400">
+                <span key={i} className="text-gray-400" style={{ fontSize: sizes.run }}>
                   {seg.distance}
                 </span>
               ) : (
-                <div key={i} className="flex flex-col items-center gap-1.5">
+                <div key={i} className="flex flex-col items-center" style={{ gap: sizes.innerGap }}>
                   <span
                     className="leading-none font-bold text-white"
                     style={{ fontSize: sizes.name }}
@@ -277,10 +317,15 @@ export default function WodDisplayPage() {
           </div>
 
           {round.bonusExercise && (
-            <span className="text-[28px] font-bold text-[#22c55e]">{round.bonusExercise}</span>
+            <span className="font-bold text-[#22c55e]" style={{ fontSize: sizes.bonus }}>
+              {round.bonusExercise}
+            </span>
           )}
 
-          <span className="text-[140px] leading-none font-bold text-[#ef4444]">
+          <span
+            className="leading-none font-bold text-[#ef4444]"
+            style={{ fontSize: sizes.timer }}
+          >
             {formatTime(((timer.phaseEndAt ?? now) - now) / 1000)}
           </span>
 
