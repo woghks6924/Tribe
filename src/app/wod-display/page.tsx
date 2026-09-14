@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import type { WodRepsByGroup, WodSegment, WodSessionData } from "@/lib/wod";
+import type { WodRepsByGroup, WodSessionData } from "@/lib/wod";
 
 type Phase = "idle" | "exercise" | "rest" | "complete";
 
@@ -44,34 +44,6 @@ function advanceToNextRound(prev: TimerState, session: WodSessionData): TimerSta
   };
 }
 
-type PairedLine =
-  | { kind: "run+exercise"; distance: string; name: string; reps: WodRepsByGroup[] }
-  | { kind: "run"; distance: string }
-  | { kind: "exercise"; name: string; reps: WodRepsByGroup[] };
-
-// 런닝-운동 세그먼트를 순서대로 짝지어 "500M RUN + SQUAT 60"처럼 한 줄로 묶는다.
-function pairSegments(segments: WodSegment[]): PairedLine[] {
-  const lines: PairedLine[] = [];
-  let i = 0;
-  while (i < segments.length) {
-    const seg = segments[i];
-    if (seg.type === "run") {
-      const next = segments[i + 1];
-      if (next?.type === "exercise") {
-        lines.push({ kind: "run+exercise", distance: seg.distance, name: next.name, reps: next.reps });
-        i += 2;
-        continue;
-      }
-      lines.push({ kind: "run", distance: seg.distance });
-      i += 1;
-      continue;
-    }
-    lines.push({ kind: "exercise", name: seg.name, reps: seg.reps });
-    i += 1;
-  }
-  return lines;
-}
-
 function RepsBadges({ reps }: { reps: WodRepsByGroup[] }) {
   if (reps.length === 0) return null;
   if (reps.length === 1 && !reps[0].group) {
@@ -107,16 +79,16 @@ function formatRestLabel(totalSec: number): string {
 }
 
 // 세그먼트(런닝+운동) 개수가 많아질수록 태블릿 화면에 스크롤 없이 다 들어가도록
-// 운동 이름/횟수(name/reps, 원거리 가시성이 중요한 부분)를 최대한 키우고
-// 대신 라운드명·타이머·간격을 줄여서 공간을 맞춘다.
+// 운동 이름/횟수(name/reps, 멀리서도 보여야 하는 가장 중요한 부분)를 최대한 극단적으로 키우고
+// 그 공간을 만들기 위해 라운드명·타이머·간격은 과감히 줄인다.
 function phaseSizes(exerciseCount: number) {
   if (exerciseCount <= 1) {
-    return { roundName: 110, timer: 130, name: 100, reps: 88, run: 46, bonus: 26, gap: 18, innerGap: 6 };
+    return { roundName: 80, timer: 120, name: 140, reps: 120, run: 40, bonus: 22, gap: 14, innerGap: 5 };
   }
   if (exerciseCount === 2) {
-    return { roundName: 90, timer: 110, name: 72, reps: 62, run: 34, bonus: 22, gap: 10, innerGap: 4 };
+    return { roundName: 64, timer: 96, name: 96, reps: 82, run: 30, bonus: 18, gap: 8, innerGap: 3 };
   }
-  return { roundName: 70, timer: 90, name: 50, reps: 42, run: 28, bonus: 18, gap: 8, innerGap: 3 };
+  return { roundName: 50, timer: 76, name: 66, reps: 56, run: 24, bonus: 14, gap: 6, innerGap: 2 };
 }
 
 export default function WodDisplayPage() {
@@ -282,47 +254,67 @@ export default function WodDisplayPage() {
     >
       {logo}
       {phase === "idle" && (
-        <div className="flex h-full w-full flex-col overflow-y-auto px-10 py-10 text-left sm:px-16">
-          <div className="mt-14 flex flex-wrap items-baseline gap-x-6 gap-y-2">
-            <span className="font-display text-6xl leading-none font-extrabold tracking-tight text-[#f2ece0] sm:text-7xl">
+        <div
+          className="flex h-full w-full flex-col overflow-y-auto text-left"
+          style={{ padding: "clamp(20px, 5vw, 64px)" }}
+        >
+          <div
+            className="flex flex-wrap items-baseline gap-x-6 gap-y-2"
+            style={{ marginTop: "clamp(16px, 4vh, 56px)" }}
+          >
+            <span
+              className="font-display leading-none font-extrabold tracking-tight text-[#f2ece0]"
+              style={{ fontSize: "clamp(2.25rem, 9vw, 4.5rem)" }}
+            >
               WOD
             </span>
             <div className="flex flex-col gap-1">
-              <span className="text-lg font-bold tracking-[0.08em] text-[#c8b89a] uppercase">
+              <span
+                className="font-bold tracking-[0.08em] text-[#c8b89a] uppercase"
+                style={{ fontSize: "clamp(0.85rem, 2.6vw, 1.125rem)" }}
+              >
                 {session.name}
               </span>
-              <span className="text-sm font-bold tracking-[0.08em] text-white/50 uppercase">
+              <span
+                className="font-bold tracking-[0.08em] text-white/50 uppercase"
+                style={{ fontSize: "clamp(0.7rem, 1.8vw, 0.875rem)" }}
+              >
                 {session.teamSize != null ? `Team of ${session.teamSize}` : "Solo"}
               </span>
             </div>
           </div>
 
-          <div className="flex flex-1 flex-col justify-center gap-9 py-14">
+          <div className="flex flex-1 flex-col justify-center gap-[3vh] py-10">
             {session.rounds.map((r, i) => (
-              <div key={r.id} className="flex items-start gap-6">
-                <span className="w-16 shrink-0 text-3xl leading-none font-extrabold text-[#c8b89a] sm:w-20 sm:text-4xl">
+              <div key={r.id} className="flex items-start" style={{ gap: "clamp(12px, 3vw, 24px)" }}>
+                <span
+                  className="shrink-0 leading-none font-extrabold text-[#c8b89a]"
+                  style={{ fontSize: "clamp(1.4rem, 5vw, 2.25rem)", width: "clamp(2.2rem, 8vw, 3.6rem)" }}
+                >
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <div className="flex flex-col gap-2">
-                  {pairSegments(r.segments).map((line, k) => (
+                  {r.segments.map((seg, k) => (
                     <div
                       key={k}
-                      className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-xl leading-tight font-extrabold uppercase sm:text-2xl"
+                      className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 leading-tight font-extrabold uppercase"
+                      style={{ fontSize: "clamp(0.95rem, 3.4vw, 1.5rem)" }}
                     >
-                      {(line.kind === "run" || line.kind === "run+exercise") && (
-                        <span className="text-[#7e8aa8]">{line.distance} RUN</span>
-                      )}
-                      {line.kind === "run+exercise" && <span className="text-white/25">+</span>}
-                      {(line.kind === "exercise" || line.kind === "run+exercise") && (
-                        <span className="text-[#f2ece0]">{line.name}</span>
-                      )}
-                      {(line.kind === "exercise" || line.kind === "run+exercise") && (
-                        <RepsBadges reps={line.reps} />
+                      {seg.type === "run" ? (
+                        <span className="text-[#7e8aa8]">{seg.distance} RUN</span>
+                      ) : (
+                        <>
+                          <span className="text-[#f2ece0]">{seg.name}</span>
+                          <RepsBadges reps={seg.reps} />
+                        </>
                       )}
                     </div>
                   ))}
                   {(r.timeCapSec != null || r.restTimeSec != null || r.bonusExercise) && (
-                    <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-bold tracking-wide uppercase sm:text-sm">
+                    <div
+                      className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-bold tracking-wide uppercase"
+                      style={{ fontSize: "clamp(0.6rem, 1.8vw, 0.875rem)" }}
+                    >
                       {r.timeCapSec != null && (
                         <span className="text-[#e0a05f]">Time cap : {formatCapLabel(r.timeCapSec)}</span>
                       )}
@@ -337,10 +329,14 @@ export default function WodDisplayPage() {
             ))}
           </div>
 
-          <div className="mb-6 flex justify-center">
+          <div className="mb-4 flex justify-center">
             <button
               onClick={handleStart}
-              className="cursor-pointer rounded bg-[#f2ece0] px-16 py-6 text-3xl font-bold text-black"
+              className="cursor-pointer rounded bg-[#f2ece0] font-bold text-black"
+              style={{
+                fontSize: "clamp(1.25rem, 4vw, 1.875rem)",
+                padding: "clamp(14px, 3vh, 24px) clamp(32px, 8vw, 64px)",
+              }}
             >
               시작
             </button>
