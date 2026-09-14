@@ -462,3 +462,61 @@ model WodRound {
 
   @@index([sessionId])
 }
+
+enum RunningFormCategory {
+  RANDOM_DRAW // 랜덤추첨
+  FIRST_COME // 선착순
+}
+
+enum RunningSubmissionStatus {
+  PENDING
+  WINNER
+  NOT_WINNER
+  CONFIRMED
+  CANCELLED
+}
+
+// 러닝 이벤트 신청폼 — /admin/running-forms에서 만들고 게시하면 /running에 공개된다.
+// 이름/성별/연락처/인스타 등 고정 항목 외에 fields로 관리자가 자유롭게 질문을 추가할 수 있다.
+model RunningForm {
+  id              String              @id @default(cuid())
+  title           String
+  thumbnailUrl    String?
+  eventDate       DateTime
+  category        RunningFormCategory @default(FIRST_COME)
+  noticeContent   String? // 공지 본문(자유 텍스트)
+  capacity        Int? // 정원, null이면 무제한
+  isClosed        Boolean             @default(false) // 관리자가 수동으로 마감 처리
+  isPublished     Boolean             @default(false) // 공개 여부(/running 노출)
+  providedItems   String? // 참가 시 제공되는 사항(자유 텍스트)
+  // RunningFormCollabBrand[]: {name,url}[] — 콜라보 브랜드 목록(여러 개 가능).
+  collabBrands    Json                @default("[]")
+  // RunningFormField[]: {id,label,type,required,options?} — 커스텀 질문 목록.
+  fields          Json                @default("[]")
+
+  submissions RunningSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RunningSubmission {
+  id     String      @id @default(cuid())
+  formId String
+  form   RunningForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  name             String
+  gender           String?
+  phone            String
+  email            String?
+  instagramId      String?
+  marketingConsent Boolean                 @default(false)
+  privacyConsent   Boolean                 @default(false)
+  // 커스텀 질문 답변: { [fieldId]: string | string[] }
+  answers          Json                    @default("{}")
+  status           RunningSubmissionStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+
+  @@index([formId])
+}
