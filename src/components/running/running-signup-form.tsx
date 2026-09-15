@@ -1,22 +1,27 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { RunningFormField } from "@/lib/running";
+import type { RunningFormField, RunningFormStatus } from "@/lib/running";
 
 const inputClass =
   "border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint";
 
+const CLOSED_MESSAGE: Record<Exclude<RunningFormStatus, "OPEN">, string> = {
+  UPCOMING: "아직 오픈되지 않은 신청폼입니다",
+  CLOSED: "마감된 신청폼입니다",
+};
+
 export function RunningSignupForm({
   formId,
   fields,
-  closed,
+  status,
   privacyItems,
   privacyPurpose,
   privacyRetention,
 }: {
   formId: string;
   fields: RunningFormField[];
-  closed: boolean;
+  status: RunningFormStatus;
   privacyItems: string;
   privacyPurpose: string;
   privacyRetention: string;
@@ -91,11 +96,11 @@ export function RunningSignupForm({
     );
   }
 
-  if (closed) {
+  if (status !== "OPEN") {
     return (
       <div className="flex flex-col gap-2 border border-line-strong px-6 py-10 text-center">
         <span className="font-display text-lg font-extrabold tracking-[0.02em] uppercase text-ink-faint">
-          마감된 신청폼입니다
+          {CLOSED_MESSAGE[status]}
         </span>
       </div>
     );

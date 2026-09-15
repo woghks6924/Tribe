@@ -29,11 +29,10 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
   if (!form) notFound();
 
   const status = getEffectiveRunningFormStatus(form, form.submissionCount);
-  const closed = status !== "OPEN";
 
   return (
     <div className="mx-auto flex max-w-xl flex-col">
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-base-elevated">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-base-elevated">
         {form.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={form.thumbnailUrl} alt="" className="h-full w-full object-cover" />
@@ -102,7 +101,7 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
         <RunningSignupForm
           formId={form.id}
           fields={form.fields}
-          closed={closed}
+          status={status}
           privacyItems={form.privacyItems}
           privacyPurpose={form.privacyPurpose}
           privacyRetention={form.privacyRetention}

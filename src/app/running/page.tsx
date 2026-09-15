@@ -41,7 +41,7 @@ export default async function RunningEventsPage() {
                 href={`/running/${f.id}`}
                 className="group flex flex-col overflow-hidden border border-line"
               >
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-base-elevated">
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-base-elevated">
                   {f.thumbnailUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
