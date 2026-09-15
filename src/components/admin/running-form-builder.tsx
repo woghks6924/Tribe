@@ -7,14 +7,22 @@ import type {
   RunningFormCollabBrand,
   RunningFormField,
   RunningFormFieldType,
+  RunningFormStatus,
 } from "@/lib/running";
 
 type FieldInput = {
   id: string;
   label: string;
+  description: string;
   type: RunningFormFieldType;
   required: boolean;
   optionsText: string; // 줄바꿈으로 구분한 선택지
+};
+
+const STATUS_LABEL: Record<RunningFormStatus, string> = {
+  UPCOMING: "예정",
+  OPEN: "진행중",
+  CLOSED: "마감",
 };
 
 type BrandInput = {
@@ -36,13 +44,43 @@ const FIELD_TYPE_LABEL: Record<RunningFormFieldType, string> = {
 };
 
 function emptyField(): FieldInput {
-  return { id: crypto.randomUUID(), label: "", type: "text", required: false, optionsText: "" };
+  return {
+    id: crypto.randomUUID(),
+    label: "",
+    description: "",
+    type: "text",
+    required: false,
+    optionsText: "",
+  };
+}
+
+// 새 폼을 만들 때 미리 채워두는 기본 질문 — 다른 질문처럼 그대로 삭제할 수 있다.
+function defaultFields(): FieldInput[] {
+  return [
+    {
+      id: crypto.randomUUID(),
+      label: "Tri.be_seoul 계정을 팔로우하셨나요?",
+      description: "",
+      type: "checkbox",
+      required: true,
+      optionsText: "팔로우 완료",
+    },
+    {
+      id: crypto.randomUUID(),
+      label: "세션 중 촬영 사진 마케팅 활용 동의",
+      description: "",
+      type: "radio",
+      required: true,
+      optionsText: "동의합니다\n동의하지 않습니다",
+    },
+  ];
 }
 
 function fieldsToInput(fields: RunningFormField[]): FieldInput[] {
   return fields.map((f) => ({
     id: f.id,
     label: f.label,
+    description: f.description ?? "",
     type: f.type,
     required: f.required,
     optionsText: (f.options ?? []).join("\n"),
@@ -58,8 +96,11 @@ export type RunningFormInitial = {
   noticeContent: string | null;
   providedItems: string | null;
   capacity: number | null;
-  isClosed: boolean;
+  status: RunningFormStatus;
   isPublished: boolean;
+  privacyItems: string;
+  privacyPurpose: string;
+  privacyRetention: string;
   collabBrands: RunningFormCollabBrand[];
   fields: RunningFormField[];
 };
@@ -83,15 +124,22 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
   const [noticeContent, setNoticeContent] = useState(initial?.noticeContent ?? "");
   const [providedItems, setProvidedItems] = useState(initial?.providedItems ?? "");
   const [capacity, setCapacity] = useState(initial?.capacity != null ? String(initial.capacity) : "");
-  const [isClosed, setIsClosed] = useState(initial?.isClosed ?? false);
+  const [status, setStatus] = useState<RunningFormStatus>(initial?.status ?? "UPCOMING");
   const [isPublished, setIsPublished] = useState(initial?.isPublished ?? false);
+  const [privacyItems, setPrivacyItems] = useState(initial?.privacyItems ?? "이름, 연락처");
+  const [privacyPurpose, setPrivacyPurpose] = useState(
+    initial?.privacyPurpose ?? "이벤트 진행 및 당첨 안내",
+  );
+  const [privacyRetention, setPrivacyRetention] = useState(
+    initial?.privacyRetention ?? "행사 종료 후 파기",
+  );
   const [brands, setBrands] = useState<BrandInput[]>(
     initial?.collabBrands.length
       ? initial.collabBrands.map((b) => ({ id: crypto.randomUUID(), name: b.name, url: b.url }))
       : [],
   );
   const [fields, setFields] = useState<FieldInput[]>(
-    initial ? fieldsToInput(initial.fields) : [],
+    initial ? fieldsToInput(initial.fields) : defaultFields(),
   );
 
   const [uploading, setUploading] = useState(false);
@@ -173,8 +221,11 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         noticeContent: noticeContent || undefined,
         providedItems: providedItems || undefined,
         capacity: capacity ? Number(capacity) : undefined,
-        isClosed,
+        status,
         isPublished,
+        privacyItems: privacyItems.trim() || undefined,
+        privacyPurpose: privacyPurpose.trim() || undefined,
+        privacyRetention: privacyRetention.trim() || undefined,
         collabBrands: brands
           .filter((b) => b.name.trim() && b.url.trim())
           .map((b): RunningFormCollabBrand => ({ name: b.name.trim(), url: b.url.trim() })),
@@ -183,6 +234,7 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
           .map((f): RunningFormField => ({
             id: f.id,
             label: f.label.trim(),
+            description: f.description.trim() || undefined,
             type: f.type,
             required: f.required,
             options:
@@ -340,14 +392,56 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         </button>
       </div>
 
-      <div className="flex gap-6">
-        <label className="flex items-center gap-2 text-xs text-ink-muted">
-          <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} />
-          공개 (published)
+      <div className="flex flex-col gap-1.5">
+        <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">진행 상태</span>
+        <div className="flex border border-line-strong">
+          {(["UPCOMING", "OPEN", "CLOSED"] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStatus(s)}
+              className={`flex-1 cursor-pointer px-4 py-2 text-xs uppercase ${
+                status === s ? "bg-ink text-base" : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              {STATUS_LABEL[s]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <label className="flex w-fit items-center gap-2 text-xs text-ink-muted">
+        <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} />
+        공개 (published)
+      </label>
+
+      <div className="flex flex-col gap-3 border-t border-line pt-6">
+        <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">
+          개인정보 수집·이용 동의 안내
+        </span>
+        <label className="flex flex-col gap-1.5 text-xs text-ink-faint">
+          수집 및 이용 항목
+          <input
+            value={privacyItems}
+            onChange={(e) => setPrivacyItems(e.target.value)}
+            className="border border-line-strong bg-transparent px-3 py-2 text-sm text-ink outline-none"
+          />
         </label>
-        <label className="flex items-center gap-2 text-xs text-ink-muted">
-          <input type="checkbox" checked={isClosed} onChange={(e) => setIsClosed(e.target.checked)} />
-          마감 처리
+        <label className="flex flex-col gap-1.5 text-xs text-ink-faint">
+          수집 및 이용 목적
+          <input
+            value={privacyPurpose}
+            onChange={(e) => setPrivacyPurpose(e.target.value)}
+            className="border border-line-strong bg-transparent px-3 py-2 text-sm text-ink outline-none"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-xs text-ink-faint">
+          보유 및 이용 기간
+          <input
+            value={privacyRetention}
+            onChange={(e) => setPrivacyRetention(e.target.value)}
+            className="border border-line-strong bg-transparent px-3 py-2 text-sm text-ink outline-none"
+          />
         </label>
       </div>
 
@@ -407,6 +501,13 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
                 ×
               </button>
             </div>
+            <textarea
+              placeholder="부가 설명 (선택 — 질문 아래에 작게 표시됩니다)"
+              value={f.description}
+              onChange={(e) => updateField(f.id, { description: e.target.value })}
+              rows={2}
+              className="border border-line-strong bg-transparent px-3 py-2 text-xs outline-none placeholder:text-ink-faint"
+            />
             {(f.type === "select" || f.type === "radio" || f.type === "checkbox") && (
               <textarea
                 placeholder={"선택지 (줄바꿈으로 구분)\n예: S\nM\nL"}

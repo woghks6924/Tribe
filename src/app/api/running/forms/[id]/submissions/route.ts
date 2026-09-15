@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isRunningFormClosed, type RunningFormField } from "@/lib/running";
+import { getEffectiveRunningFormStatus, type RunningFormField } from "@/lib/running";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,7 +28,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "존재하지 않는 신청폼입니다." }, { status: 404 });
   }
 
-  if (isRunningFormClosed(form, form._count.submissions)) {
+  if (getEffectiveRunningFormStatus(form, form._count.submissions) !== "OPEN") {
     return NextResponse.json({ error: "마감된 신청폼입니다." }, { status: 400 });
   }
 

@@ -29,7 +29,7 @@ export default async function AdminRunningFormsPage() {
           eventDate: f.eventDate.toISOString(),
           category: f.category,
           capacity: f.capacity,
-          isClosed: f.isClosed,
+          status: f.status,
           isPublished: f.isPublished,
           submissionCount: f._count.submissions,
           createdAt: f.createdAt.toISOString(),

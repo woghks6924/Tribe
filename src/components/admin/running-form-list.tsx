@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { RunningFormStatus } from "@/lib/running";
 
 type FormSummary = {
   id: string;
@@ -10,7 +11,7 @@ type FormSummary = {
   eventDate: string;
   category: "RANDOM_DRAW" | "FIRST_COME";
   capacity: number | null;
-  isClosed: boolean;
+  status: RunningFormStatus;
   isPublished: boolean;
   submissionCount: number;
   createdAt: string;
@@ -19,6 +20,18 @@ type FormSummary = {
 const CATEGORY_LABEL: Record<FormSummary["category"], string> = {
   RANDOM_DRAW: "랜덤추첨",
   FIRST_COME: "선착순",
+};
+
+const STATUS_LABEL: Record<RunningFormStatus, string> = {
+  UPCOMING: "예정",
+  OPEN: "진행중",
+  CLOSED: "마감",
+};
+
+const STATUS_COLOR: Record<RunningFormStatus, string> = {
+  UPCOMING: "text-ink-muted",
+  OPEN: "text-accent",
+  CLOSED: "text-red-400",
 };
 
 export function RunningFormList({ forms }: { forms: FormSummary[] }) {
@@ -33,11 +46,11 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
     router.refresh();
   }
 
-  async function toggleClosed(f: FormSummary) {
-    await fetch(`/api/admin/running-forms/${f.id}`, {
+  async function changeStatus(id: string, status: RunningFormStatus) {
+    await fetch(`/api/admin/running-forms/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isClosed: !f.isClosed }),
+      body: JSON.stringify({ status }),
     });
     router.refresh();
   }
@@ -60,7 +73,7 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
   return (
     <div className="flex flex-col gap-3">
       {forms.map((f) => (
-        <div key={f.id} className="flex items-center gap-4 border border-line px-4 py-3 text-sm">
+        <div key={f.id} className="flex flex-wrap items-center gap-4 border border-line px-4 py-3 text-sm">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-line-strong bg-base-elevated">
             {f.thumbnailUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -87,12 +100,17 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
             {f.isPublished ? "Unpublish" : "Publish"}
           </button>
 
-          <span className={`text-xs uppercase ${f.isClosed ? "text-red-400" : "text-ink-muted"}`}>
-            {f.isClosed ? "Closed" : "Open"}
-          </span>
-          <button onClick={() => toggleClosed(f)} className="cursor-pointer text-xs text-ink-muted hover:text-ink">
-            {f.isClosed ? "Reopen" : "Close"}
-          </button>
+          <select
+            value={f.status}
+            onChange={(e) => changeStatus(f.id, e.target.value as RunningFormStatus)}
+            className={`border border-line-strong bg-base px-2 py-1.5 text-xs uppercase outline-none ${STATUS_COLOR[f.status]}`}
+          >
+            {(["UPCOMING", "OPEN", "CLOSED"] as const).map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABEL[s]}
+              </option>
+            ))}
+          </select>
 
           <Link
             href={`/admin/running-forms/${f.id}/submissions`}

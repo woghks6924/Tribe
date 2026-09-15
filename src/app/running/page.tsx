@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getPublishedRunningForms, isRunningFormClosed } from "@/lib/running";
+import { getEffectiveRunningFormStatus, getPublishedRunningForms } from "@/lib/running";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +10,12 @@ export const metadata: Metadata = {
 };
 
 const CATEGORY_LABEL = { RANDOM_DRAW: "랜덤추첨", FIRST_COME: "선착순" } as const;
+const STATUS_LABEL = { UPCOMING: "예정", OPEN: "진행중", CLOSED: "마감" } as const;
+const STATUS_BADGE = {
+  UPCOMING: "bg-white/90 text-ink",
+  OPEN: "bg-accent text-accent-ink",
+  CLOSED: "bg-black/70 text-white",
+} as const;
 
 export default async function RunningEventsPage() {
   const forms = await getPublishedRunningForms();
@@ -28,7 +34,7 @@ export default async function RunningEventsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {forms.map((f) => {
-            const closed = isRunningFormClosed(f, f.submissionCount);
+            const status = getEffectiveRunningFormStatus(f, f.submissionCount);
             return (
               <Link
                 key={f.id}
@@ -49,11 +55,9 @@ export default async function RunningEventsPage() {
                     </div>
                   )}
                   <span
-                    className={`absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] uppercase ${
-                      closed ? "bg-black/70 text-white" : "bg-accent text-accent-ink"
-                    }`}
+                    className={`absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] uppercase ${STATUS_BADGE[status]}`}
                   >
-                    {closed ? "마감" : "모집중"}
+                    {STATUS_LABEL[status]}
                   </span>
                   <span className="absolute top-3 right-3 bg-black/60 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] text-white uppercase">
                     {CATEGORY_LABEL[f.category]}

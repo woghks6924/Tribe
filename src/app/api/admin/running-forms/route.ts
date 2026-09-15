@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import type { RunningFormCategory, RunningFormCollabBrand, RunningFormField } from "@/lib/running";
+import type {
+  RunningFormCategory,
+  RunningFormCollabBrand,
+  RunningFormField,
+  RunningFormStatus,
+} from "@/lib/running";
 
 export async function GET() {
   const { response } = await requireAdmin();
@@ -20,7 +25,7 @@ export async function GET() {
       eventDate: f.eventDate.toISOString(),
       category: f.category,
       capacity: f.capacity,
-      isClosed: f.isClosed,
+      status: f.status,
       isPublished: f.isPublished,
       submissionCount: f._count.submissions,
       createdAt: f.createdAt.toISOString(),
@@ -36,8 +41,11 @@ export type RunningFormInput = {
   noticeContent?: string | null;
   providedItems?: string | null;
   capacity?: number | null;
-  isClosed?: boolean;
+  status?: RunningFormStatus;
   isPublished?: boolean;
+  privacyItems?: string;
+  privacyPurpose?: string;
+  privacyRetention?: string;
   collabBrands?: RunningFormCollabBrand[];
   fields: RunningFormField[];
 };
@@ -61,8 +69,11 @@ export async function POST(request: Request) {
       noticeContent: body.noticeContent || null,
       providedItems: body.providedItems || null,
       capacity: body.capacity ?? null,
-      isClosed: body.isClosed ?? false,
+      status: body.status ?? "UPCOMING",
       isPublished: body.isPublished ?? false,
+      privacyItems: body.privacyItems || "이름, 연락처",
+      privacyPurpose: body.privacyPurpose || "이벤트 진행 및 당첨 안내",
+      privacyRetention: body.privacyRetention || "행사 종료 후 파기",
       collabBrands: body.collabBrands ?? [],
       fields: body.fields ?? [],
     },

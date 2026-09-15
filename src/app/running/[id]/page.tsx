@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getPublishedRunningForm, isRunningFormClosed } from "@/lib/running";
+import { getEffectiveRunningFormStatus, getPublishedRunningForm } from "@/lib/running";
 import { RunningSignupForm } from "@/components/running/running-signup-form";
 
 export const dynamic = "force-dynamic";
 
 const CATEGORY_LABEL = { RANDOM_DRAW: "랜덤추첨", FIRST_COME: "선착순" } as const;
+const STATUS_LABEL = { UPCOMING: "예정", OPEN: "진행중", CLOSED: "마감" } as const;
+const STATUS_BADGE = {
+  UPCOMING: "bg-white/90 text-ink",
+  OPEN: "bg-accent text-accent-ink",
+  CLOSED: "bg-black/70 text-white",
+} as const;
 
 export async function generateMetadata({
   params,
@@ -22,7 +28,8 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
   const form = await getPublishedRunningForm(id);
   if (!form) notFound();
 
-  const closed = isRunningFormClosed(form, form.submissionCount);
+  const status = getEffectiveRunningFormStatus(form, form.submissionCount);
+  const closed = status !== "OPEN";
 
   return (
     <div className="mx-auto flex max-w-xl flex-col">
@@ -32,11 +39,9 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
           <img src={form.thumbnailUrl} alt="" className="h-full w-full object-cover" />
         ) : null}
         <span
-          className={`absolute top-4 left-4 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] uppercase ${
-            closed ? "bg-black/70 text-white" : "bg-accent text-accent-ink"
-          }`}
+          className={`absolute top-4 left-4 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] uppercase ${STATUS_BADGE[status]}`}
         >
-          {closed ? "마감" : "모집중"}
+          {STATUS_LABEL[status]}
         </span>
       </div>
 
@@ -95,7 +100,14 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
           </div>
         )}
 
-        <RunningSignupForm formId={form.id} fields={form.fields} closed={closed} />
+        <RunningSignupForm
+          formId={form.id}
+          fields={form.fields}
+          closed={closed}
+          privacyItems={form.privacyItems}
+          privacyPurpose={form.privacyPurpose}
+          privacyRetention={form.privacyRetention}
+        />
       </div>
     </div>
   );

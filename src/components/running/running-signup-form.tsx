@@ -10,10 +10,16 @@ export function RunningSignupForm({
   formId,
   fields,
   closed,
+  privacyItems,
+  privacyPurpose,
+  privacyRetention,
 }: {
   formId: string;
   fields: RunningFormField[];
   closed: boolean;
+  privacyItems: string;
+  privacyPurpose: string;
+  privacyRetention: string;
 }) {
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
@@ -153,6 +159,9 @@ export function RunningSignupForm({
             {field.label}
             {field.required && <span className="text-red-400"> *</span>}
           </span>
+          {field.description && (
+            <p className="text-xs whitespace-pre-line text-ink-faint">{field.description}</p>
+          )}
           {field.type === "text" && (
             <input
               required={field.required}
@@ -229,20 +238,40 @@ export function RunningSignupForm({
         </div>
       ))}
 
-      <div className="flex flex-col gap-2 border-t border-line pt-4">
-        <label className="flex items-start gap-2 text-xs text-ink-muted">
-          <input
-            required
-            type="checkbox"
-            checked={privacyConsent}
-            onChange={(e) => setPrivacyConsent(e.target.checked)}
-            className="mt-0.5"
-          />
-          <span>
-            (필수) 개인정보 수집·이용에 동의합니다. 수집 항목은 신청 처리 목적으로만 사용되며 행사
-            종료 후 파기됩니다.
-          </span>
-        </label>
+      <div className="flex flex-col gap-3 border-t border-line pt-4">
+        <div className="flex flex-col gap-3 border border-line-strong p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold">
+              <span className="text-red-500">*</span> 개인정보 수집 및 이용 동의
+            </span>
+            <span className="text-xs text-ink-faint">
+              동의하지 않을 경우, 신청이 제한될 수 있습니다.
+            </span>
+          </div>
+          <div className="flex flex-col gap-2 border-t border-line pt-3 text-xs">
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="shrink-0 text-ink-faint">수집 및 이용 항목</span>
+              <span className="text-right font-semibold">{privacyItems}</span>
+            </div>
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="shrink-0 text-ink-faint">수집 및 이용 목적</span>
+              <span className="text-right font-semibold">{privacyPurpose}</span>
+            </div>
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="shrink-0 text-ink-faint">보유 및 이용 기간</span>
+              <span className="text-right font-semibold text-red-500">{privacyRetention}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPrivacyConsent((prev) => !prev)}
+            className={`flex cursor-pointer items-center justify-center gap-1.5 border px-4 py-3 text-sm font-bold ${
+              privacyConsent ? "border-ink bg-ink text-base" : "border-line-strong text-ink-muted"
+            }`}
+          >
+            {privacyConsent && "✓ "}동의합니다
+          </button>
+        </div>
         <label className="flex items-start gap-2 text-xs text-ink-muted">
           <input
             type="checkbox"

@@ -38,8 +38,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       noticeContent: body.noticeContent || null,
       providedItems: body.providedItems || null,
       capacity: body.capacity ?? null,
-      isClosed: body.isClosed ?? false,
+      status: body.status ?? "UPCOMING",
       isPublished: body.isPublished ?? false,
+      privacyItems: body.privacyItems || "이름, 연락처",
+      privacyPurpose: body.privacyPurpose || "이벤트 진행 및 당첨 안내",
+      privacyRetention: body.privacyRetention || "행사 종료 후 파기",
       collabBrands: body.collabBrands ?? [],
       fields: body.fields ?? [],
     },
@@ -48,19 +51,22 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   return NextResponse.json({ ok: true });
 }
 
-// 목록 화면의 공개/마감 토글용 — 다른 필드는 건드리지 않고 두 값만 부분 수정한다.
+// 목록 화면의 공개 여부/진행 상태 토글용 — 다른 필드는 건드리지 않고 부분 수정한다.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { response } = await requireAdmin();
   if (response) return response;
 
   const { id } = await params;
-  const body = (await request.json()) as { isPublished?: boolean; isClosed?: boolean };
+  const body = (await request.json()) as {
+    isPublished?: boolean;
+    status?: "UPCOMING" | "OPEN" | "CLOSED";
+  };
 
   await prisma.runningForm.update({
     where: { id },
     data: {
       ...(body.isPublished !== undefined ? { isPublished: body.isPublished } : {}),
-      ...(body.isClosed !== undefined ? { isClosed: body.isClosed } : {}),
+      ...(body.status !== undefined ? { status: body.status } : {}),
     },
   });
 

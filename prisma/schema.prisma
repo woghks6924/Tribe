@@ -468,6 +468,12 @@ enum RunningFormCategory {
   FIRST_COME // 선착순
 }
 
+enum RunningFormStatus {
+  UPCOMING // 예정
+  OPEN // 진행중(신청 접수 중)
+  CLOSED // 마감
+}
+
 enum RunningSubmissionStatus {
   PENDING
   WINNER
@@ -486,9 +492,13 @@ model RunningForm {
   category        RunningFormCategory @default(FIRST_COME)
   noticeContent   String? // 공지 본문(자유 텍스트)
   capacity        Int? // 정원, null이면 무제한
-  isClosed        Boolean             @default(false) // 관리자가 수동으로 마감 처리
+  status          RunningFormStatus   @default(UPCOMING) // 예정/진행중/마감
   isPublished     Boolean             @default(false) // 공개 여부(/running 노출)
   providedItems   String? // 참가 시 제공되는 사항(자유 텍스트)
+  // 개인정보 수집·이용 동의 안내 — 신청 폼에 구조화된 카드로 표시된다.
+  privacyItems     String @default("이름, 연락처") // 수집 및 이용 항목
+  privacyPurpose   String @default("이벤트 진행 및 당첨 안내") // 수집 및 이용 목적
+  privacyRetention String @default("행사 종료 후 파기") // 보유 및 이용 기간
   // RunningFormCollabBrand[]: {name,url}[] — 콜라보 브랜드 목록(여러 개 가능).
   collabBrands    Json                @default("[]")
   // RunningFormField[]: {id,label,type,required,options?} — 커스텀 질문 목록.
