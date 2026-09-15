@@ -87,6 +87,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       answers: s.answers ?? {},
       status: s.status,
       createdAt: s.createdAt.toISOString(),
+      personalDataPurgedAt: s.personalDataPurgedAt?.toISOString() ?? null,
     })),
   );
 }

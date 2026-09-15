@@ -26,6 +26,13 @@ export default async function RunningFormSubmissionsPage({
           {submissions.length}
           {form.capacity != null ? `/${form.capacity}` : ""}명 신청
         </p>
+        {form.status === "CLOSED" && form.closedAt && (
+          <p className="text-xs text-ink-faint">
+            {new Date(form.closedAt).toLocaleDateString()} 마감 · 30일 후(
+            {new Date(form.closedAt.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}) 이름/연락처/성별
+            자동 파기 예정
+          </p>
+        )}
       </div>
       <RunningSubmissionsManager
         formId={id}
@@ -41,6 +48,7 @@ export default async function RunningFormSubmissionsPage({
           answers: (s.answers ?? {}) as Record<string, string | string[]>,
           status: s.status,
           createdAt: s.createdAt.toISOString(),
+          personalDataPurgedAt: s.personalDataPurgedAt?.toISOString() ?? null,
         }))}
       />
     </div>

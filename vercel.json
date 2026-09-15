@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/keep-alive",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/purge-running-submissions",
+      "schedule": "0 4 * * *"
     }
   ]
 }

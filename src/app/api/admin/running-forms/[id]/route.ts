@@ -17,6 +17,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   return NextResponse.json(toRunningFormData(form));
 }
 
+// CLOSED로 막 바뀌는 순간 closedAt을 찍고, CLOSED에서 벗어나면 다시 비운다 —
+// 개인정보 자동 파기 크론이 이 시각 기준 30일을 계산한다.
+function closedAtPatch(
+  currentStatus: string,
+  newStatus: string | undefined,
+): { closedAt?: Date | null } {
+  if (newStatus === undefined || newStatus === currentStatus) return {};
+  if (newStatus === "CLOSED") return { closedAt: new Date() };
+  if (currentStatus === "CLOSED") return { closedAt: null };
+  return {};
+}
+
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { response } = await requireAdmin();
   if (response) return response;
@@ -28,6 +40,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Please provide a title and event date." }, { status: 400 });
   }
 
+  const existing = await prisma.runningForm.findUnique({ where: { id }, select: { status: true } });
+  if (!existing) {
+    return NextResponse.json({ error: "Form not found." }, { status: 404 });
+  }
+  const nextStatus = body.status ?? "UPCOMING";
+
   await prisma.runningForm.update({
     where: { id },
     data: {
@@ -38,7 +56,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       noticeContent: body.noticeContent || null,
       providedItems: body.providedItems || null,
       capacity: body.capacity ?? null,
-      status: body.status ?? "UPCOMING",
+      status: nextStatus,
+      ...closedAtPatch(existing.status, nextStatus),
       isPublished: body.isPublished ?? false,
       privacyItems: body.privacyItems || "이름, 연락처",
       privacyPurpose: body.privacyPurpose || "이벤트 진행 및 당첨 안내",
@@ -62,11 +81,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     status?: "UPCOMING" | "OPEN" | "CLOSED";
   };
 
+  const existing = await prisma.runningForm.findUnique({ where: { id }, select: { status: true } });
+  if (!existing) {
+    return NextResponse.json({ error: "Form not found." }, { status: 404 });
+  }
+
   await prisma.runningForm.update({
     where: { id },
     data: {
       ...(body.isPublished !== undefined ? { isPublished: body.isPublished } : {}),
       ...(body.status !== undefined ? { status: body.status } : {}),
+      ...closedAtPatch(existing.status, body.status),
     },
   });
 

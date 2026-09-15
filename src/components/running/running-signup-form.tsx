@@ -26,7 +26,6 @@ export function RunningSignupForm({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [instagramId, setInstagramId] = useState("");
-  const [marketingConsent, setMarketingConsent] = useState(false);
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [loading, setLoading] = useState(false);
@@ -65,7 +64,7 @@ export function RunningSignupForm({
           phone,
           email: email || undefined,
           instagramId: instagramId || undefined,
-          marketingConsent,
+          marketingConsent: false,
           privacyConsent,
           answers,
         }),
@@ -115,7 +114,7 @@ export function RunningSignupForm({
       />
 
       <div className="flex gap-2">
-        {["남", "여", "선택안함"].map((g) => (
+        {["남", "여"].map((g) => (
           <button
             key={g}
             type="button"
@@ -272,15 +271,6 @@ export function RunningSignupForm({
             {privacyConsent && "✓ "}동의합니다
           </button>
         </div>
-        <label className="flex items-start gap-2 text-xs text-ink-muted">
-          <input
-            type="checkbox"
-            checked={marketingConsent}
-            onChange={(e) => setMarketingConsent(e.target.checked)}
-            className="mt-0.5"
-          />
-          <span>(선택) 이벤트·마케팅 정보 수신에 동의합니다.</span>
-        </label>
       </div>
 
       {error && <p className="text-xs text-red-400">{error}</p>}

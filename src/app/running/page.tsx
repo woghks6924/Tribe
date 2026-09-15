@@ -75,10 +75,9 @@ export default async function RunningEventsPage() {
                       minute: "2-digit",
                     })}
                   </span>
-                  <span className="text-xs text-ink-faint">
-                    {f.submissionCount}
-                    {f.capacity != null ? `/${f.capacity}` : ""}명 신청
-                  </span>
+                  {f.capacity != null && (
+                    <span className="text-xs text-ink-faint">정원 {f.capacity}명</span>
+                  )}
                 </div>
               </Link>
             );

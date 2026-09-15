@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
+export { normalizeExternalUrl } from "@/lib/url";
+
 export type RunningFormFieldType = "text" | "textarea" | "select" | "radio" | "checkbox";
 
 export type RunningFormField = {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getEffectiveRunningFormStatus, getPublishedRunningForm } from "@/lib/running";
+import { getEffectiveRunningFormStatus, getPublishedRunningForm, normalizeExternalUrl } from "@/lib/running";
 import { RunningSignupForm } from "@/components/running/running-signup-form";
 
 export const dynamic = "force-dynamic";
@@ -62,10 +62,9 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
               minute: "2-digit",
             })}
           </span>
-          <span className="text-xs text-ink-faint">
-            {form.submissionCount}
-            {form.capacity != null ? `/${form.capacity}` : ""}명 신청
-          </span>
+          {form.capacity != null && (
+            <span className="text-xs text-ink-faint">정원 {form.capacity}명</span>
+          )}
         </div>
 
         {form.noticeContent && (
@@ -86,7 +85,7 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
             {form.collabBrands.map((brand, i) => (
               <a
                 key={i}
-                href={brand.url}
+                href={normalizeExternalUrl(brand.url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between border border-line-strong px-4 py-3 text-sm hover:border-ink"

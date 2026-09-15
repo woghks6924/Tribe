@@ -14,6 +14,7 @@ type Submission = {
   answers: Record<string, string | string[]>;
   status: "PENDING" | "WINNER" | "NOT_WINNER" | "CONFIRMED" | "CANCELLED";
   createdAt: string;
+  personalDataPurgedAt: string | null;
 };
 
 type Field = { id: string; label: string };
@@ -109,6 +110,11 @@ export function RunningSubmissionsManager({
                 <div className="flex flex-col">
                   <span className="font-semibold">
                     {s.name} {s.gender ? `· ${s.gender}` : ""}
+                    {s.personalDataPurgedAt && (
+                      <span className="ml-2 text-[10px] font-normal text-ink-faint uppercase">
+                        개인정보 파기됨 ({new Date(s.personalDataPurgedAt).toLocaleDateString()})
+                      </span>
+                    )}
                   </span>
                   <span className="text-xs text-ink-muted">
                     {s.phone}

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { normalizeExternalUrl } from "@/lib/url";
 import type {
   RunningFormCategory,
   RunningFormCollabBrand,
@@ -228,7 +229,10 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         privacyRetention: privacyRetention.trim() || undefined,
         collabBrands: brands
           .filter((b) => b.name.trim() && b.url.trim())
-          .map((b): RunningFormCollabBrand => ({ name: b.name.trim(), url: b.url.trim() })),
+          .map((b): RunningFormCollabBrand => ({
+            name: b.name.trim(),
+            url: normalizeExternalUrl(b.url),
+          })),
         fields: fields
           .filter((f) => f.label.trim())
           .map((f): RunningFormField => ({
@@ -443,12 +447,54 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
             className="border border-line-strong bg-transparent px-3 py-2 text-sm text-ink outline-none"
           />
         </label>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs text-ink-faint normal-case">신청 폼에 실제로 보이는 모습</span>
+          <div className="flex flex-col gap-3 border border-line-strong bg-base p-4 normal-case">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-bold text-ink">
+                <span className="text-red-500">*</span> 개인정보 수집 및 이용 동의
+              </span>
+              <span className="text-xs text-ink-faint">
+                동의하지 않을 경우, 신청이 제한될 수 있습니다.
+              </span>
+            </div>
+            <div className="flex flex-col gap-2 border-t border-line pt-3 text-xs">
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="shrink-0 text-ink-faint">수집 및 이용 항목</span>
+                <span className="text-right font-semibold text-ink">{privacyItems}</span>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="shrink-0 text-ink-faint">수집 및 이용 목적</span>
+                <span className="text-right font-semibold text-ink">{privacyPurpose}</span>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="shrink-0 text-ink-faint">보유 및 이용 기간</span>
+                <span className="text-right font-semibold text-red-500">{privacyRetention}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-center border border-line-strong px-4 py-3 text-sm font-bold text-ink-muted">
+              동의합니다
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 border-t border-line pt-6">
-        <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">
-          설문 항목 (이름/성별/연락처/인스타는 기본 항목으로 항상 수집됩니다)
-        </span>
+        <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">설문 항목</span>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs text-ink-faint">기본 항목 (모든 폼에 자동 포함, 삭제 불가)</span>
+          <div className="flex flex-wrap gap-2">
+            {["이름", "성별", "휴대폰번호", "인스타그램 ID"].map((label) => (
+              <span
+                key={label}
+                className="border border-line-strong bg-base-elevated px-3 py-1.5 text-xs text-ink-muted"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
         {fields.map((f, i) => (
           <div key={f.id} className="flex flex-col gap-2 border border-line-strong p-3">
             <div className="flex items-center gap-2">
