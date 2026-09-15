@@ -20,9 +20,20 @@ export function SiteChrome({
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
   const isStandaloneTool = pathname.startsWith("/wod-admin") || pathname.startsWith("/wod-display");
+  // 러닝 신청 공지는 쇼핑몰 내비게이션 없이 공지만 딱 보이는 독립 페이지로 노출한다.
+  const isMinimalChrome = pathname.startsWith("/running");
 
   if (isAdmin || isStandaloneTool) {
     return <div className="flex flex-1 flex-col">{children}</div>;
+  }
+
+  if (isMinimalChrome) {
+    return (
+      <>
+        <SiteLoader />
+        <main className="flex flex-1 flex-col">{children}</main>
+      </>
+    );
   }
 
   return (

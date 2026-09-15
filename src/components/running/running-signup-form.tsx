@@ -24,7 +24,6 @@ export function RunningSignupForm({
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
   const [instagramId, setInstagramId] = useState("");
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
@@ -62,7 +61,6 @@ export function RunningSignupForm({
           name,
           gender: gender || undefined,
           phone,
-          email: email || undefined,
           instagramId: instagramId || undefined,
           marketingConsent: false,
           privacyConsent,
@@ -139,14 +137,8 @@ export function RunningSignupForm({
         className={inputClass}
       />
       <input
-        type="email"
-        placeholder="이메일 (선택)"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className={inputClass}
-      />
-      <input
-        placeholder="인스타그램 아이디 (선택)"
+        required
+        placeholder="인스타그램 아이디"
         value={instagramId}
         onChange={(e) => setInstagramId(e.target.value)}
         className={inputClass}
