@@ -73,6 +73,7 @@ export default async function RunningEventsPage() {
                       day: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
+                      timeZone: "Asia/Seoul",
                     })}
                   </span>
                   {f.capacity != null && (

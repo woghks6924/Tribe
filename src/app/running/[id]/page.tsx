@@ -59,6 +59,7 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
               day: "numeric",
               hour: "2-digit",
               minute: "2-digit",
+              timeZone: "Asia/Seoul",
             })}
           </span>
           {form.capacity != null && (

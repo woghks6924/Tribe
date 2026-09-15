@@ -28,8 +28,10 @@ export default async function RunningFormSubmissionsPage({
         </p>
         {form.status === "CLOSED" && form.closedAt && (
           <p className="text-xs text-ink-faint">
-            {new Date(form.closedAt).toLocaleDateString()} 마감 · 30일 후(
-            {new Date(form.closedAt.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}) 이름/연락처/성별
+            {new Date(form.closedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })} 마감 · 30일 후(
+            {new Date(form.closedAt.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("ko-KR", {
+              timeZone: "Asia/Seoul",
+            })}) 이름/연락처/성별
             자동 파기 예정
           </p>
         )}

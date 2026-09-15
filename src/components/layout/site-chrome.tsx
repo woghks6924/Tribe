@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Footer } from "@/components/layout/footer";
 import { NoticePopup } from "@/components/notice/notice-popup";
@@ -31,6 +33,17 @@ export function SiteChrome({
     return (
       <>
         <SiteLoader />
+        <div className="px-6 py-5 md:px-10">
+          <Link href="/" className="inline-block">
+            <Image
+              src="/logo/tribe-logo-black.png"
+              alt="Tri.be"
+              width={473}
+              height={100}
+              className="h-6 w-auto"
+            />
+          </Link>
+        </div>
         <main className="flex flex-1 flex-col">{children}</main>
       </>
     );
