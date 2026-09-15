@@ -30,6 +30,7 @@ export type RunningFormData = {
   category: RunningFormCategory;
   noticeContent: string | null;
   providedItems: string | null;
+  entryFee: number | null;
   capacity: number | null;
   status: RunningFormStatus;
   isPublished: boolean;
@@ -49,6 +50,7 @@ type PrismaRunningForm = {
   category: string;
   noticeContent: string | null;
   providedItems: string | null;
+  entryFee: number | null;
   capacity: number | null;
   status: string;
   isPublished: boolean;
@@ -69,6 +71,7 @@ export function toRunningFormData(f: PrismaRunningForm): RunningFormData {
     category: f.category as RunningFormCategory,
     noticeContent: f.noticeContent,
     providedItems: f.providedItems,
+    entryFee: f.entryFee,
     capacity: f.capacity,
     status: f.status as RunningFormStatus,
     isPublished: f.isPublished,

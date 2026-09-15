@@ -18,6 +18,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     phone: string;
     email?: string;
     instagramId?: string;
+    previousParticipant?: boolean;
     marketingConsent: boolean;
     privacyConsent: boolean;
     answers?: Record<string, string | string[]>;
@@ -79,6 +80,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       phone: body.phone.trim(),
       email: body.email || null,
       instagramId: body.instagramId.trim(),
+      previousParticipant: !!body.previousParticipant,
       marketingConsent: !!body.marketingConsent,
       privacyConsent: !!body.privacyConsent,
       answers,

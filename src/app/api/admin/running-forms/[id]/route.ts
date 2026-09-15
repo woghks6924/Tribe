@@ -55,6 +55,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       category: body.category,
       noticeContent: body.noticeContent || null,
       providedItems: body.providedItems || null,
+      entryFee: body.entryFee ?? null,
       capacity: body.capacity ?? null,
       status: nextStatus,
       ...closedAtPatch(existing.status, nextStatus),

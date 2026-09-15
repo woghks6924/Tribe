@@ -96,6 +96,7 @@ export type RunningFormInitial = {
   category: RunningFormCategory;
   noticeContent: string | null;
   providedItems: string | null;
+  entryFee: number | null;
   capacity: number | null;
   status: RunningFormStatus;
   isPublished: boolean;
@@ -124,6 +125,7 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
   const [category, setCategory] = useState<RunningFormCategory>(initial?.category ?? "FIRST_COME");
   const [noticeContent, setNoticeContent] = useState(initial?.noticeContent ?? "");
   const [providedItems, setProvidedItems] = useState(initial?.providedItems ?? "");
+  const [entryFee, setEntryFee] = useState(initial?.entryFee != null ? String(initial.entryFee) : "");
   const [capacity, setCapacity] = useState(initial?.capacity != null ? String(initial.capacity) : "");
   const [status, setStatus] = useState<RunningFormStatus>(initial?.status ?? "UPCOMING");
   const [isPublished, setIsPublished] = useState(initial?.isPublished ?? false);
@@ -221,6 +223,7 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         category,
         noticeContent: noticeContent || undefined,
         providedItems: providedItems || undefined,
+        entryFee: entryFee ? Number(entryFee) : undefined,
         capacity: capacity ? Number(capacity) : undefined,
         status,
         isPublished,
@@ -350,17 +353,30 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
       />
 
-      <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
-        정원 (비워두면 무제한)
-        <input
-          type="number"
-          min="1"
-          placeholder="예: 30"
-          value={capacity}
-          onChange={(e) => setCapacity(e.target.value)}
-          className="border border-line-strong bg-transparent px-4 py-3 text-sm text-ink normal-case outline-none placeholder:text-ink-faint"
-        />
-      </label>
+      <div className="grid grid-cols-2 gap-4">
+        <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
+          참가비 (원, 비워두면 무료)
+          <input
+            type="number"
+            min="0"
+            placeholder="예: 10000"
+            value={entryFee}
+            onChange={(e) => setEntryFee(e.target.value)}
+            className="border border-line-strong bg-transparent px-4 py-3 text-sm text-ink normal-case outline-none placeholder:text-ink-faint"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
+          정원 (비워두면 무제한)
+          <input
+            type="number"
+            min="1"
+            placeholder="예: 30"
+            value={capacity}
+            onChange={(e) => setCapacity(e.target.value)}
+            className="border border-line-strong bg-transparent px-4 py-3 text-sm text-ink normal-case outline-none placeholder:text-ink-faint"
+          />
+        </label>
+      </div>
 
       <div className="flex flex-col gap-3">
         <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">콜라보 브랜드 (선택, 여러 개 가능)</span>

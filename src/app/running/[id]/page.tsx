@@ -62,9 +62,10 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
               timeZone: "Asia/Seoul",
             })}
           </span>
-          {form.capacity != null && (
-            <span className="text-xs text-ink-faint">정원 {form.capacity}명</span>
-          )}
+          <span className="text-xs text-ink-faint">
+            참가비 {form.entryFee != null ? `${form.entryFee.toLocaleString()}원` : "무료"}
+            {form.capacity != null ? ` · 정원 ${form.capacity}명` : ""}
+          </span>
         </div>
 
         {form.noticeContent && (

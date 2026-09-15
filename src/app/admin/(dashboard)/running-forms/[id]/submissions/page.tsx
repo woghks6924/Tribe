@@ -46,6 +46,7 @@ export default async function RunningFormSubmissionsPage({
           phone: s.phone,
           email: s.email,
           instagramId: s.instagramId,
+          previousParticipant: s.previousParticipant,
           marketingConsent: s.marketingConsent,
           answers: (s.answers ?? {}) as Record<string, string | string[]>,
           status: s.status,

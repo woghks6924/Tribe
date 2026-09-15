@@ -24,6 +24,7 @@ export async function GET() {
       thumbnailUrl: f.thumbnailUrl,
       eventDate: f.eventDate.toISOString(),
       category: f.category,
+      entryFee: f.entryFee,
       capacity: f.capacity,
       status: f.status,
       isPublished: f.isPublished,
@@ -40,6 +41,7 @@ export type RunningFormInput = {
   category: RunningFormCategory;
   noticeContent?: string | null;
   providedItems?: string | null;
+  entryFee?: number | null;
   capacity?: number | null;
   status?: RunningFormStatus;
   isPublished?: boolean;
@@ -68,6 +70,7 @@ export async function POST(request: Request) {
       category: body.category ?? "FIRST_COME",
       noticeContent: body.noticeContent || null,
       providedItems: body.providedItems || null,
+      entryFee: body.entryFee ?? null,
       capacity: body.capacity ?? null,
       status: body.status ?? "UPCOMING",
       isPublished: body.isPublished ?? false,

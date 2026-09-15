@@ -30,6 +30,7 @@ export function RunningSignupForm({
   const [gender, setGender] = useState("");
   const [phone, setPhone] = useState("");
   const [instagramId, setInstagramId] = useState("");
+  const [previousParticipant, setPreviousParticipant] = useState(false);
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [loading, setLoading] = useState(false);
@@ -67,6 +68,7 @@ export function RunningSignupForm({
           gender: gender || undefined,
           phone,
           instagramId: instagramId || undefined,
+          previousParticipant,
           marketingConsent: false,
           privacyConsent,
           answers,
@@ -148,6 +150,15 @@ export function RunningSignupForm({
         onChange={(e) => setInstagramId(e.target.value)}
         className={inputClass}
       />
+
+      <label className="flex items-center gap-2 border border-line-strong px-4 py-3 text-sm text-ink-muted">
+        <input
+          type="checkbox"
+          checked={previousParticipant}
+          onChange={(e) => setPreviousParticipant(e.target.checked)}
+        />
+        Tri.be 세션에 참여한 적이 있어요
+      </label>
 
       {fields.map((field) => (
         <div key={field.id} className="flex flex-col gap-1.5">
