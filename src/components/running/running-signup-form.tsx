@@ -49,9 +49,27 @@ export function RunningSignupForm({
     });
   }
 
+  function findMissingRequiredField(): string | null {
+    // 객관식/체크박스 질문은 버튼으로 렌더링돼 브라우저 기본 required 검증이 통하지
+    // 않으므로, 개인정보 동의와 마찬가지로 제출 전에 직접 확인한다.
+    for (const field of fields) {
+      if (!field.required || (field.type !== "radio" && field.type !== "checkbox")) continue;
+      const value = answers[field.id];
+      const isEmpty = value == null || (Array.isArray(value) && value.length === 0);
+      if (isEmpty) return field.label;
+    }
+    return null;
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+
+    const missingField = findMissingRequiredField();
+    if (missingField) {
+      setError(`${missingField}을(를) 입력해주세요.`);
+      return;
+    }
 
     if (!privacyConsent) {
       setError("개인정보 수집·이용에 동의해주세요.");
