@@ -34,7 +34,7 @@ export function SiteChrome({
       <>
         <SiteLoader />
         <div className="px-6 py-5 md:px-10">
-          <Link href="/" className="inline-block">
+          <Link href="/running" className="inline-block">
             <Image
               src="/logo/tribe-logo-black.png"
               alt="Tri.be"
