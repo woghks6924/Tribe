@@ -96,6 +96,7 @@ export type RunningFormInitial = {
   category: RunningFormCategory;
   noticeContent: string | null;
   providedItems: string | null;
+  photoAlbumUrl: string | null;
   entryFee: number | null;
   bankName: string | null;
   bankAccountNumber: string | null;
@@ -130,6 +131,7 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
   const [category, setCategory] = useState<RunningFormCategory>(initial?.category ?? "FIRST_COME");
   const [noticeContent, setNoticeContent] = useState(initial?.noticeContent ?? "");
   const [providedItems, setProvidedItems] = useState(initial?.providedItems ?? "");
+  const [photoAlbumUrl, setPhotoAlbumUrl] = useState(initial?.photoAlbumUrl ?? "");
   const [entryFee, setEntryFee] = useState(initial?.entryFee != null ? String(initial.entryFee) : "");
   const [bankName, setBankName] = useState(initial?.bankName ?? "");
   const [bankAccountNumber, setBankAccountNumber] = useState(initial?.bankAccountNumber ?? "");
@@ -237,6 +239,7 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         category,
         noticeContent: noticeContent || undefined,
         providedItems: providedItems || undefined,
+        photoAlbumUrl: photoAlbumUrl.trim() || undefined,
         entryFee: entryFee ? Number(entryFee) : undefined,
         bankName: bankName.trim() || undefined,
         bankAccountNumber: bankAccountNumber.trim() || undefined,
@@ -371,6 +374,19 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         rows={3}
         className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
       />
+
+      <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
+        세션 사진 앨범 링크 (선택, 마이박스 공유 링크 등)
+        <input
+          placeholder="https://..."
+          value={photoAlbumUrl}
+          onChange={(e) => setPhotoAlbumUrl(e.target.value)}
+          className="border border-line-strong bg-transparent px-4 py-3 text-sm text-ink normal-case outline-none placeholder:text-ink-faint"
+        />
+      </label>
+      <p className="-mt-3 text-xs text-ink-faint">
+        행사일이 지나면 공개 페이지에 &ldquo;세션 사진 다운받기&rdquo; 버튼으로 노출됩니다.
+      </p>
 
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">

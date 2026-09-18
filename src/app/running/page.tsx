@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getEffectiveRunningFormStatus, getPublishedRunningForms } from "@/lib/running";
+import { getEffectiveRunningFormStatus, getPublishedRunningForms, normalizeExternalUrl } from "@/lib/running";
 import { RunningCalendarButton } from "@/components/running/running-calendar-button";
 
 export const dynamic = "force-dynamic";
@@ -58,57 +58,66 @@ export default async function RunningEventsPage() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {forms.map((f) => {
             const status = getEffectiveRunningFormStatus(f, f.submissionCount);
+            const isPastEvent = new Date(f.eventDate) < new Date();
             return (
-              <Link
-                key={f.id}
-                href={`/running/${f.id}`}
-                className="group flex flex-col overflow-hidden border border-line"
-              >
-                <div className="relative aspect-[4/5] w-full overflow-hidden bg-base-elevated">
-                  {f.thumbnailUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={f.thumbnailUrl}
-                      alt=""
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs text-ink-faint">
-                      TRI.BE
-                    </div>
-                  )}
-                  <span
-                    className={`absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] uppercase ${STATUS_BADGE[status]}`}
-                  >
-                    {STATUS_LABEL[status]}
-                  </span>
-                  <span className="absolute top-3 right-3 bg-black/60 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] text-white uppercase">
-                    {CATEGORY_LABEL[f.category]}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1.5 px-4 py-4">
-                  <span className="font-display text-lg font-extrabold tracking-[0.01em] uppercase">
-                    {f.title}
-                  </span>
-                  <span className="text-xs text-ink-muted">
-                    {new Date(f.eventDate).toLocaleString("ko-KR", {
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      timeZone: "Asia/Seoul",
-                    })}
-                  </span>
-                  {f.capacity != null && (
-                    <span className="text-xs text-ink-faint">정원 {f.capacity}명</span>
-                  )}
-                  {formatApplicationPeriod(f.applicationStartAt, f.applicationEndAt) && (
-                    <span className="text-xs text-ink-faint">
-                      {formatApplicationPeriod(f.applicationStartAt, f.applicationEndAt)}
+              <div key={f.id} className="group flex flex-col overflow-hidden border border-line">
+                <Link href={`/running/${f.id}`} className="contents">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden bg-base-elevated">
+                    {f.thumbnailUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={f.thumbnailUrl}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-xs text-ink-faint">
+                        TRI.BE
+                      </div>
+                    )}
+                    <span
+                      className={`absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] uppercase ${STATUS_BADGE[status]}`}
+                    >
+                      {STATUS_LABEL[status]}
                     </span>
-                  )}
-                </div>
-              </Link>
+                    <span className="absolute top-3 right-3 bg-black/60 px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] text-white uppercase">
+                      {CATEGORY_LABEL[f.category]}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1.5 px-4 py-4">
+                    <span className="font-display text-lg font-extrabold tracking-[0.01em] uppercase">
+                      {f.title}
+                    </span>
+                    <span className="text-xs text-ink-muted">
+                      {new Date(f.eventDate).toLocaleString("ko-KR", {
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: "Asia/Seoul",
+                      })}
+                    </span>
+                    {f.capacity != null && (
+                      <span className="text-xs text-ink-faint">정원 {f.capacity}명</span>
+                    )}
+                    {formatApplicationPeriod(f.applicationStartAt, f.applicationEndAt) && (
+                      <span className="text-xs text-ink-faint">
+                        {formatApplicationPeriod(f.applicationStartAt, f.applicationEndAt)}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+                {isPastEvent && f.photoAlbumUrl && (
+                  <a
+                    href={normalizeExternalUrl(f.photoAlbumUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="border-t border-line px-4 py-2.5 text-center text-xs font-bold tracking-[0.06em] text-ink-muted uppercase hover:bg-base-elevated hover:text-ink"
+                  >
+                    세션 사진 다운받기 →
+                  </a>
+                )}
+              </div>
             );
           })}
         </div>

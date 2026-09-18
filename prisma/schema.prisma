@@ -502,6 +502,7 @@ model RunningForm {
   closedAt        DateTime? // status가 CLOSED로 바뀐 시각 (관리자 화면 표시용, 개인정보 자동 파기와는 무관 — 파기는 eventDate 기준)
   isPublished     Boolean             @default(false) // 공개 여부(/running 노출)
   providedItems   String? // 참가 시 제공되는 사항(자유 텍스트)
+  photoAlbumUrl   String? // 세션 사진 공유 링크(마이박스 등) — 행사일이 지나면 공개 페이지에 다운로드 버튼으로 노출
   // 개인정보 수집·이용 동의 안내 — 신청 폼에 구조화된 카드로 표시된다.
   privacyItems     String @default("이름, 연락처") // 수집 및 이용 항목
   privacyPurpose   String @default("이벤트 진행 및 당첨 안내") // 수집 및 이용 목적

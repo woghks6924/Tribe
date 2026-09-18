@@ -30,6 +30,7 @@ export type RunningFormData = {
   category: RunningFormCategory;
   noticeContent: string | null;
   providedItems: string | null;
+  photoAlbumUrl: string | null;
   entryFee: number | null;
   bankName: string | null;
   bankAccountNumber: string | null;
@@ -55,6 +56,7 @@ type PrismaRunningForm = {
   category: string;
   noticeContent: string | null;
   providedItems: string | null;
+  photoAlbumUrl: string | null;
   entryFee: number | null;
   bankName: string | null;
   bankAccountNumber: string | null;
@@ -81,6 +83,7 @@ export function toRunningFormData(f: PrismaRunningForm): RunningFormData {
     category: f.category as RunningFormCategory,
     noticeContent: f.noticeContent,
     providedItems: f.providedItems,
+    photoAlbumUrl: f.photoAlbumUrl,
     entryFee: f.entryFee,
     bankName: f.bankName,
     bankAccountNumber: f.bankAccountNumber,

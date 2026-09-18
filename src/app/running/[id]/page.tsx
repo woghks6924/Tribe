@@ -44,6 +44,7 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
   if (!form) notFound();
 
   const status = getEffectiveRunningFormStatus(form, form.submissionCount);
+  const isPastEvent = new Date(form.eventDate) < new Date();
 
   return (
     <div className="mx-auto flex max-w-xl flex-col">
@@ -124,6 +125,18 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
               </a>
             ))}
           </div>
+        )}
+
+        {isPastEvent && form.photoAlbumUrl && (
+          <a
+            href={normalizeExternalUrl(form.photoAlbumUrl)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between border border-line-strong px-4 py-3 text-sm hover:border-ink"
+          >
+            <span className="font-semibold">세션 사진 다운받기</span>
+            <span aria-hidden>→</span>
+          </a>
         )}
 
         <RunningSignupForm
