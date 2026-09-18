@@ -98,6 +98,8 @@ export type RunningFormInitial = {
   providedItems: string | null;
   entryFee: number | null;
   capacity: number | null;
+  applicationStartAt: string | null;
+  applicationEndAt: string | null;
   status: RunningFormStatus;
   isPublished: boolean;
   privacyItems: string;
@@ -127,6 +129,12 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
   const [providedItems, setProvidedItems] = useState(initial?.providedItems ?? "");
   const [entryFee, setEntryFee] = useState(initial?.entryFee != null ? String(initial.entryFee) : "");
   const [capacity, setCapacity] = useState(initial?.capacity != null ? String(initial.capacity) : "");
+  const [applicationStartAt, setApplicationStartAt] = useState(
+    initial?.applicationStartAt ? toLocalInputValue(initial.applicationStartAt) : "",
+  );
+  const [applicationEndAt, setApplicationEndAt] = useState(
+    initial?.applicationEndAt ? toLocalInputValue(initial.applicationEndAt) : "",
+  );
   const [status, setStatus] = useState<RunningFormStatus>(initial?.status ?? "UPCOMING");
   const [isPublished, setIsPublished] = useState(initial?.isPublished ?? false);
   const [privacyItems, setPrivacyItems] = useState(initial?.privacyItems ?? "이름, 연락처");
@@ -225,6 +233,8 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         providedItems: providedItems || undefined,
         entryFee: entryFee ? Number(entryFee) : undefined,
         capacity: capacity ? Number(capacity) : undefined,
+        applicationStartAt: applicationStartAt ? new Date(applicationStartAt).toISOString() : undefined,
+        applicationEndAt: applicationEndAt ? new Date(applicationEndAt).toISOString() : undefined,
         status,
         isPublished,
         privacyItems: privacyItems.trim() || undefined,
@@ -377,6 +387,30 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
           />
         </label>
       </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
+          신청 시작일시 (비워두면 즉시 시작)
+          <input
+            type="datetime-local"
+            value={applicationStartAt}
+            onChange={(e) => setApplicationStartAt(e.target.value)}
+            className="border border-line-strong bg-transparent px-4 py-3 text-sm text-ink normal-case outline-none"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
+          신청 마감일시 (비워두면 수동 마감)
+          <input
+            type="datetime-local"
+            value={applicationEndAt}
+            onChange={(e) => setApplicationEndAt(e.target.value)}
+            className="border border-line-strong bg-transparent px-4 py-3 text-sm text-ink normal-case outline-none"
+          />
+        </label>
+      </div>
+      <p className="-mt-3 text-xs text-ink-faint">
+        마감일시가 지나면 신청이 자동으로 막히고, 아래 진행 상태도 자동으로 마감으로 바뀝니다.
+      </p>
 
       <div className="flex flex-col gap-3">
         <span className="text-xs tracking-[0.08em] text-ink-muted uppercase">콜라보 브랜드 (선택, 여러 개 가능)</span>

@@ -13,6 +13,21 @@ const STATUS_BADGE = {
   CLOSED: "bg-black/70 text-white",
 } as const;
 
+function formatApplicationPeriod(startAt: string | null, endAt: string | null): string | null {
+  if (!startAt && !endAt) return null;
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleString("ko-KR", {
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Seoul",
+    });
+  if (startAt && endAt) return `${fmt(startAt)} ~ ${fmt(endAt)}`;
+  if (endAt) return `~ ${fmt(endAt)} 마감`;
+  return `${fmt(startAt!)} 부터`;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -66,6 +81,11 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
             참가비 {form.entryFee != null ? `${form.entryFee.toLocaleString()}원` : "무료"}
             {form.capacity != null ? ` · 정원 ${form.capacity}명` : ""}
           </span>
+          {formatApplicationPeriod(form.applicationStartAt, form.applicationEndAt) && (
+            <span className="text-xs text-ink-faint">
+              신청기간 {formatApplicationPeriod(form.applicationStartAt, form.applicationEndAt)}
+            </span>
+          )}
         </div>
 
         {form.noticeContent && (

@@ -11,6 +11,21 @@ export const metadata: Metadata = {
 };
 
 const CATEGORY_LABEL = { RANDOM_DRAW: "랜덤추첨", FIRST_COME: "선착순" } as const;
+
+function formatApplicationPeriod(startAt: string | null, endAt: string | null): string | null {
+  if (!startAt && !endAt) return null;
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleString("ko-KR", {
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Seoul",
+    });
+  if (startAt && endAt) return `신청 ${fmt(startAt)} ~ ${fmt(endAt)}`;
+  if (endAt) return `신청 마감 ${fmt(endAt)}`;
+  return `신청 시작 ${fmt(startAt!)}`;
+}
 const STATUS_LABEL = { UPCOMING: "예정", OPEN: "진행중", CLOSED: "마감" } as const;
 const STATUS_BADGE = {
   UPCOMING: "bg-white/90 text-ink",
@@ -86,6 +101,11 @@ export default async function RunningEventsPage() {
                   </span>
                   {f.capacity != null && (
                     <span className="text-xs text-ink-faint">정원 {f.capacity}명</span>
+                  )}
+                  {formatApplicationPeriod(f.applicationStartAt, f.applicationEndAt) && (
+                    <span className="text-xs text-ink-faint">
+                      {formatApplicationPeriod(f.applicationStartAt, f.applicationEndAt)}
+                    </span>
                   )}
                 </div>
               </Link>

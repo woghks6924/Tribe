@@ -32,6 +32,8 @@ export type RunningFormData = {
   providedItems: string | null;
   entryFee: number | null;
   capacity: number | null;
+  applicationStartAt: string | null;
+  applicationEndAt: string | null;
   status: RunningFormStatus;
   isPublished: boolean;
   privacyItems: string;
@@ -52,6 +54,8 @@ type PrismaRunningForm = {
   providedItems: string | null;
   entryFee: number | null;
   capacity: number | null;
+  applicationStartAt: Date | null;
+  applicationEndAt: Date | null;
   status: string;
   isPublished: boolean;
   privacyItems: string;
@@ -73,6 +77,8 @@ export function toRunningFormData(f: PrismaRunningForm): RunningFormData {
     providedItems: f.providedItems,
     entryFee: f.entryFee,
     capacity: f.capacity,
+    applicationStartAt: f.applicationStartAt ? f.applicationStartAt.toISOString() : null,
+    applicationEndAt: f.applicationEndAt ? f.applicationEndAt.toISOString() : null,
     status: f.status as RunningFormStatus,
     isPublished: f.isPublished,
     privacyItems: f.privacyItems,
@@ -84,13 +90,23 @@ export function toRunningFormData(f: PrismaRunningForm): RunningFormData {
   };
 }
 
-// 관리자가 수동으로 마감 처리했거나 정원이 다 찼으면 실질적으로 마감으로 취급한다.
-// (status가 아직 OPEN이어도 정원이 찼으면 신청은 막는다.)
+// 관리자가 수동으로 마감 처리했거나, 정원이 다 찼거나, 신청기간을 벗어났으면
+// 실질적으로 마감(또는 아직 예정)으로 취급한다. status 필드 자체는 크론이 나중에
+// 따라잡을 때까지 그대로일 수 있어 항상 이 함수를 통해 "지금 실제로 신청 가능한지"를 판단한다.
 export function getEffectiveRunningFormStatus(
-  form: { status: RunningFormStatus; capacity: number | null },
+  form: {
+    status: RunningFormStatus;
+    capacity: number | null;
+    applicationStartAt?: Date | string | null;
+    applicationEndAt?: Date | string | null;
+  },
   submissionCount: number,
 ): RunningFormStatus {
-  if (form.status !== "OPEN") return form.status;
+  if (form.status === "CLOSED") return "CLOSED";
+  const now = new Date();
+  if (form.applicationEndAt && now > new Date(form.applicationEndAt)) return "CLOSED";
+  if (form.applicationStartAt && now < new Date(form.applicationStartAt)) return "UPCOMING";
+  if (form.status === "UPCOMING") return "UPCOMING";
   if (form.capacity != null && submissionCount >= form.capacity) return "CLOSED";
   return "OPEN";
 }

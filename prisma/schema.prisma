@@ -493,6 +493,8 @@ model RunningForm {
   noticeContent   String? // 공지 본문(자유 텍스트)
   entryFee        Int? // 참가비(원), null이면 무료
   capacity        Int? // 정원, null이면 무제한
+  applicationStartAt DateTime? // 신청 시작일시, null이면 즉시 시작
+  applicationEndAt   DateTime? // 신청 마감일시 — 지나면 자동으로 CLOSED 처리
   status          RunningFormStatus   @default(UPCOMING) // 예정/진행중/마감
   closedAt        DateTime? // status가 CLOSED로 바뀐 시각 — 개인정보 자동 파기 기준일
   isPublished     Boolean             @default(false) // 공개 여부(/running 노출)

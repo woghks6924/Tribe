@@ -26,6 +26,8 @@ export async function GET() {
       category: f.category,
       entryFee: f.entryFee,
       capacity: f.capacity,
+      applicationStartAt: f.applicationStartAt ? f.applicationStartAt.toISOString() : null,
+      applicationEndAt: f.applicationEndAt ? f.applicationEndAt.toISOString() : null,
       status: f.status,
       isPublished: f.isPublished,
       submissionCount: f._count.submissions,
@@ -43,6 +45,8 @@ export type RunningFormInput = {
   providedItems?: string | null;
   entryFee?: number | null;
   capacity?: number | null;
+  applicationStartAt?: string | null;
+  applicationEndAt?: string | null;
   status?: RunningFormStatus;
   isPublished?: boolean;
   privacyItems?: string;
@@ -72,6 +76,8 @@ export async function POST(request: Request) {
       providedItems: body.providedItems || null,
       entryFee: body.entryFee ?? null,
       capacity: body.capacity ?? null,
+      applicationStartAt: body.applicationStartAt ? new Date(body.applicationStartAt) : null,
+      applicationEndAt: body.applicationEndAt ? new Date(body.applicationEndAt) : null,
       status: body.status ?? "UPCOMING",
       isPublished: body.isPublished ?? false,
       privacyItems: body.privacyItems || "이름, 연락처",

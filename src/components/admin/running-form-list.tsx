@@ -11,11 +11,22 @@ type FormSummary = {
   eventDate: string;
   category: "RANDOM_DRAW" | "FIRST_COME";
   capacity: number | null;
+  applicationStartAt: string | null;
+  applicationEndAt: string | null;
   status: RunningFormStatus;
   isPublished: boolean;
   submissionCount: number;
   createdAt: string;
 };
+
+function formatApplicationPeriod(startAt: string | null, endAt: string | null): string | null {
+  if (!startAt && !endAt) return null;
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  if (startAt && endAt) return `신청 ${fmt(startAt)} ~ ${fmt(endAt)}`;
+  if (endAt) return `신청 마감 ${fmt(endAt)}`;
+  return `신청 시작 ${fmt(startAt!)}`;
+}
 
 const CATEGORY_LABEL: Record<FormSummary["category"], string> = {
   RANDOM_DRAW: "랜덤추첨",
@@ -89,6 +100,11 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
                 {f.submissionCount}
                 {f.capacity != null ? `/${f.capacity}` : ""}명 신청
               </span>
+              {formatApplicationPeriod(f.applicationStartAt, f.applicationEndAt) && (
+                <span className="text-xs text-ink-faint">
+                  {formatApplicationPeriod(f.applicationStartAt, f.applicationEndAt)}
+                </span>
+              )}
             </div>
           </div>
 

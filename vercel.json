@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/purge-running-submissions",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/close-expired-running-forms",
+      "schedule": "30 4 * * *"
     }
   ]
 }
