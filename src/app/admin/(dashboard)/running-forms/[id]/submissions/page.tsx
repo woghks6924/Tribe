@@ -35,6 +35,17 @@ export default async function RunningFormSubmissionsPage({
       </div>
       <RunningSubmissionsManager
         formId={id}
+        form={{
+          title: form.title,
+          eventDate: form.eventDate.toISOString(),
+          entryFee: form.entryFee,
+          capacity: form.capacity,
+          providedItems: form.providedItems,
+          noticeContent: form.noticeContent,
+          collabBrands: Array.isArray(form.collabBrands)
+            ? (form.collabBrands as { name: string; url: string }[])
+            : [],
+        }}
         fields={Array.isArray(form.fields) ? (form.fields as { id: string; label: string }[]) : []}
         submissions={submissions.map((s) => ({
           id: s.id,

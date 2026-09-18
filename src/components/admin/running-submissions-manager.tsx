@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { RunningMessageGenerator, type RunningMessageFormInfo } from "./running-message-generator";
 
 type Submission = {
   id: string;
@@ -31,10 +32,12 @@ const STATUS_LABEL: Record<Submission["status"], string> = {
 
 export function RunningSubmissionsManager({
   formId,
+  form,
   fields,
   submissions,
 }: {
   formId: string;
+  form: RunningMessageFormInfo;
   fields: Field[];
   submissions: Submission[];
 }) {
@@ -93,6 +96,8 @@ export function RunningSubmissionsManager({
 
   return (
     <div className="flex flex-col gap-4">
+      <RunningMessageGenerator form={form} />
+
       {winnerCounts.total > 0 && (
         <div className="flex flex-wrap items-center gap-2 border border-accent bg-accent/10 px-4 py-2.5 text-sm font-semibold text-ink">
           <span className="text-accent">당첨 {winnerCounts.total}명</span>
