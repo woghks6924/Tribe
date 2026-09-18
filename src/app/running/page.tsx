@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getEffectiveRunningFormStatus, getPublishedRunningForms } from "@/lib/running";
+import { RunningCalendarButton } from "@/components/running/running-calendar-button";
 
 export const dynamic = "force-dynamic";
 
@@ -22,9 +23,16 @@ export default async function RunningEventsPage() {
 
   return (
     <div className="flex flex-col gap-8 px-5 py-10 sm:px-10">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-display text-3xl font-extrabold tracking-[0.02em] uppercase">Running</h1>
-        <p className="text-sm text-ink-muted">Tri.be와 함께 달릴 러닝 이벤트</p>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <h1 className="font-display text-3xl font-extrabold tracking-[0.02em] uppercase">Running</h1>
+            <p className="text-sm text-ink-muted">Tri.be와 함께 달릴 러닝 이벤트</p>
+          </div>
+          <RunningCalendarButton
+            events={forms.map((f) => ({ id: f.id, title: f.title, eventDate: f.eventDate }))}
+          />
+        </div>
       </div>
 
       {forms.length === 0 ? (
