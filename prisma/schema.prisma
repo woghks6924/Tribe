@@ -492,6 +492,9 @@ model RunningForm {
   category        RunningFormCategory @default(FIRST_COME)
   noticeContent   String? // 공지 본문(자유 텍스트)
   entryFee        Int? // 참가비(원), null이면 무료
+  bankName          String? // 입금받을 은행명 (참가비 안내용)
+  bankAccountNumber String? // 입금받을 계좌번호
+  bankAccountHolder String? // 예금주
   capacity        Int? // 정원, null이면 무제한
   applicationStartAt DateTime? // 신청 시작일시, null이면 즉시 시작
   applicationEndAt   DateTime? // 신청 마감일시 — 지나면 자동으로 CLOSED 처리

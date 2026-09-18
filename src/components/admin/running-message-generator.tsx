@@ -6,6 +6,9 @@ export type RunningMessageFormInfo = {
   title: string;
   eventDate: string;
   entryFee: number | null;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  bankAccountHolder: string | null;
   capacity: number | null;
   providedItems: string | null;
   noticeContent: string | null;
@@ -56,6 +59,15 @@ const SECTIONS: Section[] = [
     label: "정원",
     defaultChecked: false,
     build: (f) => (f.capacity != null ? `정원: ${f.capacity}명` : null),
+  },
+  {
+    key: "bankAccount",
+    label: "입금 계좌 안내",
+    defaultChecked: true,
+    build: (f) =>
+      f.entryFee != null && f.bankName && f.bankAccountNumber
+        ? `입금계좌: ${f.bankName} ${f.bankAccountNumber}${f.bankAccountHolder ? ` (예금주 ${f.bankAccountHolder})` : ""}`
+        : null,
   },
   {
     key: "providedItems",

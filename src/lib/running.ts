@@ -31,6 +31,9 @@ export type RunningFormData = {
   noticeContent: string | null;
   providedItems: string | null;
   entryFee: number | null;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  bankAccountHolder: string | null;
   capacity: number | null;
   applicationStartAt: string | null;
   applicationEndAt: string | null;
@@ -53,6 +56,9 @@ type PrismaRunningForm = {
   noticeContent: string | null;
   providedItems: string | null;
   entryFee: number | null;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  bankAccountHolder: string | null;
   capacity: number | null;
   applicationStartAt: Date | null;
   applicationEndAt: Date | null;
@@ -76,6 +82,9 @@ export function toRunningFormData(f: PrismaRunningForm): RunningFormData {
     noticeContent: f.noticeContent,
     providedItems: f.providedItems,
     entryFee: f.entryFee,
+    bankName: f.bankName,
+    bankAccountNumber: f.bankAccountNumber,
+    bankAccountHolder: f.bankAccountHolder,
     capacity: f.capacity,
     applicationStartAt: f.applicationStartAt ? f.applicationStartAt.toISOString() : null,
     applicationEndAt: f.applicationEndAt ? f.applicationEndAt.toISOString() : null,

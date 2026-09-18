@@ -81,6 +81,12 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
             참가비 {form.entryFee != null ? `${form.entryFee.toLocaleString()}원` : "무료"}
             {form.capacity != null ? ` · 정원 ${form.capacity}명` : ""}
           </span>
+          {form.entryFee != null && form.bankName && form.bankAccountNumber && (
+            <span className="text-xs text-ink-faint">
+              입금계좌 {form.bankName} {form.bankAccountNumber}
+              {form.bankAccountHolder ? ` (예금주 ${form.bankAccountHolder})` : ""}
+            </span>
+          )}
           {formatApplicationPeriod(form.applicationStartAt, form.applicationEndAt) && (
             <span className="text-xs text-ink-faint">
               신청기간 {formatApplicationPeriod(form.applicationStartAt, form.applicationEndAt)}

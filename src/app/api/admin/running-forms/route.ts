@@ -25,6 +25,9 @@ export async function GET() {
       eventDate: f.eventDate.toISOString(),
       category: f.category,
       entryFee: f.entryFee,
+      bankName: f.bankName,
+      bankAccountNumber: f.bankAccountNumber,
+      bankAccountHolder: f.bankAccountHolder,
       capacity: f.capacity,
       applicationStartAt: f.applicationStartAt ? f.applicationStartAt.toISOString() : null,
       applicationEndAt: f.applicationEndAt ? f.applicationEndAt.toISOString() : null,
@@ -44,6 +47,9 @@ export type RunningFormInput = {
   noticeContent?: string | null;
   providedItems?: string | null;
   entryFee?: number | null;
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountHolder?: string | null;
   capacity?: number | null;
   applicationStartAt?: string | null;
   applicationEndAt?: string | null;
@@ -75,6 +81,9 @@ export async function POST(request: Request) {
       noticeContent: body.noticeContent || null,
       providedItems: body.providedItems || null,
       entryFee: body.entryFee ?? null,
+      bankName: body.bankName || null,
+      bankAccountNumber: body.bankAccountNumber || null,
+      bankAccountHolder: body.bankAccountHolder || null,
       capacity: body.capacity ?? null,
       applicationStartAt: body.applicationStartAt ? new Date(body.applicationStartAt) : null,
       applicationEndAt: body.applicationEndAt ? new Date(body.applicationEndAt) : null,

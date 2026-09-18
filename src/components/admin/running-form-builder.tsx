@@ -97,6 +97,9 @@ export type RunningFormInitial = {
   noticeContent: string | null;
   providedItems: string | null;
   entryFee: number | null;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  bankAccountHolder: string | null;
   capacity: number | null;
   applicationStartAt: string | null;
   applicationEndAt: string | null;
@@ -128,6 +131,9 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
   const [noticeContent, setNoticeContent] = useState(initial?.noticeContent ?? "");
   const [providedItems, setProvidedItems] = useState(initial?.providedItems ?? "");
   const [entryFee, setEntryFee] = useState(initial?.entryFee != null ? String(initial.entryFee) : "");
+  const [bankName, setBankName] = useState(initial?.bankName ?? "");
+  const [bankAccountNumber, setBankAccountNumber] = useState(initial?.bankAccountNumber ?? "");
+  const [bankAccountHolder, setBankAccountHolder] = useState(initial?.bankAccountHolder ?? "");
   const [capacity, setCapacity] = useState(initial?.capacity != null ? String(initial.capacity) : "");
   const [applicationStartAt, setApplicationStartAt] = useState(
     initial?.applicationStartAt ? toLocalInputValue(initial.applicationStartAt) : "",
@@ -232,6 +238,9 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         noticeContent: noticeContent || undefined,
         providedItems: providedItems || undefined,
         entryFee: entryFee ? Number(entryFee) : undefined,
+        bankName: bankName.trim() || undefined,
+        bankAccountNumber: bankAccountNumber.trim() || undefined,
+        bankAccountHolder: bankAccountHolder.trim() || undefined,
         capacity: capacity ? Number(capacity) : undefined,
         applicationStartAt: applicationStartAt ? new Date(applicationStartAt).toISOString() : undefined,
         applicationEndAt: applicationEndAt ? new Date(applicationEndAt).toISOString() : undefined,
@@ -387,6 +396,38 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
           />
         </label>
       </div>
+
+      {entryFee && (
+        <div className="grid grid-cols-3 gap-4">
+          <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
+            입금 은행
+            <input
+              placeholder="예: 카카오뱅크"
+              value={bankName}
+              onChange={(e) => setBankName(e.target.value)}
+              className="border border-line-strong bg-transparent px-4 py-3 text-sm text-ink normal-case outline-none placeholder:text-ink-faint"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
+            계좌번호
+            <input
+              placeholder="예: 3333-01-1234567"
+              value={bankAccountNumber}
+              onChange={(e) => setBankAccountNumber(e.target.value)}
+              className="border border-line-strong bg-transparent px-4 py-3 text-sm text-ink normal-case outline-none placeholder:text-ink-faint"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
+            예금주
+            <input
+              placeholder="예: 홍길동"
+              value={bankAccountHolder}
+              onChange={(e) => setBankAccountHolder(e.target.value)}
+              className="border border-line-strong bg-transparent px-4 py-3 text-sm text-ink normal-case outline-none placeholder:text-ink-faint"
+            />
+          </label>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1.5 text-xs tracking-[0.08em] text-ink-muted uppercase">
