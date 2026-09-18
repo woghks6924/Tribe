@@ -189,7 +189,19 @@ export function RunningSubmissionsManager({
                   <span className="text-xs text-ink-muted">
                     {s.phone}
                     {s.email ? ` · ${s.email}` : ""}
-                    {s.instagramId ? ` · @${s.instagramId.replace(/^@/, "")}` : ""}
+                    {s.instagramId && (
+                      <>
+                        {" · "}
+                        <a
+                          href={`https://instagram.com/${s.instagramId.replace(/^@/, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="cursor-pointer hover:text-ink hover:underline"
+                        >
+                          @{s.instagramId.replace(/^@/, "")}
+                        </a>
+                      </>
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
