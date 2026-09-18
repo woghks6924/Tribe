@@ -73,66 +73,70 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
   return (
     <div className="flex flex-col gap-3">
       {forms.map((f) => (
-        <div key={f.id} className="flex flex-wrap items-center gap-4 border border-line px-4 py-3 text-sm">
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-line-strong bg-base-elevated">
-            {f.thumbnailUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={f.thumbnailUrl} alt="" className="h-full w-full object-cover" />
-            ) : null}
+        <div key={f.id} className="flex flex-col gap-3 border border-line px-4 py-3 text-sm">
+          <div className="flex items-center gap-4">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-line-strong bg-base-elevated">
+              {f.thumbnailUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={f.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+              ) : null}
+            </div>
+
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate font-semibold">{f.title}</span>
+              <span className="text-xs text-ink-faint">
+                {CATEGORY_LABEL[f.category]} · {new Date(f.eventDate).toLocaleDateString()} ·{" "}
+                {f.submissionCount}
+                {f.capacity != null ? `/${f.capacity}` : ""}명 신청
+              </span>
+            </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate font-semibold">{f.title}</span>
-            <span className="text-xs text-ink-faint">
-              {CATEGORY_LABEL[f.category]} · {new Date(f.eventDate).toLocaleDateString()} ·{" "}
-              {f.submissionCount}
-              {f.capacity != null ? `/${f.capacity}` : ""}명 신청
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span className={`text-xs uppercase ${f.isPublished ? "text-accent" : "text-ink-faint"}`}>
+              {f.isPublished ? "Published" : "Draft"}
             </span>
+            <button
+              onClick={() => togglePublished(f)}
+              className="cursor-pointer text-xs text-ink-muted hover:text-ink"
+            >
+              {f.isPublished ? "Unpublish" : "Publish"}
+            </button>
+
+            <select
+              value={f.status}
+              onChange={(e) => changeStatus(f.id, e.target.value as RunningFormStatus)}
+              className={`border border-line-strong bg-base px-2 py-1.5 text-xs uppercase outline-none ${STATUS_COLOR[f.status]}`}
+            >
+              {(["UPCOMING", "OPEN", "CLOSED"] as const).map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </option>
+              ))}
+            </select>
+
+            <Link
+              href={`/admin/running-forms/${f.id}/submissions`}
+              className="cursor-pointer text-xs text-ink-muted hover:text-ink"
+            >
+              Submissions
+            </Link>
+            <Link
+              href={`/admin/running-forms/${f.id}`}
+              className="cursor-pointer text-xs text-ink-muted hover:text-ink"
+            >
+              Edit
+            </Link>
+            <button onClick={() => duplicate(f.id)} className="cursor-pointer text-xs text-ink-muted hover:text-ink">
+              Copy
+            </button>
+            <button
+              onClick={() => deleteForm(f.id)}
+              className="cursor-pointer text-xs text-ink-faint hover:text-red-400"
+            >
+              Delete
+            </button>
           </div>
-
-          <span className={`text-xs uppercase ${f.isPublished ? "text-accent" : "text-ink-faint"}`}>
-            {f.isPublished ? "Published" : "Draft"}
-          </span>
-          <button
-            onClick={() => togglePublished(f)}
-            className="cursor-pointer text-xs text-ink-muted hover:text-ink"
-          >
-            {f.isPublished ? "Unpublish" : "Publish"}
-          </button>
-
-          <select
-            value={f.status}
-            onChange={(e) => changeStatus(f.id, e.target.value as RunningFormStatus)}
-            className={`border border-line-strong bg-base px-2 py-1.5 text-xs uppercase outline-none ${STATUS_COLOR[f.status]}`}
-          >
-            {(["UPCOMING", "OPEN", "CLOSED"] as const).map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-
-          <Link
-            href={`/admin/running-forms/${f.id}/submissions`}
-            className="cursor-pointer text-xs text-ink-muted hover:text-ink"
-          >
-            Submissions
-          </Link>
-          <Link
-            href={`/admin/running-forms/${f.id}`}
-            className="cursor-pointer text-xs text-ink-muted hover:text-ink"
-          >
-            Edit
-          </Link>
-          <button onClick={() => duplicate(f.id)} className="cursor-pointer text-xs text-ink-muted hover:text-ink">
-            Copy
-          </button>
-          <button
-            onClick={() => deleteForm(f.id)}
-            className="cursor-pointer text-xs text-ink-faint hover:text-red-400"
-          >
-            Delete
-          </button>
         </div>
       ))}
     </div>
