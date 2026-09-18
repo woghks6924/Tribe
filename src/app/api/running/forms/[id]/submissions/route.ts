@@ -87,10 +87,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     },
   });
 
-  // 이번 신청으로 정원이 다 찼으면(선착순 등) status를 실제로 CLOSED로 바꾸고
+  // 이번 신청으로 정원이 다 찼으면(선착순만 해당) status를 실제로 CLOSED로 바꾸고
   // closedAt을 찍는다 — 그래야 개인정보 30일 자동 파기 타이머가 시작된다.
   // (정원 체크만으로는 "표시상"으로만 마감일 뿐 status 필드는 그대로 남기 때문.)
-  if (form.status === "OPEN" && form.capacity != null && form._count.submissions + 1 >= form.capacity) {
+  // 랜덤추첨은 정원이 "뽑을 인원 수"일 뿐이라 신청자가 정원을 넘어도 마감하지 않는다.
+  if (
+    form.category === "FIRST_COME" &&
+    form.status === "OPEN" &&
+    form.capacity != null &&
+    form._count.submissions + 1 >= form.capacity
+  ) {
     await prisma.runningForm.update({
       where: { id },
       data: { status: "CLOSED", closedAt: new Date() },
