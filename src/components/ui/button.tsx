@@ -3,8 +3,8 @@ import { type ButtonHTMLAttributes } from "react";
 type Variant = "primary" | "outline" | "ghost";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-ink text-base hover:bg-ink/85",
-  outline: "border border-ink text-ink hover:bg-ink hover:text-base",
+  primary: "bg-ink text-[color:var(--color-base)] hover:bg-ink/85",
+  outline: "border border-ink text-ink hover:bg-ink hover:text-[color:var(--color-base)]",
   ghost: "text-ink-muted hover:text-ink",
 };
 

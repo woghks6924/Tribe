@@ -24,7 +24,7 @@ export default async function ProductsPage({
             href="/products"
             className={`border px-4 py-2 text-[11px] tracking-[0.08em] uppercase ${
               !categorySlug
-                ? "border-ink bg-ink text-base"
+                ? "border-ink bg-ink text-[color:var(--color-base)]"
                 : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
             }`}
           >
@@ -36,7 +36,7 @@ export default async function ProductsPage({
               href={`/products?category=${c.slug}`}
               className={`border px-4 py-2 text-[11px] tracking-[0.08em] uppercase ${
                 categorySlug === c.slug
-                  ? "border-ink bg-ink text-base"
+                  ? "border-ink bg-ink text-[color:var(--color-base)]"
                   : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
               }`}
             >

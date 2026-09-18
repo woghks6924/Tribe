@@ -96,7 +96,7 @@ function ToolbarButton({
       type="button"
       onClick={onClick}
       className={`cursor-pointer border px-2.5 py-1 text-xs ${
-        active ? "border-ink bg-ink text-base" : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
+        active ? "border-ink bg-ink text-[color:var(--color-base)]" : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
       }`}
     >
       {children}

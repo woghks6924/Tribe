@@ -466,7 +466,7 @@ export default function WodAdminPage() {
               type="button"
               onClick={() => setFormat("solo")}
               className={`cursor-pointer px-4 py-2 text-xs uppercase tracking-[0.08em] ${
-                format === "solo" ? "bg-ink text-base" : "text-ink-muted hover:text-ink"
+                format === "solo" ? "bg-ink text-[color:var(--color-base)]" : "text-ink-muted hover:text-ink"
               }`}
             >
               Solo
@@ -475,7 +475,7 @@ export default function WodAdminPage() {
               type="button"
               onClick={() => setFormat("team")}
               className={`cursor-pointer border-l border-line-strong px-4 py-2 text-xs uppercase tracking-[0.08em] ${
-                format === "team" ? "bg-ink text-base" : "text-ink-muted hover:text-ink"
+                format === "team" ? "bg-ink text-[color:var(--color-base)]" : "text-ink-muted hover:text-ink"
               }`}
             >
               Team
@@ -710,7 +710,7 @@ export default function WodAdminPage() {
         <button
           type="submit"
           disabled={saving}
-          className="w-fit cursor-pointer bg-ink px-6 py-3 text-xs font-semibold tracking-[0.08em] text-base uppercase hover:bg-ink/85 disabled:opacity-40"
+          className="w-fit cursor-pointer bg-ink px-6 py-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--color-base)] uppercase hover:bg-ink/85 disabled:opacity-40"
         >
           {saving ? "Saving..." : editingId ? "Update Session" : "Save Session"}
         </button>

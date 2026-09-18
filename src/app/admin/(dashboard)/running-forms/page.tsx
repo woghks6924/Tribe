@@ -16,7 +16,7 @@ export default async function AdminRunningFormsPage() {
         <h1 className="font-sans text-2xl font-extrabold tracking-[0.02em]">Running Forms</h1>
         <Link
           href="/admin/running-forms/new"
-          className="cursor-pointer bg-ink px-4 py-2 text-xs font-semibold tracking-[0.08em] text-base uppercase hover:bg-ink/85"
+          className="cursor-pointer bg-ink px-4 py-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--color-base)] uppercase hover:bg-ink/85"
         >
           + New Form
         </Link>

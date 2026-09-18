@@ -99,7 +99,7 @@ export function ProductOptions({ product }: { product: ProductDetailData }) {
               onClick={() => setColor(c)}
               className={`border px-4 py-2 text-xs uppercase tracking-[0.04em] cursor-pointer ${
                 color === c
-                  ? "border-ink bg-ink text-base"
+                  ? "border-ink bg-ink text-[color:var(--color-base)]"
                   : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
               }`}
             >
@@ -120,7 +120,7 @@ export function ProductOptions({ product }: { product: ProductDetailData }) {
               onClick={() => setSize(s)}
               className={`h-11 w-11 border text-xs uppercase cursor-pointer ${
                 size === s
-                  ? "border-ink bg-ink text-base"
+                  ? "border-ink bg-ink text-[color:var(--color-base)]"
                   : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
               }`}
             >

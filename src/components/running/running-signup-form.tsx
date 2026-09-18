@@ -144,7 +144,7 @@ export function RunningSignupForm({
             onClick={() => setGender(g)}
             className={`flex-1 cursor-pointer border px-3 py-2.5 text-xs uppercase ${
               gender === g
-                ? "border-ink bg-ink text-base"
+                ? "border-ink bg-ink text-[color:var(--color-base)]"
                 : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
             }`}
           >
@@ -228,7 +228,7 @@ export function RunningSignupForm({
                   onClick={() => setAnswer(field.id, opt)}
                   className={`cursor-pointer border px-3 py-2 text-xs ${
                     answers[field.id] === opt
-                      ? "border-ink bg-ink text-base"
+                      ? "border-ink bg-ink text-[color:var(--color-base)]"
                       : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
                   }`}
                 >
@@ -250,7 +250,7 @@ export function RunningSignupForm({
                     onClick={() => toggleCheckboxAnswer(field.id, opt, !checked)}
                     className={`cursor-pointer border px-3 py-2 text-xs ${
                       checked
-                        ? "border-ink bg-ink text-base"
+                        ? "border-ink bg-ink text-[color:var(--color-base)]"
                         : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
                     }`}
                   >
@@ -291,7 +291,7 @@ export function RunningSignupForm({
             type="button"
             onClick={() => setPrivacyConsent((prev) => !prev)}
             className={`flex cursor-pointer items-center justify-center gap-1.5 border px-4 py-3 text-sm font-bold ${
-              privacyConsent ? "border-ink bg-ink text-base" : "border-line-strong text-ink-muted"
+              privacyConsent ? "border-ink bg-ink text-[color:var(--color-base)]" : "border-line-strong text-ink-muted"
             }`}
           >
             {privacyConsent && "✓ "}동의합니다
@@ -304,7 +304,7 @@ export function RunningSignupForm({
       <button
         type="submit"
         disabled={loading}
-        className="cursor-pointer bg-ink px-6 py-3.5 text-sm font-bold tracking-[0.08em] text-base uppercase hover:bg-ink/85 disabled:opacity-40"
+        className="cursor-pointer bg-ink px-6 py-3.5 text-sm font-bold tracking-[0.08em] text-[color:var(--color-base)] uppercase hover:bg-ink/85 disabled:opacity-40"
       >
         {loading ? "신청 중..." : "신청하기"}
       </button>

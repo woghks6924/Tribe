@@ -234,7 +234,7 @@ export function BannerSlideManager({ slides }: { slides: BannerSlide[] }) {
               }}
               className={`cursor-pointer border px-3 py-2 text-xs uppercase ${
                 mediaType === t
-                  ? "border-ink bg-ink text-base"
+                  ? "border-ink bg-ink text-[color:var(--color-base)]"
                   : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
               }`}
             >

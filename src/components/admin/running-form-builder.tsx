@@ -328,7 +328,7 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
               type="button"
               onClick={() => setCategory(c)}
               className={`flex-1 cursor-pointer px-4 py-2 text-xs uppercase ${
-                category === c ? "bg-ink text-base" : "text-ink-muted hover:text-ink"
+                category === c ? "bg-ink text-[color:var(--color-base)]" : "text-ink-muted hover:text-ink"
               }`}
             >
               {c === "FIRST_COME" ? "선착순" : "랜덤추첨"}
@@ -421,7 +421,7 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
               type="button"
               onClick={() => setStatus(s)}
               className={`flex-1 cursor-pointer px-4 py-2 text-xs uppercase ${
-                status === s ? "bg-ink text-base" : "text-ink-muted hover:text-ink"
+                status === s ? "bg-ink text-[color:var(--color-base)]" : "text-ink-muted hover:text-ink"
               }`}
             >
               {STATUS_LABEL[s]}
@@ -595,7 +595,7 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
       <button
         type="submit"
         disabled={saving}
-        className="w-fit cursor-pointer bg-ink px-6 py-3 text-xs font-semibold tracking-[0.08em] text-base uppercase hover:bg-ink/85 disabled:opacity-40"
+        className="w-fit cursor-pointer bg-ink px-6 py-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--color-base)] uppercase hover:bg-ink/85 disabled:opacity-40"
       >
         {saving ? "저장 중..." : initial ? "수정 저장" : "폼 만들기"}
       </button>

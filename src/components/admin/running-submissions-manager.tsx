@@ -112,7 +112,7 @@ export function RunningSubmissionsManager({
           onClick={() => setSortPreviousFirst((prev) => !prev)}
           className={`cursor-pointer border px-3 py-2 text-xs uppercase ${
             sortPreviousFirst
-              ? "border-ink bg-ink text-base"
+              ? "border-ink bg-ink text-[color:var(--color-base)]"
               : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
           }`}
         >
