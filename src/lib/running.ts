@@ -138,10 +138,19 @@ export async function getPublishedRunningForms(): Promise<
 > {
   const forms = await prisma.runningForm.findMany({
     where: { isPublished: true },
-    orderBy: { eventDate: "asc" },
     include: { _count: { select: { submissions: true } } },
   });
-  return forms.map((f) => ({ ...toRunningFormData(f), submissionCount: f._count.submissions }));
+  const data = forms.map((f) => ({ ...toRunningFormData(f), submissionCount: f._count.submissions }));
+
+  // 다가오는 세션은 가까운 날짜순으로 먼저, 지난 세션은 최근에 지난 순으로 그 아래에 배치한다.
+  const now = Date.now();
+  const upcoming = data
+    .filter((f) => new Date(f.eventDate).getTime() >= now)
+    .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+  const past = data
+    .filter((f) => new Date(f.eventDate).getTime() < now)
+    .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+  return [...upcoming, ...past];
 }
 
 export async function getPublishedRunningForm(
