@@ -496,7 +496,7 @@ model RunningForm {
   applicationStartAt DateTime? // 신청 시작일시, null이면 즉시 시작
   applicationEndAt   DateTime? // 신청 마감일시 — 지나면 자동으로 CLOSED 처리
   status          RunningFormStatus   @default(UPCOMING) // 예정/진행중/마감
-  closedAt        DateTime? // status가 CLOSED로 바뀐 시각 — 개인정보 자동 파기 기준일
+  closedAt        DateTime? // status가 CLOSED로 바뀐 시각 (관리자 화면 표시용, 개인정보 자동 파기와는 무관 — 파기는 eventDate 기준)
   isPublished     Boolean             @default(false) // 공개 여부(/running 노출)
   providedItems   String? // 참가 시 제공되는 사항(자유 텍스트)
   // 개인정보 수집·이용 동의 안내 — 신청 폼에 구조화된 카드로 표시된다.
