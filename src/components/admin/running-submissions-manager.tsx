@@ -43,10 +43,19 @@ export function RunningSubmissionsManager({
   const [statusFilter, setStatusFilter] = useState<Submission["status"] | "ALL">("ALL");
   const [previousFilter, setPreviousFilter] = useState<"ALL" | "PREVIOUS" | "NEW">("ALL");
   const [sortPreviousFirst, setSortPreviousFirst] = useState(false);
+  const [sortWinnersFirst, setSortWinnersFirst] = useState(false);
+
+  const winnerCounts = useMemo(() => {
+    const winners = submissions.filter((s) => s.status === "WINNER");
+    const male = winners.filter((s) => s.gender === "남").length;
+    const female = winners.filter((s) => s.gender === "여").length;
+    const unspecified = winners.length - male - female;
+    return { total: winners.length, male, female, unspecified };
+  }, [submissions]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const result = submissions.filter((s) => {
+    let result = submissions.filter((s) => {
       if (statusFilter !== "ALL" && s.status !== statusFilter) return false;
       if (previousFilter === "PREVIOUS" && !s.previousParticipant) return false;
       if (previousFilter === "NEW" && s.previousParticipant) return false;
@@ -57,11 +66,16 @@ export function RunningSubmissionsManager({
         (s.instagramId ?? "").toLowerCase().includes(q)
       );
     });
+    // 정렬 기준을 여러 개 켤 수 있어, 나중에 적용한 기준이 우선순위를 갖도록
+    // (안정 정렬이므로) 당첨자 정렬을 재참여자 정렬 뒤에 적용한다.
     if (sortPreviousFirst) {
-      return [...result].sort((a, b) => Number(b.previousParticipant) - Number(a.previousParticipant));
+      result = [...result].sort((a, b) => Number(b.previousParticipant) - Number(a.previousParticipant));
+    }
+    if (sortWinnersFirst) {
+      result = [...result].sort((a, b) => Number(b.status === "WINNER") - Number(a.status === "WINNER"));
     }
     return result;
-  }, [submissions, query, statusFilter, previousFilter, sortPreviousFirst]);
+  }, [submissions, query, statusFilter, previousFilter, sortPreviousFirst, sortWinnersFirst]);
 
   async function updateStatus(id: string, status: Submission["status"]) {
     await fetch(`/api/admin/running-forms/${formId}/submissions/${id}`, {
@@ -79,6 +93,17 @@ export function RunningSubmissionsManager({
 
   return (
     <div className="flex flex-col gap-4">
+      {winnerCounts.total > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border border-accent bg-accent/10 px-4 py-2.5 text-sm font-semibold text-ink">
+          <span className="text-accent">당첨 {winnerCounts.total}명</span>
+          <span className="text-ink-muted">·</span>
+          <span>남 {winnerCounts.male}명 / 여 {winnerCounts.female}명</span>
+          {winnerCounts.unspecified > 0 && (
+            <span className="text-ink-muted">(성별 미상 {winnerCounts.unspecified}명)</span>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-3">
         <input
           placeholder="이름 / 연락처 / 인스타 검색"
@@ -117,6 +142,17 @@ export function RunningSubmissionsManager({
           }`}
         >
           재참여자 먼저
+        </button>
+        <button
+          type="button"
+          onClick={() => setSortWinnersFirst((prev) => !prev)}
+          className={`cursor-pointer border px-3 py-2 text-xs uppercase ${
+            sortWinnersFirst
+              ? "border-ink bg-ink text-[color:var(--color-base)]"
+              : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
+          }`}
+        >
+          당첨자 먼저
         </button>
         <a
           href={`/api/admin/running-forms/${formId}/submissions?export=csv`}
