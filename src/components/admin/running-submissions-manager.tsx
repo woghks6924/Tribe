@@ -175,11 +175,21 @@ export function RunningSubmissionsManager({
       ) : (
         <div className="flex flex-col gap-2">
           {filtered.map((s) => (
-            <div key={s.id} className="flex flex-col gap-2 border border-line p-4 text-sm">
+            <div
+              key={s.id}
+              className={`flex flex-col gap-2 border p-4 text-sm ${
+                s.status === "WINNER" ? "border-accent bg-accent/10" : "border-line"
+              }`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-col">
                   <span className="font-semibold">
                     {s.name} {s.gender ? `· ${s.gender}` : ""}
+                    {s.status === "WINNER" && (
+                      <span className="ml-2 bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-ink uppercase">
+                        당첨
+                      </span>
+                    )}
                     {s.previousParticipant && (
                       <span className="ml-2 border border-accent px-1.5 py-0.5 text-[10px] font-bold text-accent uppercase">
                         재참여
@@ -214,7 +224,9 @@ export function RunningSubmissionsManager({
                   <select
                     value={s.status}
                     onChange={(e) => updateStatus(s.id, e.target.value as Submission["status"])}
-                    className="border border-line-strong bg-base px-2 py-1.5 text-xs outline-none"
+                    className={`border border-line-strong bg-base px-2 py-1.5 text-xs outline-none ${
+                      s.status === "WINNER" ? "font-bold text-accent" : ""
+                    }`}
                   >
                     {STATUSES.map((st) => (
                       <option key={st} value={st}>
