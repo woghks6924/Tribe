@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { CHECKPOINTS, type RaceAcc, type RaceBodyType, type RaceEye, TYPE_LABEL } from "@/lib/race/constants";
-import { drawCrown, drawSprite, grid, SPRITE_GRID_SIZE } from "@/lib/race/sprite";
-
-const N = SPRITE_GRID_SIZE;
+import { CHECKPOINTS, type RaceBodyType, TYPE_LABEL } from "@/lib/race/constants";
+import type { RaceAppearance } from "@/lib/race/appearance";
+import { drawRaceCharacter, preloadRaceAppearance } from "@/lib/race/layer-render";
 
 // 문자열 시드로 결정적 의사난수를 만든다(배경 노이즈 텍스처 전용, 통계 계산과는 무관).
 function mulberry32(seed: number) {
@@ -22,12 +21,36 @@ function stringSeed(s: string): number {
   return h;
 }
 
+function loadImageFile(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("이미지를 불러오지 못했어요."));
+    };
+    img.src = url;
+  });
+}
+
+// object-fit: cover와 동일하게 (x,y,w,h) 영역을 이미지로 꽉 채워서 그린다.
+function drawImageCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
+  const scale = Math.max(w / img.width, h / img.height);
+  const sw = w / scale;
+  const sh = h / scale;
+  const sx = (img.width - sw) / 2;
+  const sy = (img.height - sh) / 2;
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+
 export type RaceStoryInput = {
   memberId: string;
   name: string;
-  color: string;
-  eye: RaceEye;
-  acc: RaceAcc;
+  appearance: RaceAppearance;
   igHandle: string | null;
   type: RaceBodyType;
   rank: number;
@@ -41,6 +64,16 @@ export type RaceStoryInput = {
 export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setPhotoFile(file);
+    setImgSrc(null);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(file ? URL.createObjectURL(file) : null);
+  }
 
   async function makeStory() {
     setBusy(true);
@@ -61,16 +94,32 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
       canvas.width = W;
       canvas.height = H;
       const g = canvas.getContext("2d")!;
-      g.imageSmoothingEnabled = false;
 
       g.fillStyle = "#1d1e21";
       g.fillRect(0, 0, W, H);
 
-      const rnd = mulberry32(stringSeed(input.memberId) + stringSeed(input.dayLabel));
-      for (let i = 0; i < 9000; i++) {
-        g.fillStyle = rnd() < 0.5 ? "rgba(255,255,255,.035)" : "rgba(0,0,0,.18)";
-        g.fillRect(Math.floor((rnd() * W) / 3) * 3, Math.floor((rnd() * H) / 3) * 3, 3, 3);
+      if (photoFile) {
+        // 내 사진을 배경으로 꽉 채우고, 위에 얹는 글자/캐릭터가 항상 잘 보이도록 어둡게 스크림을 깐다.
+        g.imageSmoothingEnabled = true;
+        try {
+          const photo = await loadImageFile(photoFile);
+          drawImageCover(g, photo, 0, 0, W, H);
+        } catch {
+          // 사진 로드 실패 시 기본 배경으로 조용히 폴백.
+        }
+        g.fillStyle = "rgba(13,14,16,.62)";
+        g.fillRect(0, 0, W, H);
+      } else {
+        g.imageSmoothingEnabled = false;
+        const rnd = mulberry32(stringSeed(input.memberId) + stringSeed(input.dayLabel));
+        for (let i = 0; i < 9000; i++) {
+          g.fillStyle = rnd() < 0.5 ? "rgba(255,255,255,.035)" : "rgba(0,0,0,.18)";
+          g.fillRect(Math.floor((rnd() * W) / 3) * 3, Math.floor((rnd() * H) / 3) * 3, 3, 3);
+        }
       }
+      g.imageSmoothingEnabled = false;
+
+      await preloadRaceAppearance(input.appearance);
 
       const PX = '"Press Start 2P", monospace';
       const KR = '"IBM Plex Sans KR", system-ui, sans-serif';
@@ -84,17 +133,22 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
       g.fillStyle = "#f0b84a";
       g.fillText(input.dayLabel, W / 2, 345);
 
-      const sc = 28;
-      const sx = (W - N * sc) / 2;
-      const sy = 360;
-      const gd = grid(input.type, 2, false, input.eye, input.acc);
+      const charX = W / 2;
+      const charY = 360;
+      const CHAR_H = 600;
       g.fillStyle = "rgba(0,0,0,.35)";
-      g.fillRect(sx + 6 * sc, sy + 21 * sc, 10 * sc, sc);
-      drawSprite(g, gd, input.color, sx, sy, sc);
-      if (input.rank === 1) drawCrown(g, sx, sy + (gd.top - 3) * sc, sc);
+      g.fillRect(charX - 110, charY + CHAR_H - 16, 220, 16);
+      drawRaceCharacter(g, input.appearance, charX, charY, CHAR_H);
+      if (input.rank === 1) {
+        const s = CHAR_H / 44;
+        const crownY = charY - 8 * s;
+        g.fillStyle = "#f0b84a";
+        [-4, 0, 4].forEach((dx) => g.fillRect(charX + dx * s - s, crownY, 2 * s, 5 * s));
+        g.fillRect(charX - 5 * s, crownY + 3 * s, 11 * s, 2 * s);
+      }
 
       g.font = `700 92px ${KR}`;
-      g.fillStyle = input.color;
+      g.fillStyle = input.appearance.topColor;
       g.fillText(input.name, W / 2, 1100);
       g.font = `500 40px ${KR}`;
       g.fillStyle = "#a3a29a";
@@ -131,7 +185,7 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
         g.fillStyle = input.pts >= cp.km ? "#f0b84a" : "#6f6f6a";
         g.fillRect(X(cp.km) - 7, y - 4, 14, 14);
       });
-      drawSprite(g, grid(input.type, 2, false, input.eye, input.acc), input.color, X(input.pts) - N * 2, y - N * 4 - 4, 4);
+      drawRaceCharacter(g, input.appearance, X(input.pts), y - 92, 88);
 
       g.font = `500 30px ${KR}`;
       g.fillStyle = "#a3a29a";
@@ -187,6 +241,37 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
       <p className="text-xs text-[#6f6f6a]">
         내 캐릭터와 오늘 기록이 담긴 9:16 카드를 만들어서 인스타 스토리에 자랑해요.
       </p>
+
+      <div className="flex items-center gap-3">
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-[#a3a29a]">
+          <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+          <span className="cursor-pointer rounded border border-[#3c3d43] px-3 py-1.5 hover:border-[#f0b84a] hover:text-[#f0b84a]">
+            {photoFile ? "내 사진 바꾸기" : "내 사진 추가 (선택)"}
+          </span>
+        </label>
+        {photoPreview && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photoPreview} alt="선택한 사진 미리보기" className="h-10 w-10 rounded object-cover" />
+        )}
+        {photoFile && (
+          <button
+            type="button"
+            onClick={() => {
+              setPhotoFile(null);
+              setImgSrc(null);
+              if (photoPreview) URL.revokeObjectURL(photoPreview);
+              setPhotoPreview(null);
+            }}
+            className="cursor-pointer text-xs text-[#6f6f6a] underline"
+          >
+            제거
+          </button>
+        )}
+      </div>
+      <p className="-mt-1.5 text-[11px] text-[#6f6f6a]">
+        사진을 추가하면 카드 배경으로 쓰여요. 우리 서버엔 저장되지 않고, 카드 이미지 안에만 합성돼요.
+      </p>
+
       {imgSrc && (
         <div className="grid grid-cols-1 items-start gap-4 min-[480px]:grid-cols-[minmax(0,200px)_minmax(0,1fr)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}

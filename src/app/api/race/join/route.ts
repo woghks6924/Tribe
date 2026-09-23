@@ -2,23 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { createRaceSession } from "@/lib/auth/race-session";
-import {
-  isValidAcc,
-  isValidColor,
-  isValidEye,
-  isValidName,
-  isValidPin,
-  normalizeAndValidateIgHandle,
-} from "@/lib/race/validate";
+import { isValidName, isValidPin, normalizeAndValidateIgHandle, validateAppearance } from "@/lib/race/validate";
+import type { RaceAppearanceInput } from "@/lib/race/validate";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as {
+  const body = (await request.json()) as RaceAppearanceInput & {
     inviteCode?: string;
     name?: string;
     pin?: string;
-    color?: string;
-    eye?: string;
-    acc?: string;
     igHandle?: string;
   };
 
@@ -45,11 +36,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "PIN은 숫자 4자리로 정해주세요." }, { status: 400 });
   }
 
-  const color = body.color ?? "";
-  const eye = body.eye ?? "";
-  const acc = body.acc ?? "";
-  if (!isValidColor(color) || !isValidEye(eye) || !isValidAcc(acc)) {
-    return NextResponse.json({ error: "꾸미기 옵션이 올바르지 않아요." }, { status: 400 });
+  const appearance = validateAppearance(body);
+  if (!appearance.ok) {
+    return NextResponse.json({ error: appearance.error }, { status: 400 });
   }
 
   const ig = normalizeAndValidateIgHandle(body.igHandle ?? "");
@@ -64,7 +53,7 @@ export async function POST(request: Request) {
 
   const pinHash = await hashPassword(pin);
   const member = await prisma.raceMember.create({
-    data: { name, pinHash, color, eye, acc, igHandle: ig.value || null },
+    data: { name, pinHash, ...appearance.value, igHandle: ig.value || null },
   });
 
   await createRaceSession({ sub: member.id, name: member.name });

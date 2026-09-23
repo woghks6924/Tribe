@@ -14,14 +14,21 @@ export type RaceLogRow = {
   convertedKm: number;
 };
 
-// eye/acc는 DB(Prisma)에서는 그냥 String이라 여기서는 느슨하게 string으로 받는다 —
-// 실제 RaceEye/RaceAcc로의 좁히기는 스프라이트를 그리는 컴포넌트 쪽에서 한다.
+// 꾸미기 관련 필드는 DB(Prisma)에서는 그냥 String이라 여기서는 느슨하게 받는다 —
+// 실제 RaceGender 등으로의 좁히기는 렌더링하는 컴포넌트 쪽에서 한다.
 export type RaceMemberRow = {
   id: string;
   name: string;
-  color: string;
-  eye: string;
-  acc: string;
+  gender: string;
+  skinTone: string;
+  hairStyle: string;
+  hairColor: string;
+  topType: string;
+  topColor: string;
+  bottomType: string;
+  bottomColor: string;
+  shoeType: string;
+  prop: string | null;
   igHandle: string | null;
   excluded: boolean;
 };

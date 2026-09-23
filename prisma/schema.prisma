@@ -579,10 +579,19 @@ model RaceMember {
   name    String @unique // 2~8자 (앱 레벨 검증)
   pinHash String // bcrypt(PIN 4자리)
 
-  color    String // 꾸미기: 색상 12종 중 하나 (hex)
-  eye      String // dot/round/happy/wink
-  acc      String // none/cap/band/shades/bib
-  igHandle String? // 선택, 영문/숫자/./_만 허용 (앱 레벨 검증)
+  // 꾸미기 — 레이어드 픽셀아트 에셋 조합 (public/race-parts/). 옷/머리 색상은 중립색 에셋을
+  // 런타임에 tint(곱연산 합성)해서 입힌다. 피부색은 톤별로 별도 에셋이라 재색칠하지 않는다.
+  gender      String  @default("male") // male/female — 사용 가능한 옷/머리 종류가 갈린다
+  skinTone    String  @default("light") // light/medium/dark
+  hairStyle   String  @default("male-short")
+  hairColor   String  @default("#4a2f23")
+  topType     String  @default("short-sleeve")
+  topColor    String  @default("#6aa7f0")
+  bottomType  String  @default("shorts")
+  bottomColor String  @default("#2f3136")
+  shoeType    String  @default("sneakers")
+  prop        String? // yoga-mat/kettlebell/dumbbells/gym-bag, null이면 없음
+  igHandle    String? // 선택, 영문/숫자/./_만 허용 (앱 레벨 검증)
 
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime? // 5회 실패 시 10분 잠금
