@@ -2,9 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { RaceAcc, RaceBodyType, RaceEye } from "@/lib/race/constants";
 import { RaceCustomizer, type RaceCustomizeValue } from "@/components/race/race-customizer";
 
-export function RaceEditForm({ initial }: { initial: RaceCustomizeValue }) {
+export function RaceEditForm({
+  initial,
+  type,
+}: {
+  initial: { color: string; eye: RaceEye; acc: RaceAcc; igHandle: string };
+  type: RaceBodyType;
+}) {
   const router = useRouter();
   const [value, setValue] = useState<RaceCustomizeValue>(initial);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +45,7 @@ export function RaceEditForm({ initial }: { initial: RaceCustomizeValue }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      <RaceCustomizer value={value} onChange={setValue} />
+      <RaceCustomizer value={value} onChange={setValue} previewType={type} />
       {error && <p className="text-sm text-[#f08068]">{error}</p>}
       {ok && <p className="text-sm text-[#86d494]">저장했어요. 코스와 리더보드에 바로 반영돼요.</p>}
       <div>

@@ -2,31 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { defaultBottomTypeFor, defaultHairStyleFor, defaultTopTypeFor } from "@/lib/race/appearance";
+import { PALETTE } from "@/lib/race/constants";
 import { RaceCustomizer, type RaceCustomizeValue } from "@/components/race/race-customizer";
-
-function defaultAppearance(): RaceCustomizeValue {
-  return {
-    gender: "male",
-    skinTone: "light",
-    hairStyle: defaultHairStyleFor("male"),
-    hairColor: "#4a2f23",
-    topType: defaultTopTypeFor("male"),
-    topColor: "#6aa7f0",
-    bottomType: defaultBottomTypeFor("male"),
-    bottomColor: "#2f3136",
-    shoeType: "sneakers",
-    prop: null,
-    igHandle: "",
-  };
-}
 
 export function RaceJoinForm() {
   const router = useRouter();
   const [inviteCode, setInviteCode] = useState("");
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
-  const [custom, setCustom] = useState<RaceCustomizeValue>(defaultAppearance);
+  const [custom, setCustom] = useState<RaceCustomizeValue>(() => ({
+    color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+    eye: "dot",
+    acc: "none",
+    igHandle: "",
+  }));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -42,7 +31,10 @@ export function RaceJoinForm() {
           inviteCode: inviteCode.trim(),
           name: name.trim(),
           pin: pin.trim(),
-          ...custom,
+          color: custom.color,
+          eye: custom.eye,
+          acc: custom.acc,
+          igHandle: custom.igHandle,
         }),
       });
       const data = await res.json();
@@ -97,9 +89,11 @@ export function RaceJoinForm() {
         </label>
       </div>
 
-      <RaceCustomizer value={custom} onChange={setCustom} />
+      <RaceCustomizer value={custom} onChange={setCustom} previewType="base" />
 
-      <p className="text-xs text-[#6f6f6a]">색·헤어스타일·옷·소지품은 언제든 마이페이지에서 다시 꾸밀 수 있어요.</p>
+      <p className="text-xs text-[#6f6f6a]">
+        체형은 모두 새내기로 시작해서 기록이 쌓이면 바뀌고, 색·눈·소품은 언제든 다시 꾸밀 수 있어요.
+      </p>
       {error && <p className="text-sm text-[#f08068]">{error}</p>}
       <button
         type="submit"

@@ -15,7 +15,9 @@ export async function GET() {
     members.map((m) => ({
       id: m.id,
       name: m.name,
-      gender: m.gender,
+      color: m.color,
+      eye: m.eye,
+      acc: m.acc,
       igHandle: m.igHandle,
       excluded: m.excluded,
       failedLoginCount: m.failedLoginCount,

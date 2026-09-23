@@ -1,0 +1,13 @@
+ALTER TABLE "RaceMember" ADD COLUMN "color" TEXT NOT NULL DEFAULT '#6aa7f0';
+ALTER TABLE "RaceMember" ADD COLUMN "eye" TEXT NOT NULL DEFAULT 'dot';
+ALTER TABLE "RaceMember" ADD COLUMN "acc" TEXT NOT NULL DEFAULT 'none';
+ALTER TABLE "RaceMember" DROP COLUMN "gender";
+ALTER TABLE "RaceMember" DROP COLUMN "skinTone";
+ALTER TABLE "RaceMember" DROP COLUMN "hairStyle";
+ALTER TABLE "RaceMember" DROP COLUMN "hairColor";
+ALTER TABLE "RaceMember" DROP COLUMN "topType";
+ALTER TABLE "RaceMember" DROP COLUMN "topColor";
+ALTER TABLE "RaceMember" DROP COLUMN "bottomType";
+ALTER TABLE "RaceMember" DROP COLUMN "bottomColor";
+ALTER TABLE "RaceMember" DROP COLUMN "shoeType";
+ALTER TABLE "RaceMember" DROP COLUMN "prop";

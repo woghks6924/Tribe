@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentRaceMember } from "@/lib/auth/race-session";
-import { KIND_LABEL, TYPE_LABEL } from "@/lib/race/constants";
-import { appearanceOf } from "@/lib/race/appearance";
+import { KIND_LABEL, TYPE_LABEL, type RaceAcc, type RaceEye } from "@/lib/race/constants";
 import { raceProofPublicUrl } from "@/lib/race/storage";
 import {
   addDaysToDateStr,
@@ -76,7 +75,9 @@ export default async function RacePage() {
   const trackEntries: RaceTrackEntry[] = cur.map((s) => ({
     memberId: s.member.id,
     name: s.member.name,
-    appearance: appearanceOf(s.member),
+    color: s.member.color,
+    eye: s.member.eye as RaceEye,
+    acc: s.member.acc as RaceAcc,
     pts: s.pts,
     type: s.type,
     idleDays: s.idleDays,
@@ -190,9 +191,12 @@ export default async function RacePage() {
                       )}
                     </div>
                     <RaceAvatarImg
-                      appearance={appearanceOf(s.member)}
+                      color={s.member.color}
+                      eye={s.member.eye as RaceEye}
+                      acc={s.member.acc as RaceAcc}
+                      type={s.type}
                       sleep={sleep}
-                      heightPx={44}
+                      scale={2}
                       className="block [image-rendering:pixelated]"
                     />
                     <div className="min-w-0">
@@ -244,9 +248,12 @@ export default async function RacePage() {
                   {a.holder ? (
                     <div className="mt-auto flex items-center gap-2">
                       <RaceAvatarImg
-                        appearance={appearanceOf(a.holder.member)}
+                        color={a.holder.member.color}
+                        eye={a.holder.member.eye as RaceEye}
+                        acc={a.holder.member.acc as RaceAcc}
+                        type={a.holder.type}
                         sleep={isSleeping(a.holder.idleDays)}
-                        heightPx={44}
+                        scale={2}
                         className="[image-rendering:pixelated]"
                       />
                       <div>

@@ -1,21 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CHECKPOINTS, type RaceBodyType } from "@/lib/race/constants";
-import type { RaceAppearance } from "@/lib/race/appearance";
-import { drawRaceCharacter, preloadRaceAppearance } from "@/lib/race/layer-render";
+import { CHECKPOINTS } from "@/lib/race/constants";
+import type { RaceAcc, RaceBodyType, RaceEye } from "@/lib/race/constants";
+import { drawCrown, drawSprite, grid, SPRITE_GRID_SIZE } from "@/lib/race/sprite";
 import { isSleeping } from "@/lib/race/stats";
 
 export type RaceTrackEntry = {
   memberId: string;
   name: string;
-  appearance: RaceAppearance;
+  color: string;
+  eye: RaceEye;
+  acc: RaceAcc;
   pts: number;
   type: RaceBodyType;
   idleDays: number;
 };
 
-const CHAR_H = 44; // 캔버스에 그릴 캐릭터 높이(px)
+const N = SPRITE_GRID_SIZE;
+const S = 2; // 한 픽셀당 캔버스 픽셀 수
 const LH = 52;
 const TOP = 34;
 
@@ -27,13 +30,6 @@ export function RaceTrack({ entries, goalKm }: { entries: RaceTrackEntry[]; goal
   useEffect(() => {
     zoomRef.current = zoom;
   }, [zoom]);
-
-  // 새 크루원/외형이 생기면 미리 로드해둔다 — 그려질 때 딱 맞춰 캐시가 준비돼 있게.
-  useEffect(() => {
-    entries.forEach((e) => {
-      preloadRaceAppearance(e.appearance).catch(() => {});
-    });
-  }, [entries]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -57,6 +53,7 @@ export function RaceTrack({ entries, goalKm }: { entries: RaceTrackEntry[]; goal
       canvas!.height = Math.round(H * dpr);
       canvas!.style.height = `${H}px`;
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx!.imageSmoothingEnabled = false;
     }
 
     function range() {
@@ -68,7 +65,6 @@ export function RaceTrack({ entries, goalKm }: { entries: RaceTrackEntry[]; goal
     function draw(t: number) {
       if (cancelled) return;
       const tick = reduce ? 0 : Math.floor(t / 170);
-      ctx!.imageSmoothingEnabled = false;
       ctx!.clearRect(0, 0, W, H);
       const nameW = W < 520 ? 60 : 78;
       const rg = range();
@@ -115,7 +111,7 @@ export function RaceTrack({ entries, goalKm }: { entries: RaceTrackEntry[]; goal
         ctx!.fillText(String(i + 1), 10, y + LH / 2);
 
         ctx!.font = '700 13px "IBM Plex Sans KR", system-ui, sans-serif';
-        ctx!.fillStyle = s.appearance.topColor;
+        ctx!.fillStyle = s.color;
         ctx!.fillText(s.name.length > 5 ? `${s.name.slice(0, 5)}…` : s.name, 30, y + LH / 2);
 
         let d = dispRef.current.get(s.memberId);
@@ -126,54 +122,47 @@ export function RaceTrack({ entries, goalKm }: { entries: RaceTrackEntry[]; goal
 
         const moving = Math.abs(s.pts - d) > 0.3;
         const sleep = isSleeping(s.idleDays);
-        const bob = !sleep && moving && !reduce ? Math.sin(t / 150 + i) * 2 : 0;
-        const cx = X(d);
-        const cy = y + LH - CHAR_H - 4 + bob;
+        const fr = sleep ? 2 : moving ? tick % 2 : (Math.floor(tick / 2) + i) % 2;
+        const g = grid(s.type, fr, sleep, s.eye, s.acc);
+        const bob = !sleep && fr === 1 && !reduce ? -S : 0;
+        const sx = Math.round(X(d) - (N * S) / 2);
+        const sy = y + LH - N * S - 4 + bob;
 
         ctx!.fillStyle = "rgba(0,0,0,.35)";
-        ctx!.fillRect(cx - CHAR_H * 0.3, y + LH - 5, CHAR_H * 0.6, 2);
-
-        ctx!.globalAlpha = sleep ? 0.55 : 1;
-        drawRaceCharacter(ctx!, s.appearance, cx, cy, CHAR_H);
-        ctx!.globalAlpha = 1;
-
-        if (i === 0 && s.pts > 0) {
-          ctx!.fillStyle = "#f0b84a";
-          const crownY = cy - 8;
-          [-4, 0, 4].forEach((dx) => ctx!.fillRect(cx + dx - 1, crownY, 2, 5));
-          ctx!.fillRect(cx - 5, crownY + 3, 11, 2);
-        }
+        ctx!.fillRect(sx + 12, y + LH - 5, N * S - 24, 2);
+        drawSprite(ctx!, g, s.color, sx, sy, S);
+        if (i === 0 && s.pts > 0) drawCrown(ctx!, sx, sy + (g.top - 3) * S, S);
 
         if (sleep) {
           ctx!.font = '8px "Press Start 2P", monospace';
           ctx!.fillStyle = "#a3a8d6";
           const zz = tick % 3;
-          ctx!.fillText("z", cx + CHAR_H * 0.3, cy + 10 - zz * 2);
-          if (zz > 0) ctx!.fillText("Z", cx + CHAR_H * 0.3 + 8, cy + 2 - zz * 2);
+          ctx!.fillText("z", sx + N * S - 4, sy + 10 - zz * 2);
+          if (zz > 0) ctx!.fillText("Z", sx + N * S + 4, sy + 2 - zz * 2);
         }
         if (s.type === "hybrid" && !sleep) {
           ctx!.fillStyle = "#f0b84a";
           const a = tick % 4;
           const pts: [number, number][] = [
-            [-18, -10],
-            [18, -14],
-            [-20, 6],
-            [20, 2],
+            [2, 6],
+            [19, 4],
+            [1, 14],
+            [20, 12],
           ];
           const p = pts[a];
-          ctx!.fillRect(cx + p[0], cy + p[1] + CHAR_H / 2, 2, 2);
+          ctx!.fillRect(sx + p[0] * S, sy + p[1] * S, S, S);
         }
 
         ctx!.font = '500 11px "IBM Plex Sans KR", system-ui, sans-serif';
         ctx!.fillStyle = "#a3a29a";
         const lbl = s.pts.toFixed(1);
-        const right = cx + CHAR_H * 0.5 + 4;
+        const right = sx + N * S + 4;
         if (right + 34 < W) {
           ctx!.textAlign = "left";
           ctx!.fillText(lbl, right, y + LH / 2 + 2);
         } else {
           ctx!.textAlign = "right";
-          ctx!.fillText(lbl, cx - CHAR_H * 0.5 - 2, y + LH / 2 + 2);
+          ctx!.fillText(lbl, sx - 2, y + LH / 2 + 2);
         }
       });
 

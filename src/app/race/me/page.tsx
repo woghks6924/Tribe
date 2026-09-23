@@ -3,7 +3,6 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentRaceMember } from "@/lib/auth/race-session";
 import { CHECKPOINTS, TYPE_LABEL } from "@/lib/race/constants";
-import { appearanceOf } from "@/lib/race/appearance";
 import { computeMemberStats, dayIndexOf, formatBreakdown, isSleeping, todayKstDateStr } from "@/lib/race/stats";
 import { RaceLoginForm } from "@/components/race/race-login-form";
 import { RaceLogoutButton } from "@/components/race/race-logout-button";
@@ -93,7 +92,9 @@ export default async function RaceMePage() {
   const storyInput: RaceStoryInput = {
     memberId: member.id,
     name: member.name,
-    appearance: appearanceOf(member),
+    color: member.color,
+    eye: member.eye as RaceStoryInput["eye"],
+    acc: member.acc as RaceStoryInput["acc"],
     igHandle: member.igHandle,
     type: my.type,
     rank: my.rank,
@@ -118,9 +119,12 @@ export default async function RaceMePage() {
 
       <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-3.5 rounded bg-[#323338] p-3">
         <RaceAvatarImg
-          appearance={appearanceOf(member)}
+          color={member.color}
+          eye={member.eye as RaceStoryInput["eye"]}
+          acc={member.acc as RaceStoryInput["acc"]}
+          type={my.type}
           sleep={sleep}
-          heightPx={88}
+          scale={4}
           className="[image-rendering:pixelated]"
           alt={`${member.name} 캐릭터`}
         />
@@ -153,7 +157,15 @@ export default async function RaceMePage() {
       <details className="rounded border border-[#3c3d43] p-3">
         <summary className="cursor-pointer text-[15px] font-bold">캐릭터 꾸미기</summary>
         <div className="mt-3">
-          <RaceEditForm initial={{ ...appearanceOf(member), igHandle: member.igHandle ?? "" }} />
+          <RaceEditForm
+            initial={{
+              color: member.color,
+              eye: member.eye as RaceStoryInput["eye"],
+              acc: member.acc as RaceStoryInput["acc"],
+              igHandle: member.igHandle ?? "",
+            }}
+            type={my.type}
+          />
         </div>
       </details>
 

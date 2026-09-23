@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CHECKPOINTS, type RaceBodyType, TYPE_LABEL } from "@/lib/race/constants";
-import type { RaceAppearance } from "@/lib/race/appearance";
-import { drawRaceCharacter, preloadRaceAppearance } from "@/lib/race/layer-render";
+import { CHECKPOINTS, type RaceAcc, type RaceBodyType, type RaceEye, TYPE_LABEL } from "@/lib/race/constants";
+import { drawCrown, drawSprite, grid, SPRITE_GRID_SIZE } from "@/lib/race/sprite";
+
+const N = SPRITE_GRID_SIZE;
 
 // 문자열 시드로 결정적 의사난수를 만든다(배경 노이즈 텍스처 전용, 통계 계산과는 무관).
 function mulberry32(seed: number) {
@@ -50,7 +51,9 @@ function drawImageCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x:
 export type RaceStoryInput = {
   memberId: string;
   name: string;
-  appearance: RaceAppearance;
+  color: string;
+  eye: RaceEye;
+  acc: RaceAcc;
   igHandle: string | null;
   type: RaceBodyType;
   rank: number;
@@ -119,8 +122,6 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
       }
       g.imageSmoothingEnabled = false;
 
-      await preloadRaceAppearance(input.appearance);
-
       const PX = '"Press Start 2P", monospace';
       const KR = '"IBM Plex Sans KR", system-ui, sans-serif';
       g.textAlign = "center";
@@ -133,22 +134,17 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
       g.fillStyle = "#f0b84a";
       g.fillText(input.dayLabel, W / 2, 345);
 
-      const charX = W / 2;
-      const charY = 360;
-      const CHAR_H = 600;
+      const sc = 28;
+      const sx = (W - N * sc) / 2;
+      const sy = 360;
+      const gd = grid(input.type, 2, false, input.eye, input.acc);
       g.fillStyle = "rgba(0,0,0,.35)";
-      g.fillRect(charX - 110, charY + CHAR_H - 16, 220, 16);
-      drawRaceCharacter(g, input.appearance, charX, charY, CHAR_H);
-      if (input.rank === 1) {
-        const s = CHAR_H / 44;
-        const crownY = charY - 8 * s;
-        g.fillStyle = "#f0b84a";
-        [-4, 0, 4].forEach((dx) => g.fillRect(charX + dx * s - s, crownY, 2 * s, 5 * s));
-        g.fillRect(charX - 5 * s, crownY + 3 * s, 11 * s, 2 * s);
-      }
+      g.fillRect(sx + 6 * sc, sy + 21 * sc, 10 * sc, sc);
+      drawSprite(g, gd, input.color, sx, sy, sc);
+      if (input.rank === 1) drawCrown(g, sx, sy + (gd.top - 3) * sc, sc);
 
       g.font = `700 92px ${KR}`;
-      g.fillStyle = input.appearance.topColor;
+      g.fillStyle = input.color;
       g.fillText(input.name, W / 2, 1100);
       g.font = `500 40px ${KR}`;
       g.fillStyle = "#a3a29a";
@@ -185,7 +181,7 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
         g.fillStyle = input.pts >= cp.km ? "#f0b84a" : "#6f6f6a";
         g.fillRect(X(cp.km) - 7, y - 4, 14, 14);
       });
-      drawRaceCharacter(g, input.appearance, X(input.pts), y - 92, 88);
+      drawSprite(g, grid(input.type, 2, false, input.eye, input.acc), input.color, X(input.pts) - N * 2, y - N * 4 - 4, 4);
 
       g.font = `500 30px ${KR}`;
       g.fillStyle = "#a3a29a";
