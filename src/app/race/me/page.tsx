@@ -8,6 +8,7 @@ import { RaceLoginForm } from "@/components/race/race-login-form";
 import { RaceLogoutButton } from "@/components/race/race-logout-button";
 import { RaceAvatarImg } from "@/components/race/race-avatar";
 import { RaceRecordForm } from "@/components/race/race-record-form";
+import { RaceMyLogs } from "@/components/race/race-my-logs";
 import { RaceEditForm } from "@/components/race/race-edit-form";
 import { RaceStoryCard, type RaceStoryInput } from "@/components/race/race-story-card";
 
@@ -74,6 +75,11 @@ export default async function RaceMePage() {
   ];
 
   const todayLogs = logs.filter((l) => l.memberId === member.id && l.date === today);
+  const myLogs = logs
+    .filter((l) => l.memberId === member.id)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 20)
+    .map((l) => ({ id: l.id, date: l.date, kind: l.kind, value: l.value, convertedKm: l.convertedKm }));
   let todaySummary: string;
   if (todayLogs.length > 0) {
     const sums = new Map<string, number>();
@@ -174,6 +180,8 @@ export default async function RaceMePage() {
         <p className="mt-1 mb-3 text-xs text-[#6f6f6a]">{formatBreakdown(my)}</p>
         <RaceRecordForm />
       </div>
+
+      <RaceMyLogs logs={myLogs} />
 
       <RaceStoryCard input={storyInput} />
 
