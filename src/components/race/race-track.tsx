@@ -22,6 +22,54 @@ const S = 2; // 한 픽셀당 캔버스 픽셀 수
 const LH = 52;
 const TOP = 34;
 
+// 체크포인트 사이 7구간에 지형을 하나씩 배정 — 실제 지리와 무관하게 코스에 변화를 주는 장식용.
+const SEGMENT_TERRAIN = ["road", "field", "mountain", "mountain", "river", "field", "river"] as const;
+type Terrain = (typeof SEGMENT_TERRAIN)[number];
+const TERRAIN_SEGMENTS = CHECKPOINTS.slice(0, -1).map((cp, i) => ({
+  from: cp.km,
+  to: CHECKPOINTS[i + 1].km,
+  kind: SEGMENT_TERRAIN[i],
+}));
+const TERRAIN_Y = 25; // 헤더(체크포인트 이름)와 코스 눈금 사이 여백에 그리는 장식 띠의 중심 y
+const TERRAIN_STEP = 16; // 아이콘 간격(px)
+
+function drawTerrainIcon(ctx: CanvasRenderingContext2D, kind: Terrain, cx: number, cy: number) {
+  switch (kind) {
+    case "mountain":
+      ctx.fillStyle = "rgba(150,144,168,.55)";
+      ctx.beginPath();
+      ctx.moveTo(cx - 6, cy + 4);
+      ctx.lineTo(cx - 1, cy - 5);
+      ctx.lineTo(cx + 4, cy + 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "rgba(150,144,168,.4)";
+      ctx.beginPath();
+      ctx.moveTo(cx + 1, cy + 4);
+      ctx.lineTo(cx + 5, cy - 2);
+      ctx.lineTo(cx + 8, cy + 4);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    case "river":
+      ctx.fillStyle = "rgba(110,176,224,.55)";
+      [-6, -2, 2, 6].forEach((dx, i) => {
+        ctx.fillRect(cx + dx, cy + (i % 2 === 0 ? -1 : 1), 3, 2);
+      });
+      break;
+    case "road":
+      ctx.fillStyle = "rgba(168,164,158,.4)";
+      ctx.fillRect(cx - 4, cy, 7, 2);
+      break;
+    case "field":
+      ctx.fillStyle = "rgba(140,190,140,.45)";
+      ctx.fillRect(cx - 5, cy + 2, 2, 4);
+      ctx.fillRect(cx - 1, cy, 2, 6);
+      ctx.fillRect(cx + 3, cy + 2, 2, 4);
+      break;
+  }
+}
+
 export function RaceTrack({ entries, goalKm }: { entries: RaceTrackEntry[]; goalKm: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dispRef = useRef<Map<string, number>>(new Map());
@@ -75,6 +123,14 @@ export function RaceTrack({ entries, goalKm }: { entries: RaceTrackEntry[]; goal
 
       ctx!.fillStyle = "rgba(241,241,238,.05)";
       for (let k = step; k < rg; k += step) ctx!.fillRect(Math.round(X(k)), TOP - 6, 1, H - TOP);
+
+      TERRAIN_SEGMENTS.forEach((seg) => {
+        if (seg.from >= rg) return;
+        const segToVisible = Math.min(seg.to, rg);
+        const xFrom = X(seg.from);
+        const xTo = X(segToVisible);
+        for (let x = xFrom; x < xTo; x += TERRAIN_STEP) drawTerrainIcon(ctx!, seg.kind, x, TERRAIN_Y);
+      });
 
       ctx!.font = '500 11px "IBM Plex Sans KR", system-ui, sans-serif';
       ctx!.textBaseline = "middle";
