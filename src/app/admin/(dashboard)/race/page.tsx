@@ -32,6 +32,7 @@ export default async function AdminRacePage() {
           goalKm: s.goalKm,
           inviteCode: s.inviteCode,
           active: s.active,
+          headline: s.headline,
           runFactor: s.runFactor,
           wodMinutesPerKm: s.wodMinutesPerKm,
           swimMetersPerKm: s.swimMetersPerKm,

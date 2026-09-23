@@ -560,6 +560,7 @@ model RaceSeason {
   goalKm       Float    @default(425) // 목표 거리 (서울→부산)
   inviteCode   String   @unique
   active       Boolean  @default(false)
+  headline     String? // /race 페이지 상단 문구 자유 입력 (비우면 "서울에서 부산 {goalKm}km까지..." 기본 문구)
 
   // 환산 비율 — 프로토타입 기본값 그대로. GYM은 WOD와 같은 분당 비율을 쓴다.
   runFactor       Float @default(1) // 러닝 1km → 환산 1km

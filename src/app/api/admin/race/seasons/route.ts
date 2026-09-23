@@ -20,6 +20,7 @@ export async function GET() {
       goalKm: s.goalKm,
       inviteCode: s.inviteCode,
       active: s.active,
+      headline: s.headline,
       runFactor: s.runFactor,
       wodMinutesPerKm: s.wodMinutesPerKm,
       swimMetersPerKm: s.swimMetersPerKm,
@@ -36,6 +37,7 @@ export type RaceSeasonInput = {
   goalKm?: number;
   inviteCode: string;
   active?: boolean;
+  headline?: string | null;
   runFactor?: number;
   wodMinutesPerKm?: number;
   swimMetersPerKm?: number;
@@ -62,6 +64,7 @@ export async function POST(request: Request) {
       goalKm: body.goalKm ?? 425,
       inviteCode: body.inviteCode.trim().toUpperCase(),
       active: body.active ?? false,
+      headline: body.headline?.trim() || null,
       runFactor: body.runFactor ?? 1,
       wodMinutesPerKm: body.wodMinutesPerKm ?? 6,
       swimMetersPerKm: body.swimMetersPerKm ?? 250,

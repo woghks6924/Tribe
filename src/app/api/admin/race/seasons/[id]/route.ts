@@ -31,6 +31,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       goalKm: body.goalKm ?? 425,
       inviteCode: body.inviteCode.trim().toUpperCase(),
       active: body.active ?? false,
+      headline: body.headline?.trim() || null,
       runFactor: body.runFactor ?? 1,
       wodMinutesPerKm: body.wodMinutesPerKm ?? 6,
       swimMetersPerKm: body.swimMetersPerKm ?? 250,

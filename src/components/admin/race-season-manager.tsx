@@ -11,6 +11,7 @@ export type SeasonSummary = {
   goalKm: number;
   inviteCode: string;
   active: boolean;
+  headline: string | null;
   runFactor: number;
   wodMinutesPerKm: number;
   swimMetersPerKm: number;
@@ -27,6 +28,7 @@ type FormState = {
   durationDays: string;
   goalKm: string;
   inviteCode: string;
+  headline: string;
   runFactor: string;
   wodMinutesPerKm: string;
   swimMetersPerKm: string;
@@ -39,6 +41,7 @@ function emptyForm(): FormState {
     durationDays: "50",
     goalKm: "425",
     inviteCode: "",
+    headline: "",
     runFactor: "1",
     wodMinutesPerKm: "6",
     swimMetersPerKm: "250",
@@ -51,6 +54,7 @@ function seasonToForm(s: SeasonSummary): FormState {
     durationDays: String(s.durationDays),
     goalKm: String(s.goalKm),
     inviteCode: s.inviteCode,
+    headline: s.headline ?? "",
     runFactor: String(s.runFactor),
     wodMinutesPerKm: String(s.wodMinutesPerKm),
     swimMetersPerKm: String(s.swimMetersPerKm),
@@ -73,6 +77,7 @@ export function RaceSeasonManager({ seasons }: { seasons: SeasonSummary[] }) {
       durationDays: Number(f.durationDays),
       goalKm: Number(f.goalKm),
       inviteCode: f.inviteCode.trim(),
+      headline: f.headline.trim() || null,
       runFactor: Number(f.runFactor),
       wodMinutesPerKm: Number(f.wodMinutesPerKm),
       swimMetersPerKm: Number(f.swimMetersPerKm),
@@ -293,6 +298,16 @@ function SeasonFields({ form, setForm }: { form: FormState; setForm: (f: FormSta
           />
         </label>
       </div>
+      <label className="flex flex-col gap-1 text-xs text-ink-faint">
+        제목 문구 (선택 — 비우면 기본 문구 &ldquo;서울에서 부산 {'{'}목표km{'}'}까지, {'{'}기간{'}'}일 동안...&rdquo;)
+        <textarea
+          value={form.headline}
+          onChange={(e) => setForm({ ...form, headline: e.target.value })}
+          rows={2}
+          placeholder={"서울에서 부산 425km까지,\n50일 동안 누가 가장 멀리 갈까"}
+          className="resize-y border border-line-strong bg-transparent px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint"
+        />
+      </label>
       <div className="grid grid-cols-3 gap-3">
         <label className="flex flex-col gap-1 text-xs text-ink-faint">
           러닝 환산 배율

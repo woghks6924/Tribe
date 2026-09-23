@@ -106,9 +106,20 @@ export default async function RacePage() {
             </Link>
           </div>
           <h1 className="text-[clamp(22px,3.4vw,32px)] leading-[1.3] font-bold tracking-tight">
-            서울에서 <em className="text-[#f0b84a] not-italic">부산 {season.goalKm}km</em>까지,
-            <br />
-            {season.durationDays}일 동안 누가 가장 멀리 갈까
+            {season.headline ? (
+              season.headline.split("\n").map((line, i) => (
+                <span key={i}>
+                  {i > 0 && <br />}
+                  {line}
+                </span>
+              ))
+            ) : (
+              <>
+                서울에서 <em className="text-[#f0b84a] not-italic">부산 {season.goalKm}km</em>까지,
+                <br />
+                {season.durationDays}일 동안 누가 가장 멀리 갈까
+              </>
+            )}
           </h1>
         </div>
         <div className="flex flex-col gap-2">
