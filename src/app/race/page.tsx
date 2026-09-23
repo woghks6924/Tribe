@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getCurrentRaceMember } from "@/lib/auth/race-session";
 import { TYPE_LABEL, type RaceAcc, type RaceEye } from "@/lib/race/constants";
 import {
   addDaysToDateStr,
@@ -28,7 +30,10 @@ function dateLabel(dateStr: string): string {
 }
 
 export default async function RacePage() {
-  const season = await prisma.raceSeason.findFirst({ where: { active: true } });
+  const [season, raceSession] = await Promise.all([
+    prisma.raceSeason.findFirst({ where: { active: true } }),
+    getCurrentRaceMember(),
+  ]);
 
   if (!season) {
     return (
@@ -74,11 +79,19 @@ export default async function RacePage() {
     <div className="mx-auto flex max-w-[1080px] flex-col gap-5 px-4 py-6 sm:px-6">
       <header className="grid grid-cols-1 gap-4 pb-2 md:grid-cols-[minmax(0,1fr)_minmax(240px,320px)] md:items-end">
         <div>
-          <div className="mb-3 flex flex-wrap items-center gap-3">
-            <span className="font-[family-name:var(--font-race-px)] text-[13px]">TRI.BE</span>
-            <span className="rounded border border-[#f0b84a] px-2 py-1 font-[family-name:var(--font-race-px)] text-[9px] text-[#f0b84a]">
-              RACE · {season.name.toUpperCase()}
-            </span>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-[family-name:var(--font-race-px)] text-[13px]">TRI.BE</span>
+              <span className="rounded border border-[#f0b84a] px-2 py-1 font-[family-name:var(--font-race-px)] text-[9px] text-[#f0b84a]">
+                RACE · {season.name.toUpperCase()}
+              </span>
+            </div>
+            <Link
+              href="/race/me"
+              className="rounded border border-[#3c3d43] px-3 py-1.5 text-sm text-[#f1f1ee] hover:border-[#f0b84a] hover:text-[#f0b84a]"
+            >
+              {raceSession ? `${raceSession.name}(내 캐릭터)` : "참가하기 / 로그인"}
+            </Link>
           </div>
           <h1 className="text-[clamp(22px,3.4vw,32px)] leading-[1.3] font-bold tracking-tight">
             서울에서 <em className="text-[#f0b84a] not-italic">부산 {season.goalKm}km</em>까지,
@@ -135,7 +148,12 @@ export default async function RacePage() {
           <h2 className="text-base font-bold">리더보드</h2>
           <p className="text-[13px] text-[#a3a29a]">어제 대비 순위 변화와 바로 앞 사람과의 거리를 보여줘요</p>
           {cur.length === 0 ? (
-            <p className="mt-4 text-sm text-[#6f6f6a]">아직 크루원이 없어요.</p>
+            <p className="mt-4 text-sm text-[#6f6f6a]">
+              아직 크루원이 없어요.{" "}
+              <Link href="/race/join" className="text-[#f0b84a] underline">
+                첫 캐릭터 만들기 →
+              </Link>
+            </p>
           ) : (
             <ol className="mt-3.5 flex flex-col">
               {cur.map((s, i) => {
