@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentRaceMember } from "@/lib/auth/race-session";
-import { TYPE_LABEL, type RaceAcc, type RaceEye } from "@/lib/race/constants";
+import { KIND_LABEL, TYPE_LABEL, type RaceAcc, type RaceEye } from "@/lib/race/constants";
+import { raceProofPublicUrl } from "@/lib/race/storage";
 import {
   addDaysToDateStr,
   buildSeasonFeed,
@@ -29,6 +30,11 @@ function dateLabel(dateStr: string): string {
   return `${m}월 ${d}일`;
 }
 
+function hoursAgoLabel(date: Date): string {
+  const h = Math.floor((Date.now() - date.getTime()) / 3600000);
+  return h < 1 ? "방금" : `${h}시간 전`;
+}
+
 export default async function RacePage() {
   const [season, raceSession] = await Promise.all([
     prisma.raceSeason.findFirst({ where: { active: true } }),
@@ -44,9 +50,15 @@ export default async function RacePage() {
     );
   }
 
-  const [members, logs] = await Promise.all([
+  const [members, logs, recentProofs] = await Promise.all([
     prisma.raceMember.findMany({ where: { excluded: false } }),
     prisma.raceLog.findMany({ where: { seasonId: season.id } }),
+    prisma.raceLog.findMany({
+      where: { seasonId: season.id, proofPath: { not: null }, proofExpiresAt: { gt: new Date() } },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+      include: { member: { select: { name: true } } },
+    }),
   ]);
 
   const startDateStr = season.startAt.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
@@ -256,6 +268,37 @@ export default async function RacePage() {
               ))}
             </div>
           </section>
+
+          {recentProofs.length > 0 && (
+            <section className="rounded border border-[#3c3d43] bg-[#2a2b2e] p-4 sm:p-[18px]">
+              <h2 className="text-base font-bold">인증샷</h2>
+              <p className="text-[13px] text-[#a3a29a]">최근 24시간 동안 올라온 인증샷이에요. 시간이 지나면 자동으로 사라져요.</p>
+              <div className="mt-3 grid grid-cols-3 gap-2 min-[420px]:grid-cols-4">
+                {recentProofs.map((p) => (
+                  <a
+                    key={p.id}
+                    href={raceProofPublicUrl(p.proofPath!)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative block aspect-square overflow-hidden rounded bg-[#17181b]"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={raceProofPublicUrl(p.proofPath!)}
+                      alt={`${p.member.name}의 ${KIND_LABEL[p.kind]} 인증샷`}
+                      className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 pt-4 pb-1">
+                      <span className="block truncate text-[11px] font-semibold text-white">{p.member.name}</span>
+                      <span className="block text-[10px] text-white/70">
+                        {KIND_LABEL[p.kind]} · {hoursAgoLabel(p.createdAt)}
+                      </span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="rounded border border-[#3c3d43] bg-[#2a2b2e] p-4 sm:p-[18px]">
             <h2 className="text-base font-bold">크루 소식</h2>
