@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getEffectiveRunningFormStatus, getPublishedRunningForms, normalizeExternalUrl } from "@/lib/running";
 import { RunningCalendarButton } from "@/components/running/running-calendar-button";
+import { RaceEntryButton } from "@/components/running/race-entry-button";
 
 export const dynamic = "force-dynamic";
 
@@ -44,9 +45,12 @@ export default async function RunningEventsPage() {
             <h1 className="font-display text-3xl font-extrabold tracking-[0.02em] uppercase">Running</h1>
             <p className="text-sm text-ink-muted">Tri.be와 함께 달릴 러닝 이벤트</p>
           </div>
-          <RunningCalendarButton
-            events={forms.map((f) => ({ id: f.id, title: f.title, eventDate: f.eventDate }))}
-          />
+          <div className="flex flex-wrap gap-2">
+            <RunningCalendarButton
+              events={forms.map((f) => ({ id: f.id, title: f.title, eventDate: f.eventDate }))}
+            />
+            <RaceEntryButton />
+          </div>
         </div>
       </div>
 
