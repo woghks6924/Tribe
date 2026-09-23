@@ -567,7 +567,8 @@ model RaceSeason {
   wodMinutesPerKm Float @default(6) // WOD·헬스 이 분(分)이 환산 1km
   swimMetersPerKm Float @default(250) // 수영 이 미터(m)가 환산 1km
 
-  logs RaceLog[]
+  logs             RaceLog[]
+  guestbookEntries RaceGuestbookEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -589,7 +590,8 @@ model RaceMember {
   lockedUntil      DateTime? // 5회 실패 시 10분 잠금
   excluded         Boolean   @default(false) // true면 리더보드/코스/시상/피드 집계에서 제외 (계정·기록은 유지)
 
-  logs RaceLog[]
+  logs             RaceLog[]
+  guestbookEntries RaceGuestbookEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -616,4 +618,20 @@ model RaceLog {
 
   @@index([seasonId])
   @@index([memberId])
+}
+
+// 크루 방명록 — 싸이월드 일촌평처럼 참가자들이 짧게 한마디씩 남기는 공용 게시판.
+// 채팅이 아니라 단발성 메시지라 수정 없이 작성/삭제만 지원한다(본인 글만 삭제 가능).
+model RaceGuestbookEntry {
+  id       String     @id @default(cuid())
+  seasonId String
+  season   RaceSeason @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  authorId String
+  author   RaceMember @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  body String // 최대 140자 (앱 레벨 검증)
+
+  createdAt DateTime @default(now())
+
+  @@index([seasonId])
 }

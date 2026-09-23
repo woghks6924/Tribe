@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentRaceMember } from "@/lib/auth/race-session";
-import { KIND_LABEL, TYPE_LABEL, type RaceAcc, type RaceEye } from "@/lib/race/constants";
+import { KIND_LABEL, TYPE_LABEL, destinationNameOf, type RaceAcc, type RaceEye } from "@/lib/race/constants";
 import { raceProofPublicUrl } from "@/lib/race/storage";
 import {
   addDaysToDateStr,
@@ -17,12 +17,13 @@ import {
 } from "@/lib/race/stats";
 import { RaceTrack, type RaceTrackEntry } from "@/components/race/race-track";
 import { RaceAvatarImg } from "@/components/race/race-avatar";
+import { RaceGuestbook } from "@/components/race/race-guestbook";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Tri.be Race",
-  description: "크루 50일 시즌 레이스 — 서울에서 부산까지",
+  description: "크루 50일 시즌 레이스",
 };
 
 function dateLabel(dateStr: string): string {
@@ -50,7 +51,7 @@ export default async function RacePage() {
     );
   }
 
-  const [members, logs, recentProofs] = await Promise.all([
+  const [members, logs, recentProofs, guestbookEntries] = await Promise.all([
     prisma.raceMember.findMany({ where: { excluded: false } }),
     prisma.raceLog.findMany({ where: { seasonId: season.id } }),
     prisma.raceLog.findMany({
@@ -58,6 +59,12 @@ export default async function RacePage() {
       orderBy: { createdAt: "desc" },
       take: 12,
       include: { member: { select: { name: true } } },
+    }),
+    prisma.raceGuestbookEntry.findMany({
+      where: { seasonId: season.id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: { author: { select: { name: true } } },
     }),
   ]);
 
@@ -69,7 +76,7 @@ export default async function RacePage() {
   const cur = computeMemberStats(members, logs, startDateStr, uptoDateStr);
   const prev = computeMemberStats(members, logs, startDateStr, addDaysToDateStr(uptoDateStr, -1));
   const prevRankByMember = new Map(prev.map((s) => [s.member.id, s.rank]));
-  const feed = buildSeasonFeed(members, logs, startDateStr, uptoDateStr).slice(-14).reverse();
+  const feed = buildSeasonFeed(members, logs, startDateStr, uptoDateStr, season.goalKm).slice(-14).reverse();
   const awards = computeAwards(cur);
 
   const trackEntries: RaceTrackEntry[] = cur.map((s) => ({
@@ -115,7 +122,11 @@ export default async function RacePage() {
               ))
             ) : (
               <>
-                서울에서 <em className="text-[#f0b84a] not-italic">부산 {season.goalKm}km</em>까지,
+                서울에서{" "}
+                <em className="text-[#f0b84a] not-italic">
+                  {destinationNameOf(season.goalKm)} {season.goalKm}km
+                </em>
+                까지,
                 <br />
                 {season.durationDays}일 동안 누가 가장 멀리 갈까
               </>
@@ -153,8 +164,8 @@ export default async function RacePage() {
             <h2 className="text-base font-bold">코스 현황</h2>
             {leader && (
               <p className="text-[13px] text-[#a3a29a]">
-                선두 {leader.member.name} · {leader.pts.toFixed(1)}km · {checkpointOf(leader.pts)} · 부산까지{" "}
-                {Math.max(0, season.goalKm - leader.pts).toFixed(1)}km
+                선두 {leader.member.name} · {leader.pts.toFixed(1)}km · {checkpointOf(leader.pts)} ·{" "}
+                {destinationNameOf(season.goalKm)}까지 {Math.max(0, season.goalKm - leader.pts).toFixed(1)}km
               </p>
             )}
           </div>
@@ -328,6 +339,18 @@ export default async function RacePage() {
               )}
             </ul>
           </section>
+
+          <RaceGuestbook
+            entries={guestbookEntries.map((e) => ({
+              id: e.id,
+              authorId: e.authorId,
+              authorName: e.author.name,
+              body: e.body,
+              createdAt: e.createdAt.toISOString(),
+            }))}
+            currentMemberId={raceSession?.sub ?? null}
+            loggedIn={!!raceSession}
+          />
         </div>
       </div>
     </div>

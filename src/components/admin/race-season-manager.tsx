@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { GOAL_CITY_OPTIONS } from "@/lib/race/constants";
 
 export type SeasonSummary = {
   id: string;
@@ -281,13 +282,18 @@ function SeasonFields({ form, setForm }: { form: FormState; setForm: (f: FormSta
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-faint">
-          목표 km
-          <input
-            type="number"
+          목표 도시
+          <select
             value={form.goalKm}
             onChange={(e) => setForm({ ...form, goalKm: e.target.value })}
             className="border border-line-strong bg-transparent px-3 py-2 text-sm text-ink outline-none"
-          />
+          >
+            {GOAL_CITY_OPTIONS.map((cp) => (
+              <option key={cp.km} value={cp.km}>
+                {cp.name} ({cp.km}km)
+              </option>
+            ))}
+          </select>
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-faint">
           초대코드

@@ -144,7 +144,9 @@ export default async function RaceMePage() {
           </div>
           <p className="mt-1 text-sm text-[#a3a29a]">
             {my.rank}위 · {my.pts.toFixed(1)}km ·{" "}
-            {nextCp ? `${nextCp.name}까지 ${(nextCp.km - my.pts).toFixed(1)}km` : "부산 완주!"}
+            {nextCp
+              ? `${nextCp.name}까지 ${(nextCp.km - my.pts).toFixed(1)}km`
+              : `${CHECKPOINTS[CHECKPOINTS.length - 1].name} 완주!`}
           </p>
           <div className="mt-2 flex flex-col gap-1">
             {bars.map((b) => (

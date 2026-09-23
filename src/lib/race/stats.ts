@@ -1,6 +1,7 @@
 import {
   BASE_TYPE_THRESHOLD_KM,
   CHECKPOINTS,
+  destinationNameOf,
   HYBRID_RATIO_THRESHOLD,
   SLEEP_IDLE_DAYS,
   type RaceBodyType,
@@ -82,8 +83,8 @@ export function checkpointOf(km: number): string {
   for (const cp of CHECKPOINTS) {
     if (cp.km > 0 && km >= cp.km) label = `${cp.name} 통과`;
   }
-  const goal = CHECKPOINTS[CHECKPOINTS.length - 1].km;
-  return km >= goal ? "부산 도착" : label;
+  const last = CHECKPOINTS[CHECKPOINTS.length - 1];
+  return km >= last.km ? `${last.name} 도착` : label;
 }
 export function checkpointIndexOf(km: number): number {
   let idx = 0;
@@ -186,11 +187,12 @@ export function eventsBetween(
   before: RaceMemberStats[],
   after: RaceMemberStats[],
   date: string,
+  goalKm: number,
   focusMemberId?: string,
 ): RaceFeedEvent[] {
   const events: RaceFeedEvent[] = [];
   const beforeByMember = new Map(before.map((s) => [s.member.id, s]));
-  const goal = CHECKPOINTS[CHECKPOINTS.length - 1].km;
+  const goal = goalKm;
 
   if (before.length && after[0] && before[0] && after[0].member.id !== before[0].member.id && after[0].pts > 0) {
     events.push({ date, text: `<b>${escapeHtml(after[0].member.name)}</b> 선두 탈환` });
@@ -206,7 +208,10 @@ export function eventsBetween(
       events.push({
         date,
         memberId: s.member.id,
-        text: cp.km === goal ? `<b>${n}</b> 부산 도착! 완주 배지 획득` : `<b>${n}</b> · ${cp.name} 통과 (${cp.km}km)`,
+        text:
+          cp.km === goal
+            ? `<b>${n}</b> ${destinationNameOf(goal)} 도착! 완주 배지 획득`
+            : `<b>${n}</b> · ${cp.name} 통과 (${cp.km}km)`,
       });
     }
     if (s.type !== o.type && s.type !== "base") {
@@ -250,6 +255,7 @@ export function buildSeasonFeed(
   logs: RaceLogRow[],
   seasonStartDateStr: string,
   todayDateStr: string,
+  goalKm: number,
 ): RaceFeedEvent[] {
   const todayDay = dayIndexOf(todayDateStr, seasonStartDateStr);
   const feed: RaceFeedEvent[] = [];
@@ -258,7 +264,7 @@ export function buildSeasonFeed(
     const prevDateStr = addDaysToDateStr(seasonStartDateStr, d - 2);
     const before = computeMemberStats(members, logs, seasonStartDateStr, prevDateStr);
     const after = computeMemberStats(members, logs, seasonStartDateStr, dateStr);
-    feed.push(...eventsBetween(before, after, dateStr));
+    feed.push(...eventsBetween(before, after, dateStr, goalKm));
   }
   return feed;
 }

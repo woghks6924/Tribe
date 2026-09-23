@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CHECKPOINTS } from "@/lib/race/constants";
+import { CHECKPOINTS, destinationNameOf } from "@/lib/race/constants";
 import type { RaceAcc, RaceBodyType, RaceEye } from "@/lib/race/constants";
 import { drawCrown, drawSprite, grid, SPRITE_GRID_SIZE } from "@/lib/race/sprite";
 import { isSleeping } from "@/lib/race/stats";
@@ -22,8 +22,28 @@ const S = 2; // 한 픽셀당 캔버스 픽셀 수
 const LH = 52;
 const TOP = 34;
 
-// 체크포인트 사이 7구간에 지형을 하나씩 배정 — 실제 지리와 무관하게 코스에 변화를 주는 장식용.
-const SEGMENT_TERRAIN = ["road", "field", "mountain", "mountain", "river", "field", "river"] as const;
+// 체크포인트 사이 구간마다 지형을 하나씩 배정 — 실제 지리와 무관하게 코스에 변화를 주는 장식용.
+// 서울~부산 7구간 + 부산 이후 해외 구간(후쿠오카~파리) 순서.
+const SEGMENT_TERRAIN = [
+  "road",
+  "field",
+  "mountain",
+  "mountain",
+  "river",
+  "field",
+  "river",
+  "river", // 부산→후쿠오카 (바다)
+  "field",
+  "road",
+  "mountain",
+  "mountain",
+  "river", // 삿포로→블라디보스토크 (바다)
+  "field",
+  "field", // 베이징→울란바토르 (초원)
+  "road", // 울란바토르→모스크바 (시베리아 횡단)
+  "field",
+  "road",
+] as const;
 type Terrain = (typeof SEGMENT_TERRAIN)[number];
 const TERRAIN_SEGMENTS = CHECKPOINTS.slice(0, -1).map((cp, i) => ({
   from: cp.km,
@@ -152,7 +172,7 @@ export function RaceTrack({ entries, goalKm }: { entries: RaceTrackEntry[]; goal
       if (rg < goalKm) {
         ctx!.fillStyle = "#6f6f6a";
         ctx!.textAlign = "right";
-        ctx!.fillText(`부산까지 ${Math.round(goalKm - rg)}km →`, W - 8, H - 10);
+        ctx!.fillText(`${destinationNameOf(goalKm)}까지 ${Math.round(goalKm - rg)}km →`, W - 8, H - 10);
       }
 
       entries.forEach((s, i) => {

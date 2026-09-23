@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CHECKPOINTS, type RaceAcc, type RaceBodyType, type RaceEye, TYPE_LABEL } from "@/lib/race/constants";
+import { CHECKPOINTS, destinationNameOf, type RaceAcc, type RaceBodyType, type RaceEye, TYPE_LABEL } from "@/lib/race/constants";
 import { drawCrown, drawSprite, grid, SPRITE_GRID_SIZE } from "@/lib/race/sprite";
 
 const N = SPRITE_GRID_SIZE;
@@ -177,7 +177,7 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
       g.fillRect(L, y, R - L, 6);
       g.fillStyle = "#f0b84a";
       g.fillRect(L, y, X(input.pts) - L, 6);
-      CHECKPOINTS.forEach((cp) => {
+      CHECKPOINTS.filter((cp) => cp.km <= input.goalKm).forEach((cp) => {
         g.fillStyle = input.pts >= cp.km ? "#f0b84a" : "#6f6f6a";
         g.fillRect(X(cp.km) - 7, y - 4, 14, 14);
       });
@@ -188,7 +188,7 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
       g.textAlign = "left";
       g.fillText("서울", L - 10, y + 60);
       g.textAlign = "right";
-      g.fillText(`부산 ${input.goalKm}`, R + 10, y + 60);
+      g.fillText(`${destinationNameOf(input.goalKm)} ${input.goalKm}`, R + 10, y + 60);
       g.textAlign = "center";
       g.fillStyle = "#f1f1ee";
 
