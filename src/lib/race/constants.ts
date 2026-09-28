@@ -64,16 +64,53 @@ export const ACC_OPTIONS: { value: RaceAcc; label: string }[] = [
   { value: "bib", label: "배번표" },
 ];
 
-// 체형(캐릭터 타입). GYM은 WOD와 합쳐 "파워형" 풀로 취급한다.
-export type RaceBodyType = "base" | "run" | "wod" | "swim" | "hybrid";
+// 체형(캐릭터 타입) 8종. GYM은 WOD와 합쳐 "파워형" 풀로 취급한다. 판정 규칙은 lib/race/type.ts.
+export type RaceBodyType = "base" | "run" | "long" | "speed" | "wod" | "swim" | "tri" | "hybrid";
 
 export const TYPE_LABEL: Record<RaceBodyType, string> = {
   base: "새내기",
   run: "러너형",
+  long: "장거리형",
+  speed: "스피드형",
   wod: "파워형",
   swim: "스위머형",
+  tri: "철인형",
   hybrid: "하이브리드",
 };
+
+// 캐릭터 표정 7종 — 사용자가 고르는 게 아니라 활동 신호로 자동 결정된다. lib/race/expression.ts 참고.
+export type RaceExpr = "n" | "happy" | "tired" | "mad" | "sleep" | "restless" | "hifive";
+
+// 장비 슬롯 — 슬롯당 하나만 착용.
+export type RaceItemSlot = "head" | "face" | "neck" | "body" | "wrist" | "feet";
+
+export type RaceItem = { id: string; name: string; slot: RaceItemSlot };
+
+// 장비 카탈로그. 코드 상수라 DB 마이그레이션 없이 나중에 시상 한정 아이템을 추가할 수 있다
+// (RaceMemberItem.itemId는 이 목록을 강제하지 않는 자유 문자열).
+export const ITEMS: RaceItem[] = [
+  { id: "shoes", name: "러닝화", slot: "feet" },
+  { id: "wrist", name: "손목밴드", slot: "wrist" },
+  { id: "tee", name: "트라이브 티", slot: "body" },
+  { id: "bib", name: "배번표", slot: "body" },
+  { id: "cap", name: "러닝캡", slot: "head" },
+  { id: "band", name: "헤어밴드", slot: "head" },
+  { id: "beanie", name: "비니", slot: "head" },
+  { id: "phones", name: "헤드폰", slot: "head" },
+  { id: "shades", name: "선글라스", slot: "face" },
+  { id: "scarf", name: "스카프", slot: "neck" },
+];
+
+export function itemById(id: string): RaceItem | undefined {
+  return ITEMS.find((it) => it.id === id);
+}
+
+// 레벨업 시 장비를 고를 수 있는 레벨 — 관리자가 RaceConfig에서 바꿀 수 있고, 이건 그 기본값.
+export const DEFAULT_PICK_LEVELS = [3, 5, 8, 10, 13, 15, 20, 25];
+// 레벨 공식(레벨업에 필요한 누적 환산 km = base * level^exponent) 기본값 — 역시 RaceConfig로 조정 가능.
+export const DEFAULT_LEVEL_BASE_KM = 10;
+export const DEFAULT_LEVEL_EXPONENT = 1.6;
+export const DEFAULT_MAX_LEVEL = 30;
 
 // 기록 입력 종목.
 export const KIND_LABEL: Record<"RUN" | "WOD" | "SWIM" | "GYM", string> = {

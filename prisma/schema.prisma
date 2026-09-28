@@ -574,6 +574,7 @@ model RaceSeason {
 
   logs             RaceLog[]
   guestbookEntries RaceGuestbookEntry[]
+  pokes            RacePoke[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -595,8 +596,20 @@ model RaceMember {
   lockedUntil      DateTime? // 5회 실패 시 10분 잠금
   excluded         Boolean   @default(false) // true면 리더보드/코스/시상/피드 집계에서 제외 (계정·기록은 유지)
 
+  // 장비 슬롯별 착용 중인 아이템 id (RaceItem 카탈로그 참조, 코드 상수라 FK 없음). null=미착용.
+  eqHead  String?
+  eqFace  String?
+  eqNeck  String?
+  eqBody  String?
+  eqWrist String?
+  eqFeet  String?
+
   logs             RaceLog[]
   guestbookEntries RaceGuestbookEntry[]
+  pokesSent        RacePoke[]     @relation("PokesSent")
+  pokesReceived    RacePoke[]     @relation("PokesReceived")
+  reactions        RaceReaction[]
+  items            RaceMemberItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -619,6 +632,8 @@ model RaceLog {
   proofPath      String? // Supabase Storage "race-proofs" 버킷 내 경로 (버킷명 제외)
   proofExpiresAt DateTime? // 업로드 시각 + 24h. 지나면 피드에서 숨기고, 크론이 파일 삭제 후 null 처리
 
+  durationSec Int? // 러닝 기록의 실제 소요 시간(초) — 페이스 계산용 선택 입력. 기존 기록·다른 종목은 null
+
   createdAt DateTime @default(now())
 
   @@index([seasonId])
@@ -639,4 +654,71 @@ model RaceGuestbookEntry {
   createdAt DateTime @default(now())
 
   @@index([seasonId])
+}
+
+// 콕 찌르기 — 잠수 3일 이상이거나 누적 0km인 크루원을 깨우는 용도. 같은 사람에게 하루 1번만
+// (앱 레벨에서 KST 날짜 기준으로 검증). acknowledgedAt은 찔린 사람이 다음 로그인 시 뜨는
+// 팝업을 확인한 시각 — null이면 미확인 상태로, 3개 이상 쌓이면 캐릭터가 "뒤척임" 표정이 된다.
+model RacePoke {
+  id       String     @id @default(cuid())
+  seasonId String
+  season   RaceSeason @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  pokerId  String
+  poker    RaceMember @relation("PokesSent", fields: [pokerId], references: [id], onDelete: Cascade)
+  targetId String
+  target   RaceMember @relation("PokesReceived", fields: [targetId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime  @default(now())
+  acknowledgedAt DateTime?
+
+  @@index([seasonId])
+  @@index([targetId])
+  @@index([pokerId])
+}
+
+// 하이파이브 — 인증샷/크루 소식 항목에 누르는 반응. 크루 소식은 DB에 저장되지 않고 매번
+// 재계산되는 값이라(RaceFeedEvent 참고) targetId는 그 이벤트를 항상 똑같이 재현하는
+// 결정적 키를 쓴다(lib/race/reaction-key.ts). targetMemberId는 "받은 하이파이브 수" 집계용 —
+// 인증샷은 그 기록 작성자, 크루 소식은 이벤트의 주인공 memberId를 그대로 저장해둔다.
+model RaceReaction {
+  id             String     @id @default(cuid())
+  targetType     String // "PROOF" | "FEED"
+  targetId       String
+  targetMemberId String
+  memberId       String
+  member         RaceMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([targetType, targetId, memberId])
+  @@index([targetType, targetId])
+  @@index([targetMemberId])
+}
+
+// 보유 장비(옷장) — 멤버당 아이템 하나씩. itemId는 코드 상수 ITEMS 카탈로그를 가리키는 자유
+// 문자열이라 DB에서 강제하지 않는다(나중에 시상 아이템을 추가해도 마이그레이션 불필요).
+model RaceMemberItem {
+  id       String     @id @default(cuid())
+  memberId String
+  member   RaceMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  itemId   String
+
+  source        String // "levelup" | "legacy" | "award" | "event"
+  acquiredLevel Int? // levelup으로 얻었을 때의 레벨. legacy/award/event는 null 가능
+  acquiredAt    DateTime @default(now())
+
+  @@unique([memberId, itemId])
+  @@index([memberId])
+}
+
+// 레이스 전역 설정 — 시즌과 무관하게 딱 한 행만 존재(싱글턴, id="singleton"). 레벨 공식과
+// 레벨업 선택 레벨 목록을 관리자가 바꿀 수 있게 코드 하드코딩 대신 여기 둔다.
+model RaceConfig {
+  id             String @id @default("singleton")
+  levelBaseKm    Float  @default(10) // 필요 누적 km = levelBaseKm * level^levelExponent
+  levelExponent  Float  @default(1.6)
+  maxLevel       Int    @default(30)
+  pickLevels     Json   @default("[3,5,8,10,13,15,20,25]") // number[] — 장비를 고를 수 있는 레벨
+
+  updatedAt DateTime @updatedAt
 }

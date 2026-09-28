@@ -1,16 +1,16 @@
 "use client";
 
-import { ACC_OPTIONS, EYE_OPTIONS, PALETTE, type RaceAcc, type RaceBodyType, type RaceEye } from "@/lib/race/constants";
+import { EYE_OPTIONS, PALETTE, type RaceBodyType, type RaceEye } from "@/lib/race/constants";
 import { RaceAvatarImg } from "@/components/race/race-avatar";
 
 export type RaceCustomizeValue = {
   color: string;
   eye: RaceEye;
-  acc: RaceAcc;
   igHandle: string;
 };
 
-// 캐릭터 꾸미기 UI(색상/눈/소품/인스타 아이디) — 가입 폼과 마이페이지 편집 둘 다에서 쓴다.
+// 캐릭터 꾸미기 UI(색상/눈/인스타 아이디) — 가입 폼과 마이페이지 편집 둘 다에서 쓴다.
+// 장비는 더 이상 여기서 고르지 않는다 — 레벨업으로 얻고 /race/me의 옷장에서 갈아입는다.
 export function RaceCustomizer({
   value,
   onChange,
@@ -23,12 +23,8 @@ export function RaceCustomizer({
   return (
     <div className="grid grid-cols-[88px_minmax(0,1fr)] items-start gap-3.5">
       <RaceAvatarImg
-        color={value.color}
-        eye={value.eye}
-        acc={value.acc}
-        type={previewType}
-        sleep={false}
-        scale={4}
+        appearance={{ color: value.color, eye: value.eye, type: previewType, expr: "n", eq: {} }}
+        scale={2.75}
         className="block bg-[#17181b] [image-rendering:pixelated]"
         alt="캐릭터 미리보기"
       />
@@ -58,23 +54,6 @@ export function RaceCustomizer({
                 onClick={() => onChange({ ...value, eye: o.value })}
                 className={`cursor-pointer rounded border px-2.5 py-1 text-[13px] ${
                   value.eye === o.value ? "border-[#f1f1ee] bg-[#f1f1ee] text-[#1d1e21]" : "border-[#3c3d43] text-[#a3a29a]"
-                }`}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm text-[#a3a29a]">소품</span>
-          <div className="flex flex-wrap gap-1.5">
-            {ACC_OPTIONS.map((o) => (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => onChange({ ...value, acc: o.value })}
-                className={`cursor-pointer rounded border px-2.5 py-1 text-[13px] ${
-                  value.acc === o.value ? "border-[#f1f1ee] bg-[#f1f1ee] text-[#1d1e21]" : "border-[#3c3d43] text-[#a3a29a]"
                 }`}
               >
                 {o.label}

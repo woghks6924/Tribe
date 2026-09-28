@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentRaceMember } from "@/lib/auth/race-session";
-import { KIND_LABEL, TYPE_LABEL, destinationNameOf, type RaceAcc, type RaceEye } from "@/lib/race/constants";
+import { KIND_LABEL, TYPE_LABEL, destinationNameOf, type RaceEye } from "@/lib/race/constants";
 import { raceProofPublicUrl } from "@/lib/race/storage";
+import { computeMemberAppearances } from "@/lib/race/appearance";
 import {
   addDaysToDateStr,
   buildSeasonFeed,
@@ -79,16 +80,30 @@ export default async function RacePage() {
   const feed = buildSeasonFeed(members, logs, startDateStr, uptoDateStr, season.goalKm).slice(-14).reverse();
   const awards = computeAwards(cur);
 
-  const trackEntries: RaceTrackEntry[] = cur.map((s) => ({
-    memberId: s.member.id,
-    name: s.member.name,
-    color: s.member.color,
-    eye: s.member.eye as RaceEye,
-    acc: s.member.acc as RaceAcc,
-    pts: s.pts,
-    type: s.type,
-    idleDays: s.idleDays,
-  }));
+  const idleDaysByMember = new Map(cur.map((s) => [s.member.id, s.idleDays]));
+  const rankDroppedByMember = new Map(cur.map((s) => [s.member.id, s.rank > (prevRankByMember.get(s.member.id) ?? s.rank)]));
+  const appearances = await computeMemberAppearances(members, {
+    seasonId: season.id,
+    idleDaysByMember,
+    rankDroppedByMember,
+  });
+  const appearanceOf = (memberId: string) =>
+    appearances.get(memberId) ?? { level: 0, gold: false, expr: "n" as const, eq: {} };
+
+  const trackEntries: RaceTrackEntry[] = cur.map((s) => {
+    const a = appearanceOf(s.member.id);
+    return {
+      memberId: s.member.id,
+      name: s.member.name,
+      color: s.member.color,
+      eye: s.member.eye as RaceEye,
+      eq: a.eq,
+      gold: a.gold,
+      expr: a.expr,
+      pts: s.pts,
+      type: s.type,
+    };
+  });
 
   const leader = cur[0];
   const endDateStr = addDaysToDateStr(startDateStr, season.durationDays - 1);
@@ -177,6 +192,18 @@ export default async function RacePage() {
         </p>
       </section>
 
+      <RaceGuestbook
+        entries={guestbookEntries.map((e) => ({
+          id: e.id,
+          authorId: e.authorId,
+          authorName: e.author.name,
+          body: e.body,
+          createdAt: e.createdAt.toISOString(),
+        }))}
+        currentMemberId={raceSession?.sub ?? null}
+        loggedIn={!!raceSession}
+      />
+
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
         <section className="rounded border border-[#3c3d43] bg-[#2a2b2e] p-4 sm:p-[18px]">
           <h2 className="text-base font-bold">리더보드</h2>
@@ -195,6 +222,7 @@ export default async function RacePage() {
                 const diff = prevRank - s.rank;
                 const gap = i === 0 ? `선두 · ${checkpointOf(s.pts)}` : `${cur[i - 1].member.name}까지 ${(cur[i - 1].pts - s.pts).toFixed(1)}km`;
                 const sleep = isSleeping(s.idleDays);
+                const a = appearanceOf(s.member.id);
                 return (
                   <li
                     key={s.member.id}
@@ -213,17 +241,14 @@ export default async function RacePage() {
                       )}
                     </div>
                     <RaceAvatarImg
-                      color={s.member.color}
-                      eye={s.member.eye as RaceEye}
-                      acc={s.member.acc as RaceAcc}
-                      type={s.type}
-                      sleep={sleep}
-                      scale={2}
+                      appearance={{ color: s.member.color, eye: s.member.eye as RaceEye, type: s.type, expr: a.expr, eq: a.eq, gold: a.gold }}
+                      scale={1.4}
                       className="block [image-rendering:pixelated]"
                     />
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5 font-bold">
                         <span>{s.member.name}</span>
+                        <span className="rounded bg-[#17181b] px-1.5 py-px text-[11px] font-normal text-[#f0b84a]">Lv.{a.level}</span>
                         {s.member.igHandle && <span className="text-[11px] font-normal text-[#a3a29a]">@{s.member.igHandle}</span>}
                       </div>
                       <div className="mt-0.5 flex flex-wrap gap-1">
@@ -267,23 +292,33 @@ export default async function RacePage() {
                   <span className="font-[family-name:var(--font-race-px)] text-[8px] leading-relaxed text-[#f0b84a]">{a.label}</span>
                   <h3 className="text-sm font-bold">{a.title}</h3>
                   <p className="text-xs leading-relaxed text-[#a3a29a]">{a.description}</p>
-                  {a.holder ? (
-                    <div className="mt-auto flex items-center gap-2">
-                      <RaceAvatarImg
-                        color={a.holder.member.color}
-                        eye={a.holder.member.eye as RaceEye}
-                        acc={a.holder.member.acc as RaceAcc}
-                        type={a.holder.type}
-                        sleep={isSleeping(a.holder.idleDays)}
-                        scale={2}
-                        className="[image-rendering:pixelated]"
-                      />
-                      <div>
-                        <b className="text-sm">{a.holder.member.name}</b>
-                        <span className="block text-xs text-[#a3a29a]">{a.value}</span>
+                  {a.holder && (() => {
+                    const holder = a.holder;
+                    const ha = appearanceOf(holder.member.id);
+                    return (
+                      <div className="mt-auto flex items-center gap-2">
+                        <RaceAvatarImg
+                          appearance={{
+                            color: holder.member.color,
+                            eye: holder.member.eye as RaceEye,
+                            type: holder.type,
+                            expr: ha.expr,
+                            eq: ha.eq,
+                            gold: ha.gold,
+                          }}
+                          scale={1.4}
+                          className="[image-rendering:pixelated]"
+                        />
+                        <div>
+                          <b className="text-sm">
+                            {holder.member.name} <span className="font-normal text-[#f0b84a]">Lv.{ha.level}</span>
+                          </b>
+                          <span className="block text-xs text-[#a3a29a]">{a.value}</span>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
+                    );
+                  })()}
+                  {!a.holder && (
                     <p className="mt-auto text-xs text-[#6f6f6a]">아직 후보가 없어요.</p>
                   )}
                 </div>
@@ -339,19 +374,11 @@ export default async function RacePage() {
               )}
             </ul>
           </section>
-
-          <RaceGuestbook
-            entries={guestbookEntries.map((e) => ({
-              id: e.id,
-              authorId: e.authorId,
-              authorName: e.author.name,
-              body: e.body,
-              createdAt: e.createdAt.toISOString(),
-            }))}
-            currentMemberId={raceSession?.sub ?? null}
-            loggedIn={!!raceSession}
-          />
         </div>
+      </div>
+
+      <div className="rounded border border-[#3c3d43] bg-[#17181b] py-6 text-center text-xs text-[#6f6f6a]">
+        업데이트 노트는 준비 중이에요.
       </div>
     </div>
   );

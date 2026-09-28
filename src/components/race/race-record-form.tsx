@@ -11,6 +11,8 @@ export function RaceRecordForm() {
   const router = useRouter();
   const [kind, setKind] = useState<Kind>("RUN");
   const [amount, setAmount] = useState("");
+  const [minutes, setMinutes] = useState("");
+  const [seconds, setSeconds] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
@@ -53,10 +55,15 @@ export function RaceRecordForm() {
         proofPath = uploadData.path;
       }
 
+      const durationSec =
+        kind === "RUN" && (minutes || seconds)
+          ? (parseInt(minutes || "0", 10) || 0) * 60 + (parseInt(seconds || "0", 10) || 0)
+          : undefined;
+
       const res = await fetch("/api/race/logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, value, proofPath }),
+        body: JSON.stringify({ kind, value, proofPath, durationSec }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -64,6 +71,8 @@ export function RaceRecordForm() {
         return;
       }
       setAmount("");
+      setMinutes("");
+      setSeconds("");
       setFile(null);
       const rankMsg =
         data.prevRank && data.rank ? ` · ${data.prevRank}위 → ${data.rank}위` : "";
@@ -122,6 +131,31 @@ export function RaceRecordForm() {
           />
         </label>
       </div>
+      {kind === "RUN" && (
+        <label className="flex flex-col gap-1">
+          <span className="text-sm text-[#a3a29a]">시간 (선택, 페이스 계산·스피드형 판정에 쓰여요)</span>
+          <div className="flex items-center gap-1.5">
+            <input
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value.replace(/\D/g, "").slice(0, 3))}
+              type="text"
+              inputMode="numeric"
+              placeholder="45"
+              className="w-16 rounded border border-[#3c3d43] bg-[#17181b] px-3 py-2 text-[15px] text-[#f1f1ee] outline-none placeholder:text-[#6f6f6a]"
+            />
+            <span className="text-sm text-[#a3a29a]">분</span>
+            <input
+              value={seconds}
+              onChange={(e) => setSeconds(e.target.value.replace(/\D/g, "").slice(0, 2))}
+              type="text"
+              inputMode="numeric"
+              placeholder="00"
+              className="w-16 rounded border border-[#3c3d43] bg-[#17181b] px-3 py-2 text-[15px] text-[#f1f1ee] outline-none placeholder:text-[#6f6f6a]"
+            />
+            <span className="text-sm text-[#a3a29a]">초</span>
+          </div>
+        </label>
+      )}
       <p className="text-xs text-[#6f6f6a]">
         인증샷은 24시간 동안 크루 피드에 공개된 뒤 자동으로 삭제돼요. 한 번에 러닝 50km, WOD·헬스 240분, 수영 10km까지
         올릴 수 있어요.

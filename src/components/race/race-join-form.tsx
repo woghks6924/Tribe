@@ -13,7 +13,6 @@ export function RaceJoinForm() {
   const [custom, setCustom] = useState<RaceCustomizeValue>(() => ({
     color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
     eye: "dot",
-    acc: "none",
     igHandle: "",
   }));
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +32,6 @@ export function RaceJoinForm() {
           pin: pin.trim(),
           color: custom.color,
           eye: custom.eye,
-          acc: custom.acc,
           igHandle: custom.igHandle,
         }),
       });

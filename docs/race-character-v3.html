@@ -1,0 +1,266 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Tri.be Race 캐릭터 v3 레퍼런스</title>
+<!--
+  Tri.be Race 캐릭터 스프라이트 레퍼런스 (v3)
+  - build(opts) 하나로 체형 8종 · 표정 7종 · 눈 4종 · 장비 6부위 · 금테를 조합해 32x32 픽셀 그리드를 만든다.
+  - 그리드 문자 → 색은 palette(baseColor, gold)로 결정.
+  - 이 파일의 build()/palette()/paint()를 lib/race/sprite.ts로 그대로 옮겨서 쓰면 된다.
+-->
+<style>
+  body{background:#1d1e21;color:#f1f1ee;font-family:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;margin:0;padding:24px 16px}
+  h2{font-size:15px;font-weight:600;margin:24px 0 10px;color:#a3a29a}
+  .row{display:flex;flex-wrap:wrap;gap:10px}
+  .cell{background:#2a2b2e;border-radius:6px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px;width:112px}
+  .cell b{font-size:12px;font-weight:600}.cell span{font-size:11px;color:#a3a29a;text-align:center}
+  canvas{image-rendering:pixelated}
+</style>
+<h2>체형 8종</h2><div class="row" id="types"></div>
+<h2>표정 7종</h2><div class="row" id="exprs"></div>
+<h2>눈 4종 (본인 선택, 기본 표정일 때만 적용)</h2><div class="row" id="eyes"></div>
+<h2>장비 (부위별 1개)</h2><div class="row" id="items"></div>
+<h2>Lv.30 금테</h2><div class="row" id="gold"></div>
+<script>
+/* ================= sprite core ================= */
+const N = 32, C = 16;
+
+/** 체형 파라미터. rx/ry: 몸통 타원, leg: 다리 길이, lw: 다리 굵기, arm: 팔 모양 */
+const TYPES = {
+  base:   { rx: 7,   ry: 7,   leg: 3, lw: 2, arm: 's' },                    // 새내기
+  run:    { rx: 6,   ry: 6.8, leg: 7, lw: 2, arm: 's' },                    // 러너형
+  long:   { rx: 6,   ry: 6.8, leg: 7, lw: 2, arm: 's', pack: true },        // 장거리형
+  speed:  { rx: 6,   ry: 6.8, leg: 7, lw: 2, arm: 's', spike: true },       // 스피드형
+  wod:    { rx: 8.8, ry: 7,   leg: 3, lw: 3, arm: 'fist' },                 // 파워형
+  swim:   { rx: 9,   ry: 6,   leg: 3, lw: 2, arm: 'fin', gog: true },       // 스위머형
+  tri:    { rx: 7,   ry: 6.6, leg: 5, lw: 2, arm: 'finS', gog: true },      // 철인형
+  hybrid: { rx: 7.4, ry: 7,   leg: 5, lw: 2, arm: 'm', star: true },        // 하이브리드
+};
+const TYPE_NAME = { base:'새내기', run:'러너형', long:'장거리형', speed:'스피드형', wod:'파워형', swim:'스위머형', tri:'철인형', hybrid:'하이브리드' };
+
+/** 장비 카탈로그. slot당 하나만 착용 */
+const ITEMS = [
+  { id:'shoes',  name:'러닝화',     slot:'feet'  },
+  { id:'wrist',  name:'손목밴드',   slot:'wrist' },
+  { id:'tee',    name:'트라이브 티', slot:'body'  },
+  { id:'bib',    name:'배번표',     slot:'body'  },
+  { id:'cap',    name:'러닝캡',     slot:'head'  },
+  { id:'band',   name:'헤어밴드',   slot:'head'  },
+  { id:'beanie', name:'비니',       slot:'head'  },
+  { id:'phones', name:'헤드폰',     slot:'head'  },
+  { id:'shades', name:'선글라스',   slot:'face'  },
+  { id:'scarf',  name:'스카프',     slot:'neck'  },
+];
+
+/**
+ * @param o.type   TYPES 키
+ * @param o.frame  0..3 달리기 프레임, -1 = 제자리
+ * @param o.expr   'n'|'happy'|'tired'|'mad'|'sleep'|'restless'|'hifive'
+ * @param o.eye    'round'|'dot'|'happy'|'wink' (expr==='n'일 때만)
+ * @param o.eq     { head, face, neck, body, wrist, feet } 각 값은 ITEMS id 또는 null
+ * @param o.tick   스카프 펄럭임용 카운터(정수)
+ * @returns 32x32 문자 그리드 (+ .cy, .top 메타)
+ */
+function build(o) {
+  const T = TYPES[o.type] || TYPES.base, eq = o.eq || {}, frame = o.frame ?? -1, expr = o.expr || 'n', tick = o.tick || 0;
+  const moving = frame >= 0;
+  const g = Array.from({ length: N }, () => Array(N).fill('.'));
+  const set = (x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N) g[y][x] = c; };
+  const inE = (x, y, cx, cy0, rx, ry) => ((x + .5 - cx) / rx) ** 2 + ((y + .5 - cy0) / ry) ** 2 <= 1;
+  const isB = v => v === 'B' || v === 'L' || v === 'D';
+  const cy = 29 - T.leg + 1.5 - T.ry;
+  const top = Math.floor(cy - T.ry);
+
+  // 다리 + 신발
+  const legTop = Math.floor(cy + T.ry) - 1;
+  const lift = [[2, 0], [0, 0], [0, 2], [0, 0]][moving ? frame : 1];
+  const shoes = eq.feet === 'shoes';
+  [[0, C - 4 - (T.lw - 1)], [1, C + 3]].forEach(([i, x0]) => {
+    const lf = lift[i];
+    for (let y = legTop; y <= 29 - lf; y++) for (let x = x0; x < x0 + T.lw; x++)
+      set(x, y, y >= 29 - lf ? (shoes ? 'S' : 's') : (x === x0 + T.lw - 1 ? 'D' : 'B'));
+    if (shoes) set(i ? x0 + T.lw : x0 - 1, 29 - lf, 'S');
+  });
+
+  // 몸통 (명암)
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (inE(x, y, C, cy, T.rx, T.ry)) {
+    const d = -(x + .5 - C) / T.rx * .6 - (y + .5 - cy) / T.ry * .8;
+    g[y][x] = d > .62 ? 'L' : d < -.5 ? 'D' : 'B';
+  }
+
+  // 팔 (+ 손목밴드)
+  const sw = frame === 0 ? -1 : frame === 2 ? 1 : 0;
+  const wb = eq.wrist === 'wrist';
+  const blob = (cx, cy0, rx, ry) => {
+    for (let y = 1; y < N - 1; y++) for (let x = 1; x < N - 1; x++) if (inE(x, y, cx, cy0, rx, ry))
+      g[y][x] = wb && y === Math.round(cy0 - .5) ? 'R' : ((y + .5 - cy0) / ry) > .2 ? 'D' : 'B';
+  };
+  [-1, 1].forEach(sd => {
+    const dy = moving ? sd * sw : 0;
+    if (expr === 'hifive' && sd === 1) { blob(C + T.rx + 1.4, cy - 4.2, 1.7, 1.7); return; }
+    if (T.arm === 's')    blob(C + sd * (T.rx + .6), cy + 2 + dy, 1.5, 1.5);
+    if (T.arm === 'm')    blob(C + sd * (T.rx + .8), cy + 1.5 + dy, 1.9, 1.9);
+    if (T.arm === 'fist') blob(C + sd * (T.rx + 1.6), cy + 1.5 + dy, 2.6, 2.6);
+    if (T.arm === 'fin')  blob(C + sd * (T.rx + 2), cy - .5 + dy, 3, 1.3);
+    if (T.arm === 'finS') blob(C + sd * (T.rx + 1.6), cy + .2 + dy, 2.3, 1.1);
+  });
+
+  // 체형 표시: 장거리 팩
+  if (T.pack) {
+    const x0 = Math.round(C - T.rx - 3);
+    for (let y = Math.round(cy - 2); y <= Math.round(cy + 2); y++) for (let x = x0; x < x0 + 2; x++) set(x, y, 'T');
+    set(x0 + 1, Math.round(cy - 3), 'A'); set(x0 + 2, Math.round(cy - 1), 'A');
+  }
+
+  // 몸 장비: 트라이브 티 / 배번표
+  if (eq.body === 'tee') {
+    for (let y = Math.round(cy + 1.5); y < N; y++) for (let x = 0; x < N; x++) {
+      const v = g[y][x]; if (isB(v) && inE(x, y, C, cy, T.rx, T.ry)) g[y][x] = v === 'D' ? 't' : 'T';
+    }
+    if (!T.star) { const ly = Math.round(cy + 2.6); [[C-1,ly],[C,ly],[C-2,ly+1],[C-1,ly+1],[C,ly+1],[C+1,ly+1]].forEach(([x, y]) => set(x, y, 'A')); }
+  }
+  // 체형 표시: 하이브리드 별
+  if (T.star) { const r = Math.round(cy + 2); [[C-1,r],[C,r],[C-2,r+1],[C-1,r+1],[C,r+1],[C+1,r+1],[C-1,r+2],[C,r+2]].forEach(([x, y]) => set(x, y, 'A')); }
+  if (eq.body === 'bib') {
+    const r = Math.round(cy + 2);
+    for (let y = r; y <= r + 2; y++) for (let x = C - 3; x <= C + 2; x++) set(x, y, 'w');
+    set(C - 1, r + 1, 'K'); set(C, r + 1, 'K'); set(C - 3, r, 'R'); set(C + 2, r, 'R');
+  }
+
+  // 체형 표시: 스피드 뾰족머리 (모자류 착용 시 숨김)
+  const hat = eq.head === 'cap' || eq.head === 'beanie';
+  if (T.spike && !hat) {
+    const s = moving ? [-1, 0, 1, 0][frame] : 0;
+    [[C-3,top],[C-3+s,top-1],[C,top],[C+s,top-1],[C+s,top-2],[C+3,top],[C+3+s,top-1]].forEach(([x, y]) => set(x, y, 'H'));
+  }
+  // 체형 표시: 수경 (비니 착용 시 숨김)
+  if (T.gog && eq.head !== 'beanie') {
+    const gr = top + 2;
+    for (let x = 0; x < N; x++) if (isB(g[gr][x])) g[gr][x] = 'q';
+    [C-5, C-4, C-3, C+2, C+3, C+4].forEach(x => set(x, gr, 'Q')); set(C - 5, gr, 'W'); set(C + 2, gr, 'W');
+  }
+  // 머리 장비: 헤어밴드
+  if (eq.head === 'band') {
+    const br = T.gog ? top + 3 : top + 2;
+    for (let x = 0; x < N; x++) { const v = g[br][x]; if (isB(v)) g[br][x] = v === 'D' ? 'r' : 'R'; }
+  }
+  // 목 장비: 스카프 (펄럭임)
+  if (eq.neck === 'scarf' && moving) {
+    const sy = Math.round(cy - 1), x0 = Math.round(C - T.rx) - (T.pack ? 3 : 1);
+    for (let i = 0; i < 5; i++) {
+      const wy = sy + ((i + tick) % 2 === 0 ? 0 : 1) + (i > 2 ? 1 : 0);
+      set(x0 - i, wy, i % 2 ? 'x' : 'X'); if (i < 3) set(x0 - i, wy + 1, 'x');
+    }
+  }
+
+  // 눈 · 입 · 볼
+  const ey = Math.round(cy - 2);
+  const bigEye = x0 => { for (let y = ey; y < ey + 3; y++) for (let x = x0; x < x0 + 2; x++) set(x, y, 'K'); set(x0, ey, 'W'); };
+  const arcs = [[C-5,ey+2],[C-4,ey+1],[C-3,ey+1],[C-2,ey+2],[C+1,ey+2],[C+2,ey+1],[C+3,ey+1],[C+4,ey+2]];
+  const closedL = () => [C-5, C-4, C-3].forEach(x => set(x, ey + 2, 'K'));
+  if (expr === 'sleep') [C-5, C-4, C-3, C+2, C+3, C+4].forEach(x => set(x, ey + 2, 'K'));
+  else if (expr === 'happy' || expr === 'hifive') arcs.forEach(([x, y]) => set(x, y, 'K'));
+  else if (expr === 'tired') { [C-4, C-3, C+2, C+3].forEach(x => { set(x, ey + 1, 'K'); set(x, ey + 2, 'K'); }); [C-5,C-4,C-3,C-2,C+1,C+2,C+3,C+4].forEach(x => set(x, ey + 1, 'K')); }
+  else if (expr === 'restless') { closedL(); bigEye(C + 2); }
+  else if (expr === 'mad') { bigEye(C - 4); bigEye(C + 2); }
+  else {
+    const eye = o.eye || 'round';
+    if (eye === 'dot') [C-3, C+2].forEach(x => { set(x, ey + 1, 'K'); set(x, ey + 2, 'K'); });
+    else if (eye === 'happy') arcs.forEach(([x, y]) => set(x, y, 'K'));
+    else if (eye === 'wink') { bigEye(C - 4); [C+1, C+2, C+3].forEach(x => set(x, ey + 2, 'K')); set(C + 2, ey + 1, 'K'); }
+    else { bigEye(C - 4); bigEye(C + 2); }
+  }
+  if (expr === 'mad') [[C-5,ey-2],[C-4,ey-2],[C-3,ey-1],[C+4,ey-2],[C+3,ey-2],[C+2,ey-1]].forEach(([x, y]) => set(x, y, 'K'));
+  const my = ey + 4;
+  if (expr === 'mad' || expr === 'tired') { set(C-2,my+1,'K'); set(C-1,my,'K'); set(C,my,'K'); set(C+1,my+1,'K'); }
+  else if (expr === 'happy' || expr === 'hifive') { [C-2,C-1,C,C+1].forEach(x => set(x, my, 'K')); set(C-1,my+1,'P'); set(C,my+1,'P'); }
+  else if (expr === 'sleep') { set(C-1,my,'K'); set(C,my,'K'); }
+  else if (expr === 'restless') { set(C-2,my+1,'K'); set(C-1,my,'K'); set(C,my+1,'K'); set(C+1,my,'K'); }
+  else { set(C-2,my,'K'); set(C-1,my+1,'K'); set(C,my+1,'K'); set(C+1,my,'K'); }
+  if (expr !== 'mad') [C-7, C-6, C+5, C+6].forEach(x => { if (isB(g[ey + 3][x])) g[ey + 3][x] = 'P'; });
+  if (expr === 'tired') { const x = Math.round(C + T.rx) + 1; set(x, ey - 2, 'Z'); set(x, ey - 1, 'Z'); set(x - 1, ey - 1, 'Z'); }
+
+  // 얼굴 장비: 선글라스 (표정보다 위)
+  if (eq.face === 'shades') {
+    [C-5,C-4,C-3,C-2,C+1,C+2,C+3,C+4].forEach(x => { set(x, ey, 'K'); set(x, ey + 1, 'K'); });
+    set(C - 1, ey, 'K'); set(C, ey, 'K'); set(C - 5, ey, 'W'); set(C + 1, ey, 'W');
+  }
+  // 머리 장비: 러닝캡 / 비니 / 헤드폰
+  if (eq.head === 'cap') {
+    for (let x = C - 3; x <= C + 2; x++) set(x, top - 1, 'p');
+    for (let x = C - 5; x <= C + 4; x++) set(x, top, 'p');
+    for (let x = C - 6; x <= C + 5; x++) set(x, top + 1, 'p');
+    for (let x = C + 5; x <= C + 8; x++) set(x, top + 2, 'v');
+    set(C - 1, top, 'A'); set(C, top, 'A');
+  }
+  if (eq.head === 'beanie') {
+    for (let y = top - 1; y <= top + 2; y++) { const h = [3, 5, 6, 7][y - top + 1]; for (let x = C - h; x < C + h; x++) set(x, y, y === top + 2 ? 'n' : 'N'); }
+    [[C-1,top-3],[C,top-3],[C-1,top-2],[C,top-2]].forEach(([x, y]) => set(x, y, 'w'));
+  }
+  if (eq.head === 'phones') {
+    const hr = top - 1;
+    for (let x = C - 4; x <= C + 3; x++) set(x, hr, 'K');
+    set(C - 5, hr + 1, 'K'); set(C + 4, hr + 1, 'K');
+    const a = Math.round(C - T.rx) - 1, b = Math.round(C + T.rx);
+    for (let y = ey - 2; y <= ey + 1; y++) { set(a, y, 'K'); set(a + 1, y, 'K'); set(b - 1, y, 'K'); set(b, y, 'K'); }
+    set(a, ey - 1, 'A'); set(b, ey - 1, 'A');
+    for (let y = hr + 1; y < ey - 2; y++) { set(C - 5 - (y > hr + 2 ? 1 : 0), y, 'K'); set(C + 4 + (y > hr + 2 ? 1 : 0), y, 'K'); }
+  }
+
+  // 외곽선 (땀방울 Z는 제외)
+  const out = g.map(r => r.slice());
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (g[y][x] !== '.') continue;
+    if ([[1,0],[-1,0],[0,1],[0,-1]].some(([a, b]) => { const v = (g[y + b] || [])[x + a]; return v && v !== '.' && v !== 'Z'; })) out[y][x] = 'O';
+  }
+  out.cy = cy; out.top = top;
+  return out;
+}
+
+function mix(h, t, a) { const p = s => parseInt(s, 16); const r = p(h.slice(1,3)), g = p(h.slice(3,5)), b = p(h.slice(5,7)); const T = t === 'w' ? 255 : 0; const f = v => Math.round(v + (T - v) * a).toString(16).padStart(2, '0'); return '#' + f(r) + f(g) + f(b); }
+
+/** 문자 → 색. gold=true면 외곽선이 금색 (Lv.30) */
+function palette(color, gold) {
+  return { O: gold ? '#c98f2a' : mix(color, 'k', .62), B: color, L: mix(color, 'w', .35), D: mix(color, 'k', .22), H: mix(color, 'k', .35),
+    W:'#ffffff', K:'#1b1b22', P:'#ff9aa8', T:'#2c2d31', t:'#1f2023', A:'#f0b84a', R:'#e5484d', r:'#b8363a', S:'#f0b84a', s:'#ecebe4',
+    X:'#f0b84a', x:'#c98f2a', Z:'#8fd3ff', Q:'#9fdcff', q:'#2c2d31', p:'#ecebe4', v:'#c9c7bd', w:'#ffffff', N:'#58607a', n:'#454b61' };
+}
+
+/**
+ * 캔버스에 그리기. 오버레이(zZ, 느낌표, 하트, 반짝이, 속도선)도 여기서.
+ * @param o build 옵션 + color, gold, scale, tick(ms 기반 카운터)
+ */
+function paint(ctx, o) {
+  const s = o.scale || 3, g = build(o), pal = palette(o.color, o.gold), moving = (o.frame ?? -1) >= 0;
+  const bob = moving && (o.frame === 1 || o.frame === 3) ? -s : 0, tk = o.tick || 0, T = TYPES[o.type] || TYPES.base;
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(9 * s, 30.4 * s, 14 * s, s);
+  if (T.spike && moving) { ctx.fillStyle = 'rgba(150,155,170,.6)'; [[g.cy-2,4],[g.cy+1,6],[g.cy+4,3]].forEach(([r, l], i) => ctx.fillRect(0, Math.round(r) * s + bob, (l + ((o.frame + i) % 2 ? 1 : -1)) * s, s)); }
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const ch = g[r][c]; if (ch === '.') continue; ctx.fillStyle = pal[ch]; ctx.fillRect(c * s, r * s + bob, s, s); }
+  if (o.expr === 'sleep') { ctx.fillStyle = '#a3a8d6'; ctx.font = `${Math.round(s * 3.6)}px monospace`; const z = tk % 3; ctx.fillText('z', 24 * s, 8 * s - z * s); ctx.fillText('Z', 27 * s, 5 * s - z * s); }
+  if (o.expr === 'restless') { ctx.fillStyle = '#f0b84a'; const t0 = g.top - 4; [t0, t0 + 1, t0 + 2, t0 + 4].forEach(r => ctx.fillRect(26 * s, r * s + (tk % 2 ? 0 : -s), s, s)); }
+  if (o.expr === 'hifive') { ctx.fillStyle = '#ff6f8f'; ['.x.x.', 'xxxxx', '.xxx.', '..x..'].forEach((row, r) => [...row].forEach((ch, c) => { if (ch === 'x') ctx.fillRect((24 + c) * s, (Math.max(0, g.top - 7) + r) * s + (tk % 2 ? 0 : -s), s, s); })); }
+  if (T.star || o.gold) { ctx.fillStyle = '#f0b84a'; const p = [[3,8],[28,6],[2,18],[29,16]][tk % 4]; ctx.fillRect(p[0] * s, p[1] * s, s, s); }
+}
+
+/* ================= demo ================= */
+const cells = [];
+function add(id, label, sub, opts) {
+  const d = document.createElement('div'); d.className = 'cell';
+  const cv = document.createElement('canvas'); cv.width = cv.height = 96; d.appendChild(cv);
+  const b = document.createElement('b'); b.textContent = label; d.appendChild(b);
+  if (sub) { const sp = document.createElement('span'); sp.textContent = sub; d.appendChild(sp); }
+  document.getElementById(id).appendChild(d); cells.push({ cv, opts });
+}
+const full = { feet:'shoes', wrist:'wrist', body:'tee' };
+Object.keys(TYPES).forEach(t => add('types', TYPE_NAME[t], '', { type: t, eq: full, run: true }));
+[['n','기본'],['happy','기록 직후'],['tired','장거리 후'],['mad','추월당함'],['sleep','잠수 3일'],['restless','콕 3번'],['hifive','하이파이브']].forEach(([e, l]) =>
+  add('exprs', l, '', { type: 'base', expr: e, eq: { feet: 'shoes' }, run: !['sleep','restless','hifive'].includes(e) }));
+[['round','동글눈 (기본)'],['dot','점눈'],['happy','웃는눈'],['wink','윙크']].forEach(([e, l]) => add('eyes', l, '', { type: 'base', eye: e, eq: {} }));
+ITEMS.forEach(it => add('items', it.name, it.slot, { type: 'run', eq: { [it.slot]: it.id }, run: true }));
+add('gold', 'Lv.30', '금테 + 반짝이', { type: 'run', eq: { feet:'shoes', body:'tee', neck:'scarf', head:'cap' }, gold: true, run: true });
+let fr = 0;
+setInterval(() => {
+  fr = (fr + 1) % 4;
+  cells.forEach(({ cv, opts }) => { const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, 96, 96);
+    paint(ctx, { ...opts, color: '#ef7b57', frame: opts.run ? fr : -1, tick: fr, scale: 3 }); });
+}, 150);
+</script>

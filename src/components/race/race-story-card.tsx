@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CHECKPOINTS, destinationNameOf, type RaceAcc, type RaceBodyType, type RaceEye, TYPE_LABEL } from "@/lib/race/constants";
-import { drawCrown, drawSprite, grid, SPRITE_GRID_SIZE } from "@/lib/race/sprite";
+import { CHECKPOINTS, destinationNameOf, type RaceBodyType, type RaceExpr, type RaceEye, TYPE_LABEL } from "@/lib/race/constants";
+import { build, drawCrown, paint, SPRITE_GRID_SIZE, type RaceEquipment } from "@/lib/race/sprite";
 
 const N = SPRITE_GRID_SIZE;
 
@@ -53,7 +53,9 @@ export type RaceStoryInput = {
   name: string;
   color: string;
   eye: RaceEye;
-  acc: RaceAcc;
+  eq: RaceEquipment;
+  gold: boolean;
+  expr: RaceExpr;
   igHandle: string | null;
   type: RaceBodyType;
   rank: number;
@@ -134,14 +136,19 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
       g.fillStyle = "#f0b84a";
       g.fillText(input.dayLabel, W / 2, 345);
 
-      const sc = 28;
+      const sc = 20; // v3 그리드(32x32)가 예전(22x22)보다 커져서 배율을 줄였다
       const sx = (W - N * sc) / 2;
       const sy = 360;
-      const gd = grid(input.type, 2, false, input.eye, input.acc);
       g.fillStyle = "rgba(0,0,0,.35)";
-      g.fillRect(sx + 6 * sc, sy + 21 * sc, 10 * sc, sc);
-      drawSprite(g, gd, input.color, sx, sy, sc);
-      if (input.rank === 1) drawCrown(g, sx, sy + (gd.top - 3) * sc, sc);
+      g.fillRect(sx + N * sc * 0.28, sy + N * sc - sc * 1.5, N * sc * 0.44, sc * 0.6);
+      g.save();
+      g.translate(sx, sy);
+      paint(g, { type: input.type, expr: input.expr, eye: input.eye, eq: input.eq, color: input.color, gold: input.gold, scale: sc });
+      g.restore();
+      if (input.rank === 1) {
+        const built = build({ type: input.type });
+        drawCrown(g, sx, sy + (built.top - 3) * sc, sc);
+      }
 
       g.font = `700 92px ${KR}`;
       g.fillStyle = input.color;
@@ -181,7 +188,13 @@ export function RaceStoryCard({ input }: { input: RaceStoryInput }) {
         g.fillStyle = input.pts >= cp.km ? "#f0b84a" : "#6f6f6a";
         g.fillRect(X(cp.km) - 7, y - 4, 14, 14);
       });
-      drawSprite(g, grid(input.type, 2, false, input.eye, input.acc), input.color, X(input.pts) - N * 2, y - N * 4 - 4, 4);
+      {
+        const msc = 2.75;
+        g.save();
+        g.translate(X(input.pts) - (N * msc) / 2, y - N * msc - 4);
+        paint(g, { type: input.type, expr: input.expr, eye: input.eye, eq: input.eq, color: input.color, gold: input.gold, scale: msc });
+        g.restore();
+      }
 
       g.font = `500 30px ${KR}`;
       g.fillStyle = "#a3a29a";

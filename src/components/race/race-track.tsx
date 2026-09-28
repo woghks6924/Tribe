@@ -2,24 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CHECKPOINTS, destinationNameOf } from "@/lib/race/constants";
-import type { RaceAcc, RaceBodyType, RaceEye } from "@/lib/race/constants";
-import { drawCrown, drawSprite, grid, SPRITE_GRID_SIZE } from "@/lib/race/sprite";
-import { isSleeping } from "@/lib/race/stats";
+import type { RaceBodyType, RaceEye, RaceExpr } from "@/lib/race/constants";
+import { build, drawCrown, paint, SPRITE_GRID_SIZE, type RaceEquipment } from "@/lib/race/sprite";
 
 export type RaceTrackEntry = {
   memberId: string;
   name: string;
   color: string;
   eye: RaceEye;
-  acc: RaceAcc;
+  eq: RaceEquipment;
+  gold: boolean;
+  expr: RaceExpr;
   pts: number;
   type: RaceBodyType;
-  idleDays: number;
 };
 
 const N = SPRITE_GRID_SIZE;
-const S = 2; // 한 픽셀당 캔버스 픽셀 수
-const LH = 52;
+const S = 1.4; // 한 픽셀당 캔버스 픽셀 수 — v3 그리드(32x32)가 커져서 예전(22x22, S=2)보다 배율을 줄였다.
+const LH = 64;
 const TOP = 34;
 
 // 체크포인트 사이 구간마다 지형을 하나씩 배정 — 실제 지리와 무관하게 코스에 변화를 주는 장식용.
@@ -196,49 +196,34 @@ export function RaceTrack({ entries, goalKm }: { entries: RaceTrackEntry[]; goal
         if (Math.abs(s.pts - d) < 0.05) d = s.pts;
         dispRef.current.set(s.memberId, d);
 
-        const moving = Math.abs(s.pts - d) > 0.3;
-        const sleep = isSleeping(s.idleDays);
-        const fr = sleep ? 2 : moving ? tick % 2 : (Math.floor(tick / 2) + i) % 2;
-        const g = grid(s.type, fr, sleep, s.eye, s.acc);
-        const bob = !sleep && fr === 1 && !reduce ? -S : 0;
-        const sx = Math.round(X(d) - (N * S) / 2);
-        const sy = y + LH - N * S - 4 + bob;
+        const moving = Math.abs(s.pts - d) > 0.3 && s.expr !== "sleep" && s.expr !== "restless";
+        const frame = moving && !reduce ? tick % 4 : -1;
+        const cx = Math.round(X(d));
+        const topY = y + LH - N * S - 4;
 
         ctx!.fillStyle = "rgba(0,0,0,.35)";
-        ctx!.fillRect(sx + 12, y + LH - 5, N * S - 24, 2);
-        drawSprite(ctx!, g, s.color, sx, sy, S);
-        if (i === 0 && s.pts > 0) drawCrown(ctx!, sx, sy + (g.top - 3) * S, S);
+        ctx!.fillRect(cx - Math.round(N * S * 0.28), y + LH - 6, Math.round(N * S * 0.56), 2);
 
-        if (sleep) {
-          ctx!.font = '8px "Press Start 2P", monospace';
-          ctx!.fillStyle = "#a3a8d6";
-          const zz = tick % 3;
-          ctx!.fillText("z", sx + N * S - 4, sy + 10 - zz * 2);
-          if (zz > 0) ctx!.fillText("Z", sx + N * S + 4, sy + 2 - zz * 2);
-        }
-        if (s.type === "hybrid" && !sleep) {
-          ctx!.fillStyle = "#f0b84a";
-          const a = tick % 4;
-          const pts: [number, number][] = [
-            [2, 6],
-            [19, 4],
-            [1, 14],
-            [20, 12],
-          ];
-          const p = pts[a];
-          ctx!.fillRect(sx + p[0] * S, sy + p[1] * S, S, S);
+        ctx!.save();
+        ctx!.translate(cx - (N * S) / 2, topY);
+        paint(ctx!, { type: s.type, frame, expr: s.expr, eye: s.eye, eq: s.eq, color: s.color, gold: s.gold, scale: S, tick });
+        ctx!.restore();
+
+        if (i === 0 && s.pts > 0) {
+          const built = build({ type: s.type, frame: -1 });
+          drawCrown(ctx!, cx - (N * S) / 2, topY + (built.top - 3) * S, S);
         }
 
         ctx!.font = '500 11px "IBM Plex Sans KR", system-ui, sans-serif';
         ctx!.fillStyle = "#a3a29a";
         const lbl = s.pts.toFixed(1);
-        const right = sx + N * S + 4;
+        const right = cx + (N * S) / 2 + 4;
         if (right + 34 < W) {
           ctx!.textAlign = "left";
           ctx!.fillText(lbl, right, y + LH / 2 + 2);
         } else {
           ctx!.textAlign = "right";
-          ctx!.fillText(lbl, sx - 2, y + LH / 2 + 2);
+          ctx!.fillText(lbl, cx - (N * S) / 2 - 2, y + LH / 2 + 2);
         }
       });
 

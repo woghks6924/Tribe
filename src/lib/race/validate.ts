@@ -1,4 +1,4 @@
-import { ACC_OPTIONS, EYE_OPTIONS, PALETTE, type RaceAcc, type RaceEye } from "@/lib/race/constants";
+import { EYE_OPTIONS, PALETTE, type RaceEye } from "@/lib/race/constants";
 
 export function isValidName(name: string): boolean {
   return name.length >= 2 && name.length <= 8;
@@ -14,10 +14,6 @@ export function isValidColor(color: string): color is (typeof PALETTE)[number] {
 
 export function isValidEye(eye: string): eye is RaceEye {
   return EYE_OPTIONS.some((o) => o.value === eye);
-}
-
-export function isValidAcc(acc: string): acc is RaceAcc {
-  return ACC_OPTIONS.some((o) => o.value === acc);
 }
 
 // 인스타그램 아이디: 선택 입력, 앞의 @는 제거하고 영문/숫자/./_만 허용(최대 30자).

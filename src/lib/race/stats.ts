@@ -1,11 +1,5 @@
-import {
-  BASE_TYPE_THRESHOLD_KM,
-  CHECKPOINTS,
-  destinationNameOf,
-  HYBRID_RATIO_THRESHOLD,
-  SLEEP_IDLE_DAYS,
-  type RaceBodyType,
-} from "@/lib/race/constants";
+import { CHECKPOINTS, destinationNameOf, SLEEP_IDLE_DAYS, type RaceBodyType } from "@/lib/race/constants";
+import { typeOf, type RunLogSample } from "@/lib/race/type";
 
 export type RaceLogRow = {
   memberId: string;
@@ -13,6 +7,8 @@ export type RaceLogRow = {
   kind: "RUN" | "WOD" | "SWIM" | "GYM";
   value: number;
   convertedKm: number;
+  durationSec: number | null; // RUN 기록의 선택 입력 시간(초) — 페이스 계산용
+  createdAt: Date; // 제출 시각(정확한 타임스탬프) — "최근 N시간 내" 판정용
 };
 
 // eye/acc는 DB(Prisma)에서는 그냥 String이라 여기서는 느슨하게 string으로 받는다 —
@@ -39,10 +35,12 @@ export type RaceMemberStats = {
   pts: number; // = runPool+wodPool+swimPool, 순위 기준
   days: Set<string>;
   lastDate: string | null;
+  lastLogAt: Date | null; // 가장 최근 기록 제출 시각(정확한 타임스탬프) — 표정 판정용
   l7: number; // 최근 7일 환산 km
   streak: number;
   idleDays: number;
   type: RaceBodyType;
+  runLogs: RunLogSample[]; // 체형 판정(장거리/스피드)용 — RUN 기록만 모은다
   rank: number;
 };
 
@@ -62,20 +60,6 @@ export function dayIndexOf(dateStr: string, seasonStartDateStr: string): number 
 }
 export function todayKstDateStr(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
-}
-
-export function typeOf(runPool: number, wodPool: number, swimPool: number): RaceBodyType {
-  const total = runPool + wodPool + swimPool;
-  if (total < BASE_TYPE_THRESHOLD_KM) return "base";
-  if (
-    runPool / total > HYBRID_RATIO_THRESHOLD &&
-    wodPool / total > HYBRID_RATIO_THRESHOLD &&
-    swimPool / total > HYBRID_RATIO_THRESHOLD
-  ) {
-    return "hybrid";
-  }
-  if (runPool >= wodPool && runPool >= swimPool) return "run";
-  return wodPool >= swimPool ? "wod" : "swim";
 }
 
 export function checkpointOf(km: number): string {
@@ -117,10 +101,12 @@ export function computeMemberStats(
         pts: 0,
         days: new Set<string>(),
         lastDate: null,
+        lastLogAt: null,
         l7: 0,
         streak: 0,
         idleDays: 0,
         type: "base",
+        runLogs: [],
         rank: 0,
       },
     ]),
@@ -135,6 +121,7 @@ export function computeMemberStats(
     if (log.kind === "RUN") {
       s.runRaw += log.value;
       s.runPool += log.convertedKm;
+      s.runLogs.push({ value: log.value, durationSec: log.durationSec });
     } else if (log.kind === "WOD") {
       s.wodRaw += log.value;
       s.wodPool += log.convertedKm;
@@ -148,6 +135,7 @@ export function computeMemberStats(
     s.pts += log.convertedKm;
     s.days.add(log.date);
     if (!s.lastDate || log.date > s.lastDate) s.lastDate = log.date;
+    if (!s.lastLogAt || log.createdAt > s.lastLogAt) s.lastLogAt = log.createdAt;
     if (logDay > upto - 7) s.l7 += log.convertedKm;
   }
 
@@ -163,7 +151,7 @@ export function computeMemberStats(
     }
     s.streak = streak;
     s.idleDays = s.lastDate ? upto - dayIndexOf(s.lastDate, seasonStartDateStr) : upto;
-    s.type = typeOf(s.runPool, s.wodPool, s.swimPool);
+    s.type = typeOf(s.runPool, s.wodPool, s.swimPool, s.runLogs);
   });
 
   result.sort((a, b) => b.pts - a.pts || a.member.name.localeCompare(b.member.name));

@@ -3,7 +3,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentRaceMember } from "@/lib/auth/race-session";
 import { CHECKPOINTS, TYPE_LABEL } from "@/lib/race/constants";
-import { computeMemberStats, dayIndexOf, formatBreakdown, isSleeping, todayKstDateStr } from "@/lib/race/stats";
+import { computeMemberStats, dayIndexOf, formatBreakdown, todayKstDateStr, addDaysToDateStr } from "@/lib/race/stats";
+import { computeMemberAppearances, getRaceLevelConfig } from "@/lib/race/appearance";
+import { nextPendingPickLevel } from "@/lib/race/level";
 import { RaceLoginForm } from "@/components/race/race-login-form";
 import { RaceLogoutButton } from "@/components/race/race-logout-button";
 import { RaceAvatarImg } from "@/components/race/race-avatar";
@@ -11,6 +13,9 @@ import { RaceRecordForm } from "@/components/race/race-record-form";
 import { RaceMyLogs } from "@/components/race/race-my-logs";
 import { RaceEditForm } from "@/components/race/race-edit-form";
 import { RaceStoryCard, type RaceStoryInput } from "@/components/race/race-story-card";
+import { RaceCloset } from "@/components/race/race-closet";
+import { RaceLevelupModal } from "@/components/race/race-levelup-modal";
+import { RacePokeModal } from "@/components/race/race-poke-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -63,9 +68,29 @@ export default async function RaceMePage() {
   const today = todayKstDateStr();
   const stats = computeMemberStats(members, logs, startDateStr, today);
   const my = stats.find((s) => s.member.id === member.id)!;
-  const sleep = isSleeping(my.idleDays);
+  const yesterdayStats = computeMemberStats(members, logs, startDateStr, addDaysToDateStr(today, -1));
+  const myYesterday = yesterdayStats.find((s) => s.member.id === member.id);
   const nextCp = CHECKPOINTS.find((cp) => cp.km > my.pts);
   const dayNum = Math.max(1, Math.min(season.durationDays, dayIndexOf(today, startDateStr)));
+
+  const appearances = await computeMemberAppearances([member], {
+    seasonId: season.id,
+    idleDaysByMember: new Map([[member.id, my.idleDays]]),
+    rankDroppedByMember: new Map([[member.id, myYesterday ? my.rank > myYesterday.rank : false]]),
+  });
+  const myAppearance = appearances.get(member.id) ?? { level: 0, gold: false, expr: "n" as const, eq: {} };
+
+  const [ownedItems, levelupPickCount, pendingPokes] = await Promise.all([
+    prisma.raceMemberItem.findMany({ where: { memberId: member.id } }),
+    prisma.raceMemberItem.count({ where: { memberId: member.id, source: "levelup" } }),
+    prisma.racePoke.findMany({
+      where: { seasonId: season.id, targetId: member.id, acknowledgedAt: null },
+      include: { poker: true },
+    }),
+  ]);
+  const levelConfig = await getRaceLevelConfig();
+  const nextPickLevel = nextPendingPickLevel(myAppearance.level, levelupPickCount, levelConfig);
+  const pokerNames = pendingPokes.map((p) => p.poker.name);
 
   const total = my.runPool + my.wodPool + my.swimPool || 1;
   const bars = [
@@ -100,7 +125,9 @@ export default async function RaceMePage() {
     name: member.name,
     color: member.color,
     eye: member.eye as RaceStoryInput["eye"],
-    acc: member.acc as RaceStoryInput["acc"],
+    eq: myAppearance.eq,
+    gold: myAppearance.gold,
+    expr: myAppearance.expr,
     igHandle: member.igHandle,
     type: my.type,
     rank: my.rank,
@@ -113,6 +140,9 @@ export default async function RaceMePage() {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6 px-5 py-8 sm:px-8">
+      <RaceLevelupModal color={member.color} eye={member.eye as RaceStoryInput["eye"]} type={my.type} />
+      <RacePokeModal pokerNames={pokerNames} />
+
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col gap-1">
           <span className="font-[family-name:var(--font-race-px)] text-[11px] text-[#f0b84a]">TRI.BE RACE</span>
@@ -125,18 +155,22 @@ export default async function RaceMePage() {
 
       <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-3.5 rounded bg-[#323338] p-3">
         <RaceAvatarImg
-          color={member.color}
-          eye={member.eye as RaceStoryInput["eye"]}
-          acc={member.acc as RaceStoryInput["acc"]}
-          type={my.type}
-          sleep={sleep}
-          scale={4}
+          appearance={{
+            color: member.color,
+            eye: member.eye as RaceStoryInput["eye"],
+            type: my.type,
+            expr: myAppearance.expr,
+            eq: myAppearance.eq,
+            gold: myAppearance.gold,
+          }}
+          scale={2.75}
           className="[image-rendering:pixelated]"
           alt={`${member.name} 캐릭터`}
         />
         <div>
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[17px] font-bold">{member.name}</span>
+            <span className="rounded bg-[#17181b] px-1.5 py-px text-[11px] font-bold text-[#f0b84a]">Lv.{myAppearance.level}</span>
             <span className="rounded bg-[#f0b84a] px-1.5 py-px text-[11px] font-bold text-[#2a1d05]">
               {TYPE_LABEL[my.type]}
             </span>
@@ -169,10 +203,25 @@ export default async function RaceMePage() {
             initial={{
               color: member.color,
               eye: member.eye as RaceStoryInput["eye"],
-              acc: member.acc as RaceStoryInput["acc"],
               igHandle: member.igHandle ?? "",
             }}
             type={my.type}
+          />
+        </div>
+      </details>
+
+      <details className="rounded border border-[#3c3d43] p-3">
+        <summary className="cursor-pointer text-[15px] font-bold">
+          옷장 {ownedItems.length > 0 && <span className="text-xs font-normal text-[#6f6f6a]">({ownedItems.length}개 보유)</span>}
+        </summary>
+        <div className="mt-3">
+          <RaceCloset
+            color={member.color}
+            eye={member.eye as RaceStoryInput["eye"]}
+            type={my.type}
+            ownedItemIds={ownedItems.map((it) => it.itemId)}
+            eq={myAppearance.eq}
+            nextPickLevel={nextPickLevel}
           />
         </div>
       </details>

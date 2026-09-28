@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { RaceAcc, RaceBodyType, RaceEye } from "@/lib/race/constants";
+import type { RaceBodyType, RaceEye } from "@/lib/race/constants";
 import { RaceCustomizer, type RaceCustomizeValue } from "@/components/race/race-customizer";
 
 export function RaceEditForm({
   initial,
   type,
 }: {
-  initial: { color: string; eye: RaceEye; acc: RaceAcc; igHandle: string };
+  initial: { color: string; eye: RaceEye; igHandle: string };
   type: RaceBodyType;
 }) {
   const router = useRouter();

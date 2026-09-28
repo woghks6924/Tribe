@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     kind?: (typeof KINDS)[number];
     value?: number;
     proofPath?: string;
+    durationSec?: number;
   };
 
   if (!body.kind || !KINDS.includes(body.kind) || !(Number(body.value) > 0)) {
@@ -45,6 +46,8 @@ export async function POST(request: Request) {
 
   const convertedKm = toConvertedKm(body.kind, value, season);
   const proofPath = body.proofPath?.trim() || null;
+  const durationSec =
+    body.kind === "RUN" && body.durationSec != null && body.durationSec > 0 ? Math.round(body.durationSec) : null;
 
   const log = await prisma.raceLog.create({
     data: {
@@ -56,6 +59,7 @@ export async function POST(request: Request) {
       convertedKm,
       proofPath,
       proofExpiresAt: proofPath ? new Date(Date.now() + PROOF_RETENTION_HOURS * 60 * 60 * 1000) : null,
+      durationSec,
     },
   });
 

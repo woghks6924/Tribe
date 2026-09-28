@@ -15,7 +15,13 @@ export function RaceEntryButton() {
 
   function handleClick() {
     setAvatarSrc(
-      renderAvatarDataUrl(PALETTE[Math.floor(Math.random() * PALETTE.length)], "happy", "none", "run", false, 8),
+      renderAvatarDataUrl({
+        color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+        type: "run",
+        expr: "happy",
+        eq: {},
+        scale: 8,
+      }),
     );
     setPhase("hidden");
     requestAnimationFrame(() => requestAnimationFrame(() => setPhase("shown")));

@@ -2,14 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { createRaceSession } from "@/lib/auth/race-session";
-import {
-  isValidAcc,
-  isValidColor,
-  isValidEye,
-  isValidName,
-  isValidPin,
-  normalizeAndValidateIgHandle,
-} from "@/lib/race/validate";
+import { isValidColor, isValidEye, isValidName, isValidPin, normalizeAndValidateIgHandle } from "@/lib/race/validate";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
@@ -18,7 +11,6 @@ export async function POST(request: Request) {
     pin?: string;
     color?: string;
     eye?: string;
-    acc?: string;
     igHandle?: string;
   };
 
@@ -47,8 +39,7 @@ export async function POST(request: Request) {
 
   const color = body.color ?? "";
   const eye = body.eye ?? "";
-  const acc = body.acc ?? "";
-  if (!isValidColor(color) || !isValidEye(eye) || !isValidAcc(acc)) {
+  if (!isValidColor(color) || !isValidEye(eye)) {
     return NextResponse.json({ error: "꾸미기 옵션이 올바르지 않아요." }, { status: 400 });
   }
 
@@ -64,7 +55,9 @@ export async function POST(request: Request) {
 
   const pinHash = await hashPassword(pin);
   const member = await prisma.raceMember.create({
-    data: { name, pinHash, color, eye, acc, igHandle: ig.value || null },
+    // acc는 v3 장비 시스템 이전의 레거시 컬럼 — 새 가입자는 항상 "none"으로 두고,
+    // 장비는 레벨업으로 얻어서 eq* 컬럼에 착용한다.
+    data: { name, pinHash, color, eye, acc: "none", igHandle: ig.value || null },
   });
 
   await createRaceSession({ sub: member.id, name: member.name });
