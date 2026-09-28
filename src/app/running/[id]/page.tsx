@@ -101,10 +101,24 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
           </p>
         )}
 
+        {form.location && (
+          <div className="flex flex-col gap-1.5 border-t border-line pt-5">
+            <span className="text-xs tracking-[0.08em] text-ink-faint uppercase">집결지</span>
+            <p className="text-sm whitespace-pre-line text-ink-muted">{form.location}</p>
+          </div>
+        )}
+
         {form.providedItems && (
           <div className="flex flex-col gap-1.5 border-t border-line pt-5">
             <span className="text-xs tracking-[0.08em] text-ink-faint uppercase">제공 사항</span>
             <p className="text-sm whitespace-pre-line text-ink-muted">{form.providedItems}</p>
+          </div>
+        )}
+
+        {form.luggageInfo && (
+          <div className="flex flex-col gap-1.5 border-t border-line pt-5">
+            <span className="text-xs tracking-[0.08em] text-ink-faint uppercase">짐 보관</span>
+            <p className="text-sm whitespace-pre-line text-ink-muted">{form.luggageInfo}</p>
           </div>
         )}
 

@@ -55,6 +55,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       category: body.category,
       noticeContent: body.noticeContent || null,
       providedItems: body.providedItems || null,
+      location: body.location || null,
+      luggageInfo: body.luggageInfo || null,
       photoAlbumUrl: body.photoAlbumUrl || null,
       entryFee: body.entryFee ?? null,
       bankName: body.bankName || null,

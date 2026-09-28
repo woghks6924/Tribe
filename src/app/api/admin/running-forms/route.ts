@@ -46,6 +46,8 @@ export type RunningFormInput = {
   category: RunningFormCategory;
   noticeContent?: string | null;
   providedItems?: string | null;
+  location?: string | null;
+  luggageInfo?: string | null;
   photoAlbumUrl?: string | null;
   entryFee?: number | null;
   bankName?: string | null;
@@ -81,6 +83,8 @@ export async function POST(request: Request) {
       category: body.category ?? "FIRST_COME",
       noticeContent: body.noticeContent || null,
       providedItems: body.providedItems || null,
+      location: body.location || null,
+      luggageInfo: body.luggageInfo || null,
       photoAlbumUrl: body.photoAlbumUrl || null,
       entryFee: body.entryFee ?? null,
       bankName: body.bankName || null,

@@ -20,6 +20,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       category: source.category,
       noticeContent: source.noticeContent,
       providedItems: source.providedItems,
+      location: source.location,
+      luggageInfo: source.luggageInfo,
       entryFee: source.entryFee,
       bankName: source.bankName,
       bankAccountNumber: source.bankAccountNumber,

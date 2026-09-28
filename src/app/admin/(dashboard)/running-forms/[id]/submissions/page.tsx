@@ -44,6 +44,8 @@ export default async function RunningFormSubmissionsPage({
           bankAccountHolder: form.bankAccountHolder,
           capacity: form.capacity,
           providedItems: form.providedItems,
+          location: form.location,
+          luggageInfo: form.luggageInfo,
           noticeContent: form.noticeContent,
           collabBrands: Array.isArray(form.collabBrands)
             ? (form.collabBrands as { name: string; url: string }[])

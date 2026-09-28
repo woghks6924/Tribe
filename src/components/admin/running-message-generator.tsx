@@ -11,6 +11,8 @@ export type RunningMessageFormInfo = {
   bankAccountHolder: string | null;
   capacity: number | null;
   providedItems: string | null;
+  location: string | null;
+  luggageInfo: string | null;
   noticeContent: string | null;
   collabBrands: { name: string; url: string }[];
 };
@@ -19,6 +21,9 @@ type Section = {
   key: string;
   label: string;
   defaultChecked: boolean;
+  // 같은 group인 섹션끼리는 줄바꿈 하나로, group이 바뀌면 빈 줄 하나를 두고 이어붙인다
+  // (예: 일시/집결지/참가비 같은 불릿들은 한 덩어리로 붙어야 자연스러운 안내문이 된다).
+  group: string;
   build: (form: RunningMessageFormInfo) => string | null;
 };
 
@@ -40,61 +45,89 @@ const SECTIONS: Section[] = [
     key: "greeting",
     label: "인사말 + 세션명",
     defaultChecked: true,
-    build: (f) => `안녕하세요, Tri.be입니다 🏃\n[${f.title}] 세션 안내드립니다.`,
+    group: "intro",
+    build: (f) => `안녕하세요, Tribe입니다 \n[${f.title}] 세션 당첨 안내드립니다.`,
   },
   {
     key: "eventDate",
     label: "일시",
     defaultChecked: true,
-    build: (f) => `일시: ${formatEventDate(f.eventDate)}`,
+    group: "details",
+    build: (f) => `* 일시: ${formatEventDate(f.eventDate)}`,
+  },
+  {
+    key: "location",
+    label: "집결지",
+    defaultChecked: true,
+    group: "details",
+    build: (f) => (f.location?.trim() ? `* 집결지: ${f.location.trim()}` : null),
   },
   {
     key: "entryFee",
     label: "참가비",
     defaultChecked: true,
-    build: (f) => `참가비: ${f.entryFee != null ? `${f.entryFee.toLocaleString()}원` : "무료"}`,
-  },
-  {
-    key: "capacity",
-    label: "정원",
-    defaultChecked: false,
-    build: (f) => (f.capacity != null ? `정원: ${f.capacity}명` : null),
-  },
-  {
-    key: "bankAccount",
-    label: "입금 계좌 안내",
-    defaultChecked: true,
-    build: (f) =>
-      f.entryFee != null && f.bankName && f.bankAccountNumber
-        ? `입금계좌: ${f.bankName} ${f.bankAccountNumber}${f.bankAccountHolder ? ` (예금주 ${f.bankAccountHolder})` : ""}`
-        : null,
+    group: "details",
+    build: (f) => `* 참가비: ${f.entryFee != null ? `${f.entryFee.toLocaleString()}원` : "무료"}`,
   },
   {
     key: "providedItems",
     label: "제공 사항",
     defaultChecked: true,
-    build: (f) => (f.providedItems?.trim() ? `제공 사항: ${f.providedItems.trim()}` : null),
+    group: "details",
+    build: (f) => (f.providedItems?.trim() ? `* 제공 사항: ${f.providedItems.trim()}` : null),
   },
   {
-    key: "noticeContent",
-    label: "공지 내용 전체",
+    key: "luggageInfo",
+    label: "짐 보관",
+    defaultChecked: true,
+    group: "details",
+    build: (f) => (f.luggageInfo?.trim() ? `* 짐 보관: ${f.luggageInfo.trim()}` : null),
+  },
+  {
+    key: "capacity",
+    label: "정원",
     defaultChecked: false,
-    build: (f) => (f.noticeContent?.trim() ? f.noticeContent.trim() : null),
+    group: "details",
+    build: (f) => (f.capacity != null ? `* 정원: ${f.capacity}명` : null),
   },
   {
     key: "collabBrands",
     label: "콜라보 브랜드",
     defaultChecked: false,
+    group: "details",
     build: (f) =>
       f.collabBrands.length > 0
-        ? `콜라보 브랜드: ${f.collabBrands.map((b) => b.name).join(", ")}`
+        ? `* 콜라보 브랜드: ${f.collabBrands.map((b) => b.name).join(", ")}`
         : null,
+  },
+  {
+    key: "bankAccount",
+    label: "입금 계좌 안내",
+    defaultChecked: true,
+    group: "payment",
+    build: (f) =>
+      f.entryFee != null && f.bankName && f.bankAccountNumber
+        ? [
+            "입금 계좌",
+            `${f.bankName} ${f.bankAccountNumber}${f.bankAccountHolder ? ` ${f.bankAccountHolder}` : ""}`,
+            `참가비는 입금하시고 "입금완료"회신부탁드립니다.`,
+            "해당 시간에 참여가 어려우신 경우, 다른 분들이 참여하실 수 있도록 빠른 회신 부탁드립니다.",
+          ].join("\n")
+        : null,
+  },
+  {
+    key: "noticeContent",
+    label: "공지 내용 전체",
+    defaultChecked: false,
+    group: "notice",
+    build: (f) => (f.noticeContent?.trim() ? f.noticeContent.trim() : null),
   },
   {
     key: "closing",
     label: "마무리 인사",
     defaultChecked: true,
-    build: () => "궁금하신 점 있으시면 언제든 편하게 답장 주세요 :)",
+    group: "closing",
+    build: () => "감사합니다.",
   },
 ];
 
@@ -110,14 +143,22 @@ export function RunningMessageGenerator({ form }: { form: RunningMessageFormInfo
     [form],
   );
 
-  const message = useMemo(
-    () =>
-      availableSections
-        .filter((s) => checked[s.key])
-        .map((s) => s.text)
-        .join("\n\n"),
-    [availableSections, checked],
-  );
+  const message = useMemo(() => {
+    const active = availableSections.filter((s) => checked[s.key]);
+    const blocks: string[] = [];
+    let currentGroup: string | null = null;
+    let buffer: string[] = [];
+    for (const s of active) {
+      if (s.group !== currentGroup && buffer.length > 0) {
+        blocks.push(buffer.join("\n"));
+        buffer = [];
+      }
+      currentGroup = s.group;
+      buffer.push(s.text!);
+    }
+    if (buffer.length > 0) blocks.push(buffer.join("\n"));
+    return blocks.join("\n\n");
+  }, [availableSections, checked]);
 
   async function copyMessage() {
     try {

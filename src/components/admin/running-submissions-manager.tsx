@@ -171,6 +171,28 @@ export function RunningSubmissionsManager({
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={() => setStatusFilter((prev) => (prev === "WINNER" ? "ALL" : "WINNER"))}
+          className={`cursor-pointer border px-3 py-2 text-xs uppercase ${
+            statusFilter === "WINNER"
+              ? "border-accent bg-accent text-accent-ink"
+              : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
+          }`}
+        >
+          당첨자만
+        </button>
+        <button
+          type="button"
+          onClick={() => setStatusFilter((prev) => (prev === "CONFIRMED" ? "ALL" : "CONFIRMED"))}
+          className={`cursor-pointer border px-3 py-2 text-xs uppercase ${
+            statusFilter === "CONFIRMED"
+              ? "border-green-500 bg-green-500 text-white"
+              : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"
+          }`}
+        >
+          입금완료자만
+        </button>
         <select
           value={previousFilter}
           onChange={(e) => setPreviousFilter(e.target.value as "ALL" | "PREVIOUS" | "NEW")}

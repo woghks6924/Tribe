@@ -96,6 +96,8 @@ export type RunningFormInitial = {
   category: RunningFormCategory;
   noticeContent: string | null;
   providedItems: string | null;
+  location: string | null;
+  luggageInfo: string | null;
   photoAlbumUrl: string | null;
   entryFee: number | null;
   bankName: string | null;
@@ -131,6 +133,8 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
   const [category, setCategory] = useState<RunningFormCategory>(initial?.category ?? "FIRST_COME");
   const [noticeContent, setNoticeContent] = useState(initial?.noticeContent ?? "");
   const [providedItems, setProvidedItems] = useState(initial?.providedItems ?? "");
+  const [location, setLocation] = useState(initial?.location ?? "");
+  const [luggageInfo, setLuggageInfo] = useState(initial?.luggageInfo ?? "");
   const [photoAlbumUrl, setPhotoAlbumUrl] = useState(initial?.photoAlbumUrl ?? "");
   const [entryFee, setEntryFee] = useState(initial?.entryFee != null ? String(initial.entryFee) : "");
   const [bankName, setBankName] = useState(initial?.bankName ?? "");
@@ -239,6 +243,8 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         category,
         noticeContent: noticeContent || undefined,
         providedItems: providedItems || undefined,
+        location: location.trim() || undefined,
+        luggageInfo: luggageInfo.trim() || undefined,
         photoAlbumUrl: photoAlbumUrl.trim() || undefined,
         entryFee: entryFee ? Number(entryFee) : undefined,
         bankName: bankName.trim() || undefined,
@@ -372,6 +378,20 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
         value={providedItems}
         onChange={(e) => setProvidedItems(e.target.value)}
         rows={3}
+        className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
+      />
+
+      <input
+        placeholder="집결지 (선택, 예: 서울 성동구 성덕정19길 25 1층)"
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
+      />
+
+      <input
+        placeholder="짐 보관 안내 (선택, 예: 간단한 짐 보관 가능합니다)"
+        value={luggageInfo}
+        onChange={(e) => setLuggageInfo(e.target.value)}
         className="border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint"
       />
 
