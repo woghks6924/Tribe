@@ -16,6 +16,7 @@ type Submission = {
   answers: Record<string, string | string[]>;
   status: "PENDING" | "WINNER" | "NOT_WINNER" | "CONFIRMED" | "CANCELLED" | "DECLINED";
   notified: boolean;
+  memo: string | null;
   createdAt: string;
   personalDataPurgedAt: string | null;
 };
@@ -108,6 +109,15 @@ export function RunningSubmissionsManager({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ notified }),
+    });
+    router.refresh();
+  }
+
+  async function updateMemo(id: string, memo: string) {
+    await fetch(`/api/admin/running-forms/${formId}/submissions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memo }),
     });
     router.refresh();
   }
@@ -362,6 +372,16 @@ export function RunningSubmissionsManager({
               <span className="text-xs text-ink-faint">
                 마케팅 수신 동의: {s.marketingConsent ? "Y" : "N"}
               </span>
+              <textarea
+                key={s.id}
+                defaultValue={s.memo ?? ""}
+                onBlur={(e) => {
+                  if (e.target.value !== (s.memo ?? "")) updateMemo(s.id, e.target.value);
+                }}
+                placeholder="관리자 메모 (참가자에게는 안 보여요)"
+                rows={2}
+                className="border border-line-strong bg-transparent px-2.5 py-1.5 text-xs text-ink-muted outline-none placeholder:text-ink-faint"
+              />
             </div>
           ))}
         </div>

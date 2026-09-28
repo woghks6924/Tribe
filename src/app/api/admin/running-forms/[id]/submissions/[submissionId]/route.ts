@@ -13,6 +13,7 @@ export async function PATCH(
   const body = (await request.json()) as {
     status?: "PENDING" | "WINNER" | "NOT_WINNER" | "CONFIRMED" | "CANCELLED" | "DECLINED";
     notified?: boolean;
+    memo?: string;
   };
 
   const submission = await prisma.runningSubmission.update({
@@ -20,10 +21,16 @@ export async function PATCH(
     data: {
       ...(body.status !== undefined ? { status: body.status } : {}),
       ...(body.notified !== undefined ? { notified: body.notified } : {}),
+      ...(body.memo !== undefined ? { memo: body.memo.trim() || null } : {}),
     },
   });
 
-  return NextResponse.json({ id: submission.id, status: submission.status, notified: submission.notified });
+  return NextResponse.json({
+    id: submission.id,
+    status: submission.status,
+    notified: submission.notified,
+    memo: submission.memo,
+  });
 }
 
 export async function DELETE(

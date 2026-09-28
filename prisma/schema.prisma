@@ -538,6 +538,7 @@ model RunningSubmission {
   answers          Json                    @default("{}")
   status           RunningSubmissionStatus @default(PENDING)
   notified         Boolean                 @default(false) // 당첨 안내 문자를 실제로 보냈는지 (관리자 체크박스)
+  memo             String? // 관리자 전용 메모(참가자에게는 노출되지 않음)
   // 폼 마감 30일 후 name/phone/gender를 파기하는 크론이 채우는 시각. null이면 아직 보관 중.
   personalDataPurgedAt DateTime?
 
