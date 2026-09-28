@@ -196,8 +196,11 @@ export function RaceTrack({ entries, goalKm }: { entries: RaceTrackEntry[]; goal
         if (Math.abs(s.pts - d) < 0.05) d = s.pts;
         dispRef.current.set(s.memberId, d);
 
-        const moving = Math.abs(s.pts - d) > 0.3 && s.expr !== "sleep" && s.expr !== "restless";
-        const frame = moving && !reduce ? tick % 4 : -1;
+        // v3 스프라이트는 프레임이 "정지(-1)"와 "달리기 사이클(0~3)" 둘뿐이라, 캐치업 중일 때만
+        // 잠깐 움직이던 예전 방식 대신 잠들지 않은 멤버는 항상 제자리 달리기를 돌려서 트랙에
+        // 생동감을 유지한다.
+        const running = s.expr !== "sleep" && s.expr !== "restless";
+        const frame = running && !reduce ? tick % 4 : -1;
         const cx = Math.round(X(d));
         const topY = y + LH - N * S - 4;
 
