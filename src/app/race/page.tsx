@@ -19,6 +19,7 @@ import {
 import { RaceTrack, type RaceTrackEntry } from "@/components/race/race-track";
 import { RaceAvatarImg } from "@/components/race/race-avatar";
 import { RaceGuestbook } from "@/components/race/race-guestbook";
+import { RacePokeButton } from "@/components/race/race-poke-button";
 
 export const dynamic = "force-dynamic";
 
@@ -268,10 +269,15 @@ export default async function RacePage() {
                       </div>
                       <div className="mt-0.5 text-xs text-[#a3a29a]">{gap}</div>
                     </div>
-                    <div className="text-right">
-                      <span className="font-[family-name:var(--font-race-px)] text-sm">{s.pts.toFixed(1)}</span>
-                      <span className="ml-1 text-xs text-[#a3a29a]">km</span>
-                      <div className="mt-1 hidden text-[11px] whitespace-nowrap text-[#6f6f6a] sm:block">{formatBreakdown(s)}</div>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <div className="text-right">
+                        <span className="font-[family-name:var(--font-race-px)] text-sm">{s.pts.toFixed(1)}</span>
+                        <span className="ml-1 text-xs text-[#a3a29a]">km</span>
+                        <div className="mt-1 hidden text-[11px] whitespace-nowrap text-[#6f6f6a] sm:block">{formatBreakdown(s)}</div>
+                      </div>
+                      {raceSession && raceSession.sub !== s.member.id && (sleep || s.pts === 0) && (
+                        <RacePokeButton targetId={s.member.id} />
+                      )}
                     </div>
                   </li>
                 );
@@ -377,9 +383,23 @@ export default async function RacePage() {
         </div>
       </div>
 
-      <div className="rounded border border-[#3c3d43] bg-[#17181b] py-6 text-center text-xs text-[#6f6f6a]">
-        업데이트 노트는 준비 중이에요.
-      </div>
+      <section className="rounded border border-[#3c3d43] bg-[#17181b] p-4 sm:p-[18px]">
+        <h2 className="text-base font-bold">업데이트 노트</h2>
+        <ul className="mt-3 flex flex-col gap-2.5 text-[13px] text-[#a3a29a]">
+          <li>
+            <b className="text-[#f1f1ee]">캐릭터 전면 개편</b> — 체형 8종, 표정 7종이 기록·순위에 따라 자동으로 바뀌고, 레벨(누적
+            거리 기준, 최대 Lv.30)에 도달하면 장비를 하나씩 골라 착용할 수 있어요. 내 캐릭터 페이지의{" "}
+            <b className="text-[#f1f1ee]">옷장</b>에서 갈아입을 수 있어요.
+          </li>
+          <li>
+            <b className="text-[#f1f1ee]">콕 찌르기</b> — 리더보드에서 잠수 중이거나 아직 0km인 크루원을 하루 한 번 깨울 수
+            있어요. 계속 못 깨어나면 캐릭터가 초조해해요.
+          </li>
+          <li>
+            <b className="text-[#f1f1ee]">방명록 위치 이동</b> — 코스 현황 바로 아래로 옮겨서 더 잘 보이게 했어요.
+          </li>
+        </ul>
+      </section>
     </div>
   );
 }
