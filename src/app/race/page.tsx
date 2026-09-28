@@ -53,9 +53,10 @@ export default async function RacePage() {
     );
   }
 
-  const [members, logs, recentProofs, guestbookEntries] = await Promise.all([
+  const [members, logs, influences, recentProofs, guestbookEntries] = await Promise.all([
     prisma.raceMember.findMany({ where: { excluded: false } }),
     prisma.raceLog.findMany({ where: { seasonId: season.id } }),
+    prisma.raceInfluence.findMany({ where: { seasonId: season.id } }),
     prisma.raceLog.findMany({
       where: { seasonId: season.id, proofPath: { not: null }, proofExpiresAt: { gt: new Date() } },
       orderBy: { createdAt: "desc" },
@@ -75,10 +76,10 @@ export default async function RacePage() {
   const todayDay = Math.min(dayIndexOf(today, startDateStr), season.durationDays);
   const uptoDateStr = todayDay <= 0 ? startDateStr : addDaysToDateStr(startDateStr, todayDay - 1);
 
-  const cur = computeMemberStats(members, logs, startDateStr, uptoDateStr);
-  const prev = computeMemberStats(members, logs, startDateStr, addDaysToDateStr(uptoDateStr, -1));
+  const cur = computeMemberStats(members, logs, startDateStr, uptoDateStr, influences);
+  const prev = computeMemberStats(members, logs, startDateStr, addDaysToDateStr(uptoDateStr, -1), influences);
   const prevRankByMember = new Map(prev.map((s) => [s.member.id, s.rank]));
-  const feed = buildSeasonFeed(members, logs, startDateStr, uptoDateStr, season.goalKm).slice(-14).reverse();
+  const feed = buildSeasonFeed(members, logs, startDateStr, uptoDateStr, season.goalKm, influences).slice(-14).reverse();
   const awards = computeAwards(cur);
 
   const idleDaysByMember = new Map(cur.map((s) => [s.member.id, s.idleDays]));

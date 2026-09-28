@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import {
+  DEFAULT_ATTACK_RATIO,
+  DEFAULT_CHEER_RATIO,
   DEFAULT_LEVEL_BASE_KM,
   DEFAULT_LEVEL_EXPONENT,
   DEFAULT_MAX_LEVEL,
+  DEFAULT_NEARBY_RANK_RANGE,
   DEFAULT_PICK_LEVELS,
   type RaceExpr,
 } from "@/lib/race/constants";
@@ -29,6 +32,20 @@ export async function getRaceLevelConfig(): Promise<RaceLevelConfig> {
   }
   const pickLevels = Array.isArray(row.pickLevels) ? (row.pickLevels as number[]) : DEFAULT_PICK_LEVELS;
   return { levelBaseKm: row.levelBaseKm, levelExponent: row.levelExponent, maxLevel: row.maxLevel, pickLevels };
+}
+
+export type RaceInfluenceConfig = {
+  attackRatio: number;
+  cheerRatio: number;
+  nearbyRankRange: number;
+};
+
+export async function getRaceInfluenceConfig(): Promise<RaceInfluenceConfig> {
+  const row = await prisma.raceConfig.findUnique({ where: { id: "singleton" } });
+  if (!row) {
+    return { attackRatio: DEFAULT_ATTACK_RATIO, cheerRatio: DEFAULT_CHEER_RATIO, nearbyRankRange: DEFAULT_NEARBY_RANK_RANGE };
+  }
+  return { attackRatio: row.attackRatio, cheerRatio: row.cheerRatio, nearbyRankRange: row.nearbyRankRange };
 }
 
 type MemberForAppearance = {

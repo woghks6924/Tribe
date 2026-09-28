@@ -11,6 +11,14 @@ export type RaceLogRow = {
   createdAt: Date; // 제출 시각(정확한 타임스탬프) — "최근 N시간 내" 판정용
 };
 
+export type RaceInfluenceRow = {
+  actorId: string;
+  targetId: string;
+  mode: string; // "ATTACK" | "CHEER" — DB에서는 그냥 String이라 느슨하게 받는다
+  km: number;
+  date: string; // KST YYYY-MM-DD, log.date와 동일
+};
+
 // eye/acc는 DB(Prisma)에서는 그냥 String이라 여기서는 느슨하게 string으로 받는다 —
 // 실제 RaceEye/RaceAcc로의 좁히기는 스프라이트를 그리는 컴포넌트 쪽에서 한다.
 export type RaceMemberRow = {
@@ -84,6 +92,7 @@ export function computeMemberStats(
   logs: RaceLogRow[],
   seasonStartDateStr: string,
   uptoDateStr: string,
+  influences: RaceInfluenceRow[] = [],
 ): RaceMemberStats[] {
   const upto = dayIndexOf(uptoDateStr, seasonStartDateStr);
   const byMember = new Map<string, RaceMemberStats>(
@@ -138,6 +147,16 @@ export function computeMemberStats(
     if (!s.lastLogAt || log.createdAt > s.lastLogAt) s.lastLogAt = log.createdAt;
     if (logDay > upto - 7) s.l7 += log.convertedKm;
   }
+
+  // 공격/응원 반영 — 순위·체크포인트·시상 등에 쓰이는 pts에만 가감하고, 종목별 구성비(runPool 등)와
+  // 체형 판정은 실제 훈련 내역 그대로 유지한다. 최종 pts는 0 밑으로 내려가지 않게 고정.
+  for (const inf of influences) {
+    const target = byMember.get(inf.targetId);
+    if (!target) continue;
+    if (dayIndexOf(inf.date, seasonStartDateStr) > upto) continue;
+    target.pts += inf.mode === "CHEER" ? inf.km : -inf.km;
+  }
+  for (const s of byMember.values()) s.pts = Math.max(0, s.pts);
 
   const result = [...byMember.values()];
   result.forEach((s) => {
@@ -244,15 +263,31 @@ export function buildSeasonFeed(
   seasonStartDateStr: string,
   todayDateStr: string,
   goalKm: number,
+  influences: RaceInfluenceRow[] = [],
 ): RaceFeedEvent[] {
   const todayDay = dayIndexOf(todayDateStr, seasonStartDateStr);
+  const nameById = new Map(members.map((m) => [m.id, m.name]));
   const feed: RaceFeedEvent[] = [];
   for (let d = 2; d <= todayDay; d++) {
     const dateStr = addDaysToDateStr(seasonStartDateStr, d - 1);
     const prevDateStr = addDaysToDateStr(seasonStartDateStr, d - 2);
-    const before = computeMemberStats(members, logs, seasonStartDateStr, prevDateStr);
-    const after = computeMemberStats(members, logs, seasonStartDateStr, dateStr);
+    const before = computeMemberStats(members, logs, seasonStartDateStr, prevDateStr, influences);
+    const after = computeMemberStats(members, logs, seasonStartDateStr, dateStr, influences);
     feed.push(...eventsBetween(before, after, dateStr, goalKm));
+
+    for (const inf of influences) {
+      if (inf.date !== dateStr) continue;
+      const actorName = escapeHtml(nameById.get(inf.actorId) ?? "?");
+      const targetName = escapeHtml(nameById.get(inf.targetId) ?? "?");
+      feed.push({
+        date: dateStr,
+        memberId: inf.targetId,
+        text:
+          inf.mode === "CHEER"
+            ? `<b>${actorName}</b> → <b>${targetName}</b> 응원! +${inf.km.toFixed(1)}km`
+            : `<b>${actorName}</b> → <b>${targetName}</b> 공격! -${inf.km.toFixed(1)}km`,
+      });
+    }
   }
   return feed;
 }

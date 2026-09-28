@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentRaceMember } from "@/lib/auth/race-session";
 import { CHECKPOINTS, TYPE_LABEL } from "@/lib/race/constants";
 import { computeMemberStats, dayIndexOf, formatBreakdown, todayKstDateStr, addDaysToDateStr } from "@/lib/race/stats";
-import { computeMemberAppearances, getRaceLevelConfig } from "@/lib/race/appearance";
+import { computeMemberAppearances, getRaceLevelConfig, getRaceInfluenceConfig } from "@/lib/race/appearance";
 import { nextPendingPickLevel } from "@/lib/race/level";
 import { RaceLoginForm } from "@/components/race/race-login-form";
 import { RaceLogoutButton } from "@/components/race/race-logout-button";
@@ -63,12 +63,13 @@ export default async function RaceMePage() {
 
   const members = await prisma.raceMember.findMany({ where: { OR: [{ excluded: false }, { id: member.id }] } });
   const logs = await prisma.raceLog.findMany({ where: { seasonId: season.id } });
+  const influences = await prisma.raceInfluence.findMany({ where: { seasonId: season.id } });
 
   const startDateStr = season.startAt.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
   const today = todayKstDateStr();
-  const stats = computeMemberStats(members, logs, startDateStr, today);
+  const stats = computeMemberStats(members, logs, startDateStr, today, influences);
   const my = stats.find((s) => s.member.id === member.id)!;
-  const yesterdayStats = computeMemberStats(members, logs, startDateStr, addDaysToDateStr(today, -1));
+  const yesterdayStats = computeMemberStats(members, logs, startDateStr, addDaysToDateStr(today, -1), influences);
   const myYesterday = yesterdayStats.find((s) => s.member.id === member.id);
   const nextCp = CHECKPOINTS.find((cp) => cp.km > my.pts);
   const dayNum = Math.max(1, Math.min(season.durationDays, dayIndexOf(today, startDateStr)));
@@ -91,6 +92,9 @@ export default async function RaceMePage() {
   const levelConfig = await getRaceLevelConfig();
   const nextPickLevel = nextPendingPickLevel(myAppearance.level, levelupPickCount, levelConfig);
   const pokerNames = pendingPokes.map((p) => p.poker.name);
+
+  const influenceConfig = await getRaceInfluenceConfig();
+  const roster = stats.map((s) => ({ id: s.member.id, name: s.member.name, rank: s.rank }));
 
   const total = my.runPool + my.wodPool + my.swimPool || 1;
   const bars = [
@@ -229,7 +233,12 @@ export default async function RaceMePage() {
       <div className="rounded border border-[#3c3d43] bg-[#2a2b2e] p-4">
         <h2 className="text-base font-bold">기록 올리기</h2>
         <p className="mt-1 mb-3 text-xs text-[#6f6f6a]">{formatBreakdown(my)}</p>
-        <RaceRecordForm />
+        <RaceRecordForm
+          myId={member.id}
+          myRank={my.rank}
+          roster={roster}
+          nearbyRankRange={influenceConfig.nearbyRankRange}
+        />
       </div>
 
       <RaceMyLogs logs={myLogs} />

@@ -6,17 +6,35 @@ import { KIND_CAP, KIND_LABEL, KIND_UNIT } from "@/lib/race/constants";
 
 const KINDS = ["RUN", "WOD", "SWIM", "GYM"] as const;
 type Kind = (typeof KINDS)[number];
+type InfluenceMode = "NONE" | "ATTACK" | "CHEER";
+type RosterEntry = { id: string; name: string; rank: number };
 
-export function RaceRecordForm() {
+export function RaceRecordForm({
+  myId,
+  myRank,
+  roster,
+  nearbyRankRange,
+}: {
+  myId: string;
+  myRank: number;
+  roster: RosterEntry[];
+  nearbyRankRange: number;
+}) {
   const router = useRouter();
   const [kind, setKind] = useState<Kind>("RUN");
   const [amount, setAmount] = useState("");
   const [minutes, setMinutes] = useState("");
   const [seconds, setSeconds] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [influenceMode, setInfluenceMode] = useState<InfluenceMode>("NONE");
+  const [targetId, setTargetId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const cheerCandidates = roster.filter((r) => r.id !== myId);
+  const attackCandidates = cheerCandidates.filter((r) => Math.abs(r.rank - myRank) <= nearbyRankRange);
+  const candidates = influenceMode === "ATTACK" ? attackCandidates : cheerCandidates;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,6 +48,10 @@ export function RaceRecordForm() {
     }
     if (value > KIND_CAP[kind]) {
       setError(`한 번에 ${KIND_CAP[kind]}${KIND_UNIT[kind]}까지 올릴 수 있어요. 나눠서 올려주세요.`);
+      return;
+    }
+    if (influenceMode !== "NONE" && !targetId) {
+      setError("공격하거나 응원할 크루원을 골라주세요.");
       return;
     }
 
@@ -60,10 +82,12 @@ export function RaceRecordForm() {
           ? (parseInt(minutes || "0", 10) || 0) * 60 + (parseInt(seconds || "0", 10) || 0)
           : undefined;
 
+      const influence = influenceMode !== "NONE" ? { targetId, mode: influenceMode } : undefined;
+
       const res = await fetch("/api/race/logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, value, proofPath, durationSec }),
+        body: JSON.stringify({ kind, value, proofPath, durationSec, influence }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -74,9 +98,18 @@ export function RaceRecordForm() {
       setMinutes("");
       setSeconds("");
       setFile(null);
+      setInfluenceMode("NONE");
+      setTargetId("");
       const rankMsg =
         data.prevRank && data.rank ? ` · ${data.prevRank}위 → ${data.rank}위` : "";
-      setOk(`+${Number(data.convertedKm).toFixed(1)}km 반영${rankMsg}${file ? " · 인증샷은 24시간 뒤 삭제돼요" : ""}`);
+      const influenceMsg = data.influence
+        ? ` · ${data.influence.targetName}님을 ${data.influence.mode === "CHEER" ? "응원" : "공격"}했어요 (${
+            data.influence.mode === "CHEER" ? "+" : "-"
+          }${Number(data.influence.km).toFixed(1)}km)`
+        : "";
+      setOk(
+        `+${Number(data.convertedKm).toFixed(1)}km 반영${rankMsg}${influenceMsg}${file ? " · 인증샷은 24시간 뒤 삭제돼요" : ""}`,
+      );
       router.refresh();
     } catch {
       setError("문제가 발생했어요.");
@@ -155,6 +188,54 @@ export function RaceRecordForm() {
             <span className="text-sm text-[#a3a29a]">초</span>
           </div>
         </label>
+      )}
+      {cheerCandidates.length > 0 && (
+        <div className="flex flex-col gap-1.5 rounded border border-[#3c3d43] p-2.5">
+          <span className="text-sm text-[#a3a29a]">공격 또는 응원 (선택, 이번 기록에서만)</span>
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="공격 또는 응원">
+            {(["NONE", "CHEER", "ATTACK"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setInfluenceMode(m);
+                  setTargetId("");
+                }}
+                className={`cursor-pointer rounded border px-3 py-1.5 text-sm ${
+                  influenceMode === m
+                    ? "border-[#f1f1ee] bg-[#f1f1ee] font-medium text-[#1d1e21]"
+                    : "border-[#3c3d43] text-[#a3a29a]"
+                }`}
+              >
+                {m === "NONE" ? "안 함" : m === "CHEER" ? "👏 응원" : "⚔️ 공격"}
+              </button>
+            ))}
+          </div>
+          {influenceMode !== "NONE" && (
+            <>
+              <select
+                value={targetId}
+                onChange={(e) => setTargetId(e.target.value)}
+                className="rounded border border-[#3c3d43] bg-[#17181b] px-3 py-2 text-[15px] text-[#f1f1ee] outline-none"
+              >
+                <option value="">대상 선택</option>
+                {candidates.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.rank}위 · {c.name}
+                  </option>
+                ))}
+              </select>
+              {influenceMode === "ATTACK" && candidates.length === 0 && (
+                <p className="text-xs text-[#f08068]">지금은 공격 가능한 순위 인접자가 없어요.</p>
+              )}
+              <p className="text-xs text-[#6f6f6a]">
+                {influenceMode === "CHEER"
+                  ? "이번 기록의 일부를 대상에게 나눠줘요. 내 기록은 그대로 다 쌓여요."
+                  : "이번 기록의 일부만큼 대상의 순위를 낮춰요. 내 기록은 그대로 다 쌓여요."}
+              </p>
+            </>
+          )}
+        </div>
       )}
       <p className="text-xs text-[#6f6f6a]">
         인증샷은 24시간 동안 크루 피드에 공개된 뒤 자동으로 삭제돼요. 한 번에 러닝 50km, WOD·헬스 240분, 수영 10km까지

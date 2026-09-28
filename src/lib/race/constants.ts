@@ -112,6 +112,12 @@ export const DEFAULT_LEVEL_BASE_KM = 10;
 export const DEFAULT_LEVEL_EXPONENT = 1.6;
 export const DEFAULT_MAX_LEVEL = 30;
 
+// 공격/응원 기본값 — 역시 RaceConfig로 조정 가능. 공격은 낮은 비율 + 순위 인접자만,
+// 응원은 높은 비율 + 대상 제한 없음(격려는 아무나 받아도 되니까).
+export const DEFAULT_ATTACK_RATIO = 0.05;
+export const DEFAULT_CHEER_RATIO = 0.15;
+export const DEFAULT_NEARBY_RANK_RANGE = 3;
+
 // 기록 입력 종목.
 export const KIND_LABEL: Record<"RUN" | "WOD" | "SWIM" | "GYM", string> = {
   RUN: "러닝",

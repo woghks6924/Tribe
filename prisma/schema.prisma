@@ -575,6 +575,7 @@ model RaceSeason {
   logs             RaceLog[]
   guestbookEntries RaceGuestbookEntry[]
   pokes            RacePoke[]
+  influences       RaceInfluence[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -610,6 +611,8 @@ model RaceMember {
   pokesReceived    RacePoke[]     @relation("PokesReceived")
   reactions        RaceReaction[]
   items            RaceMemberItem[]
+  influencesSent     RaceInfluence[] @relation("InfluenceActor")
+  influencesReceived RaceInfluence[] @relation("InfluenceTarget")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -635,6 +638,8 @@ model RaceLog {
   durationSec Int? // 러닝 기록의 실제 소요 시간(초) — 페이스 계산용 선택 입력. 기존 기록·다른 종목은 null
 
   createdAt DateTime @default(now())
+
+  influence RaceInfluence?
 
   @@index([seasonId])
   @@index([memberId])
@@ -695,6 +700,31 @@ model RaceReaction {
   @@index([targetMemberId])
 }
 
+// 공격/응원 — 기록을 올릴 때 그 기록의 일부 비율(RaceConfig.attackRatio/cheerRatio)만큼을
+// 크루원 한 명에게 보태거나(응원, 순위 무관) 깎는다(공격, 순위 인접자만 가능). 제출자 본인의
+// pts는 그대로 유지되고 이건 대상의 pts에만 가감된다. 기록 하나당 최대 1건(logId unique).
+model RaceInfluence {
+  id       String  @id @default(cuid())
+  seasonId String
+  season   RaceSeason @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  logId    String  @unique
+  log      RaceLog @relation(fields: [logId], references: [id], onDelete: Cascade)
+  actorId  String
+  actor    RaceMember @relation("InfluenceActor", fields: [actorId], references: [id], onDelete: Cascade)
+  targetId String
+  target   RaceMember @relation("InfluenceTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  mode String // "ATTACK" | "CHEER"
+  km   Float // 실제 적용된 환산 km (log.convertedKm * 비율, 제출 시점 값으로 고정)
+  date String // KST YYYY-MM-DD (log.date 그대로 복사 — 일자별 통계 리플레이용)
+
+  createdAt DateTime @default(now())
+
+  @@index([seasonId])
+  @@index([targetId])
+  @@index([actorId])
+}
+
 // 보유 장비(옷장) — 멤버당 아이템 하나씩. itemId는 코드 상수 ITEMS 카탈로그를 가리키는 자유
 // 문자열이라 DB에서 강제하지 않는다(나중에 시상 아이템을 추가해도 마이그레이션 불필요).
 model RaceMemberItem {
@@ -719,6 +749,10 @@ model RaceConfig {
   levelExponent  Float  @default(1.6)
   maxLevel       Int    @default(30)
   pickLevels     Json   @default("[3,5,8,10,13,15,20,25]") // number[] — 장비를 고를 수 있는 레벨
+
+  attackRatio     Float @default(0.05) // 공격 시 적용 비율 (기록 convertedKm의 5%)
+  cheerRatio      Float @default(0.15) // 응원 시 적용 비율 (기록 convertedKm의 15%)
+  nearbyRankRange Int   @default(3) // 공격 가능한 순위 차이 범위 (제출자 기준 ±N위까지만)
 
   updatedAt DateTime @updatedAt
 }
