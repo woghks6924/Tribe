@@ -14,21 +14,25 @@ type Submission = {
   previousParticipant: boolean;
   marketingConsent: boolean;
   answers: Record<string, string | string[]>;
-  status: "PENDING" | "WINNER" | "NOT_WINNER" | "CONFIRMED" | "CANCELLED";
+  status: "PENDING" | "WINNER" | "NOT_WINNER" | "CONFIRMED" | "CANCELLED" | "DECLINED";
+  notified: boolean;
   createdAt: string;
   personalDataPurgedAt: string | null;
 };
 
 type Field = { id: string; label: string };
 
-const STATUSES = ["PENDING", "WINNER", "NOT_WINNER", "CONFIRMED", "CANCELLED"] as const;
+const STATUSES = ["PENDING", "WINNER", "NOT_WINNER", "CONFIRMED", "CANCELLED", "DECLINED"] as const;
 const STATUS_LABEL: Record<Submission["status"], string> = {
   PENDING: "대기",
   WINNER: "당첨",
   NOT_WINNER: "미당첨",
-  CONFIRMED: "참여확정",
+  CONFIRMED: "입금완료",
   CANCELLED: "취소",
+  DECLINED: "무응답/거절",
 };
+// 최종적으로 안 오는 사람 — 카드/뱃지를 회색으로 죽인다.
+const MUTED_STATUSES: Submission["status"][] = ["CANCELLED", "DECLINED", "NOT_WINNER"];
 
 export function RunningSubmissionsManager({
   formId,
@@ -48,13 +52,23 @@ export function RunningSubmissionsManager({
   const [sortPreviousFirst, setSortPreviousFirst] = useState(false);
   const [sortWinnersFirst, setSortWinnersFirst] = useState(false);
 
-  const winnerCounts = useMemo(() => {
-    const winners = submissions.filter((s) => s.status === "WINNER");
-    const male = winners.filter((s) => s.gender === "남").length;
-    const female = winners.filter((s) => s.gender === "여").length;
-    const unspecified = winners.length - male - female;
-    return { total: winners.length, male, female, unspecified };
-  }, [submissions]);
+  function genderCountsOf(list: Submission[]) {
+    const male = list.filter((s) => s.gender === "남").length;
+    const female = list.filter((s) => s.gender === "여").length;
+    const unspecified = list.length - male - female;
+    return { total: list.length, male, female, unspecified };
+  }
+
+  // 당첨(안내 대상 전체) 집계 — WINNER만이 아니라 이후 CONFIRMED/DECLINED로 넘어간 사람도
+  // 원래 당첨자였으므로 함께 센다.
+  const winnerCounts = useMemo(
+    () => genderCountsOf(submissions.filter((s) => s.status === "WINNER" || s.status === "CONFIRMED" || s.status === "DECLINED")),
+    [submissions],
+  );
+  // 입금까지 마쳐 최종 확정된 인원.
+  const confirmedCounts = useMemo(() => genderCountsOf(submissions.filter((s) => s.status === "CONFIRMED")), [submissions]);
+  // 안내는 했지만 무응답/거절로 최종 불참 확정된 인원.
+  const declinedCounts = useMemo(() => genderCountsOf(submissions.filter((s) => s.status === "DECLINED")), [submissions]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -89,6 +103,15 @@ export function RunningSubmissionsManager({
     router.refresh();
   }
 
+  async function updateNotified(id: string, notified: boolean) {
+    await fetch(`/api/admin/running-forms/${formId}/submissions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notified }),
+    });
+    router.refresh();
+  }
+
   async function deleteSubmission(id: string) {
     await fetch(`/api/admin/running-forms/${formId}/submissions/${id}`, { method: "DELETE" });
     router.refresh();
@@ -98,6 +121,17 @@ export function RunningSubmissionsManager({
     <div className="flex flex-col gap-4">
       <RunningMessageGenerator form={form} />
 
+      {confirmedCounts.total > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border border-green-500 bg-green-500/10 px-4 py-2.5 text-sm font-semibold text-ink">
+          <span className="text-green-500">최종 확정(입금완료) {confirmedCounts.total}명</span>
+          <span className="text-ink-muted">·</span>
+          <span>남 {confirmedCounts.male}명 / 여 {confirmedCounts.female}명</span>
+          {confirmedCounts.unspecified > 0 && (
+            <span className="text-ink-muted">(성별 미상 {confirmedCounts.unspecified}명)</span>
+          )}
+        </div>
+      )}
+
       {winnerCounts.total > 0 && (
         <div className="flex flex-wrap items-center gap-2 border border-accent bg-accent/10 px-4 py-2.5 text-sm font-semibold text-ink">
           <span className="text-accent">당첨 {winnerCounts.total}명</span>
@@ -106,6 +140,15 @@ export function RunningSubmissionsManager({
           {winnerCounts.unspecified > 0 && (
             <span className="text-ink-muted">(성별 미상 {winnerCounts.unspecified}명)</span>
           )}
+        </div>
+      )}
+
+      {declinedCounts.total > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border border-line-strong bg-ink-faint/10 px-4 py-2.5 text-sm font-semibold text-ink-faint">
+          <span>무응답/거절 {declinedCounts.total}명</span>
+          <span>·</span>
+          <span>남 {declinedCounts.male}명 / 여 {declinedCounts.female}명</span>
+          {declinedCounts.unspecified > 0 && <span>(성별 미상 {declinedCounts.unspecified}명)</span>}
         </div>
       )}
 
@@ -178,7 +221,13 @@ export function RunningSubmissionsManager({
             <div
               key={s.id}
               className={`flex flex-col gap-2 border p-4 text-sm ${
-                s.status === "WINNER" ? "border-accent bg-accent/10" : "border-line"
+                s.status === "CONFIRMED"
+                  ? "border-green-500 bg-green-500/10"
+                  : s.status === "WINNER"
+                    ? "border-accent bg-accent/10"
+                    : MUTED_STATUSES.includes(s.status)
+                      ? "border-line-strong bg-ink-faint/5 opacity-60"
+                      : "border-line"
               }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -188,6 +237,21 @@ export function RunningSubmissionsManager({
                     {s.status === "WINNER" && (
                       <span className="ml-2 bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-ink uppercase">
                         당첨
+                      </span>
+                    )}
+                    {s.status === "CONFIRMED" && (
+                      <span className="ml-2 bg-green-500 px-1.5 py-0.5 text-[10px] font-bold text-white uppercase">
+                        입금완료
+                      </span>
+                    )}
+                    {s.status === "DECLINED" && (
+                      <span className="ml-2 border border-ink-faint px-1.5 py-0.5 text-[10px] font-bold text-ink-faint uppercase">
+                        무응답/거절
+                      </span>
+                    )}
+                    {(s.status === "WINNER" || s.status === "CONFIRMED" || s.status === "DECLINED") && s.notified && (
+                      <span className="ml-2 border border-line-strong px-1.5 py-0.5 text-[10px] font-normal text-ink-muted uppercase">
+                        문자 보냄
                       </span>
                     )}
                     {s.previousParticipant && (
@@ -221,11 +285,28 @@ export function RunningSubmissionsManager({
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-ink-faint">{new Date(s.createdAt).toLocaleString()}</span>
+                  {(s.status === "WINNER" || s.status === "CONFIRMED" || s.status === "DECLINED") && (
+                    <label className="flex cursor-pointer items-center gap-1.5 text-xs text-ink-muted">
+                      <input
+                        type="checkbox"
+                        checked={s.notified}
+                        onChange={(e) => updateNotified(s.id, e.target.checked)}
+                        className="cursor-pointer"
+                      />
+                      문자 보냄
+                    </label>
+                  )}
                   <select
                     value={s.status}
                     onChange={(e) => updateStatus(s.id, e.target.value as Submission["status"])}
                     className={`border border-line-strong bg-base px-2 py-1.5 text-xs outline-none ${
-                      s.status === "WINNER" ? "font-bold text-accent" : ""
+                      s.status === "WINNER"
+                        ? "font-bold text-accent"
+                        : s.status === "CONFIRMED"
+                          ? "font-bold text-green-500"
+                          : MUTED_STATUSES.includes(s.status)
+                            ? "text-ink-faint"
+                            : ""
                     }`}
                   >
                     {STATUSES.map((st) => (

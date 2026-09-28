@@ -61,6 +61,7 @@ export default async function RunningFormSubmissionsPage({
           marketingConsent: s.marketingConsent,
           answers: (s.answers ?? {}) as Record<string, string | string[]>,
           status: s.status,
+          notified: s.notified,
           createdAt: s.createdAt.toISOString(),
           personalDataPurgedAt: s.personalDataPurgedAt?.toISOString() ?? null,
         }))}

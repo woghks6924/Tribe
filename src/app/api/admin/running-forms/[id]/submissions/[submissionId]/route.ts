@@ -11,15 +11,19 @@ export async function PATCH(
 
   const { submissionId } = await params;
   const body = (await request.json()) as {
-    status: "PENDING" | "WINNER" | "NOT_WINNER" | "CONFIRMED" | "CANCELLED";
+    status?: "PENDING" | "WINNER" | "NOT_WINNER" | "CONFIRMED" | "CANCELLED" | "DECLINED";
+    notified?: boolean;
   };
 
   const submission = await prisma.runningSubmission.update({
     where: { id: submissionId },
-    data: { status: body.status },
+    data: {
+      ...(body.status !== undefined ? { status: body.status } : {}),
+      ...(body.notified !== undefined ? { notified: body.notified } : {}),
+    },
   });
 
-  return NextResponse.json({ id: submission.id, status: submission.status });
+  return NextResponse.json({ id: submission.id, status: submission.status, notified: submission.notified });
 }
 
 export async function DELETE(

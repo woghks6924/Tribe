@@ -11,8 +11,9 @@ const STATUS_LABEL: Record<string, string> = {
   PENDING: "대기",
   WINNER: "당첨",
   NOT_WINNER: "미당첨",
-  CONFIRMED: "참여확정",
+  CONFIRMED: "입금완료",
   CANCELLED: "취소",
+  DECLINED: "무응답/거절",
 };
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -42,6 +43,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       "과거참여",
       "마케팅동의",
       "상태",
+      "문자보냄",
       "신청일시",
       ...fields.map((f) => f.label),
     ];
@@ -56,6 +58,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         s.previousParticipant ? "Y" : "N",
         s.marketingConsent ? "Y" : "N",
         STATUS_LABEL[s.status] ?? s.status,
+        s.notified ? "Y" : "N",
         s.createdAt.toISOString(),
         ...fields.map((f) => {
           const v = answers[f.id];
@@ -89,6 +92,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       privacyConsent: s.privacyConsent,
       answers: s.answers ?? {},
       status: s.status,
+      notified: s.notified,
       createdAt: s.createdAt.toISOString(),
       personalDataPurgedAt: s.personalDataPurgedAt?.toISOString() ?? null,
     })),

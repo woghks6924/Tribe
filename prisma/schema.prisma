@@ -480,6 +480,7 @@ enum RunningSubmissionStatus {
   NOT_WINNER
   CONFIRMED
   CANCELLED
+  DECLINED // 당첨 안내했지만 무응답이거나 거절해서 최종 불참으로 확정된 경우
 }
 
 // 러닝 이벤트 신청폼 — /admin/running-forms에서 만들고 게시하면 /running에 공개된다.
@@ -534,6 +535,7 @@ model RunningSubmission {
   // 커스텀 질문 답변: { [fieldId]: string | string[] }
   answers          Json                    @default("{}")
   status           RunningSubmissionStatus @default(PENDING)
+  notified         Boolean                 @default(false) // 당첨 안내 문자를 실제로 보냈는지 (관리자 체크박스)
   // 폼 마감 30일 후 name/phone/gender를 파기하는 크론이 채우는 시각. null이면 아직 보관 중.
   personalDataPurgedAt DateTime?
 
