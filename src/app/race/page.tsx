@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentRaceMember } from "@/lib/auth/race-session";
 import { KIND_LABEL, TYPE_LABEL, destinationNameOf, type RaceEye } from "@/lib/race/constants";
 import { raceProofPublicUrl } from "@/lib/race/storage";
+import { feedEventKey } from "@/lib/race/reaction-key";
 import { computeMemberAppearances } from "@/lib/race/appearance";
 import {
   addDaysToDateStr,
@@ -20,6 +21,7 @@ import { RaceTrack, type RaceTrackEntry } from "@/components/race/race-track";
 import { RaceAvatarImg } from "@/components/race/race-avatar";
 import { RaceGuestbook } from "@/components/race/race-guestbook";
 import { RacePokeButton } from "@/components/race/race-poke-button";
+import { RaceHifiveButton } from "@/components/race/race-hifive-button";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +83,27 @@ export default async function RacePage() {
   const prevRankByMember = new Map(prev.map((s) => [s.member.id, s.rank]));
   const feed = buildSeasonFeed(members, logs, startDateStr, uptoDateStr, season.goalKm, influences).slice(-14).reverse();
   const awards = computeAwards(cur);
+
+  const proofIds = recentProofs.map((p) => p.id);
+  const feedKeys = feed.filter((f) => f.memberId).map((f) => feedEventKey(f));
+  const reactions =
+    proofIds.length || feedKeys.length
+      ? await prisma.raceReaction.findMany({
+          where: {
+            OR: [
+              ...(proofIds.length ? [{ targetType: "PROOF", targetId: { in: proofIds } }] : []),
+              ...(feedKeys.length ? [{ targetType: "FEED", targetId: { in: feedKeys } }] : []),
+            ],
+          },
+        })
+      : [];
+  const reactionCountByKey = new Map<string, number>();
+  const myReactedKeys = new Set<string>();
+  for (const r of reactions) {
+    const key = `${r.targetType}:${r.targetId}`;
+    reactionCountByKey.set(key, (reactionCountByKey.get(key) ?? 0) + 1);
+    if (raceSession && r.memberId === raceSession.sub) myReactedKeys.add(key);
+  }
 
   const idleDaysByMember = new Map(cur.map((s) => [s.member.id, s.idleDays]));
   const rankDroppedByMember = new Map(cur.map((s) => [s.member.id, s.rank > (prevRankByMember.get(s.member.id) ?? s.rank)]));
@@ -339,26 +362,37 @@ export default async function RacePage() {
               <p className="text-[13px] text-[#a3a29a]">최근 24시간 동안 올라온 인증샷이에요. 시간이 지나면 자동으로 사라져요.</p>
               <div className="mt-3 grid grid-cols-3 gap-2 min-[420px]:grid-cols-4">
                 {recentProofs.map((p) => (
-                  <a
-                    key={p.id}
-                    href={raceProofPublicUrl(p.proofPath!)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group relative block aspect-square overflow-hidden rounded bg-[#17181b]"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={raceProofPublicUrl(p.proofPath!)}
-                      alt={`${p.member.name}의 ${KIND_LABEL[p.kind]} 인증샷`}
-                      className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  <div key={p.id} className="group relative aspect-square overflow-hidden rounded bg-[#17181b]">
+                    <a
+                      href={raceProofPublicUrl(p.proofPath!)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 block"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={raceProofPublicUrl(p.proofPath!)}
+                        alt={`${p.member.name}의 ${KIND_LABEL[p.kind]} 인증샷`}
+                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 pt-4 pb-1">
+                        <span className="block truncate text-[11px] font-semibold text-white">{p.member.name}</span>
+                        <span className="block text-[10px] text-white/70">
+                          {KIND_LABEL[p.kind]} · {hoursAgoLabel(p.createdAt)}
+                        </span>
+                      </div>
+                    </a>
+                    <RaceHifiveButton
+                      targetType="PROOF"
+                      targetId={p.id}
+                      targetMemberId={p.memberId}
+                      initialCount={reactionCountByKey.get(`PROOF:${p.id}`) ?? 0}
+                      initialActive={myReactedKeys.has(`PROOF:${p.id}`)}
+                      loggedIn={!!raceSession}
+                      variant="overlay"
+                      className="absolute top-1 right-1"
                     />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 pt-4 pb-1">
-                      <span className="block truncate text-[11px] font-semibold text-white">{p.member.name}</span>
-                      <span className="block text-[10px] text-white/70">
-                        {KIND_LABEL[p.kind]} · {hoursAgoLabel(p.createdAt)}
-                      </span>
-                    </div>
-                  </a>
+                  </div>
                 ))}
               </div>
             </section>
@@ -370,14 +404,30 @@ export default async function RacePage() {
               {feed.length === 0 ? (
                 <li className="py-2 text-sm text-[#6f6f6a]">아직 소식이 없어요</li>
               ) : (
-                feed.map((f, i) => (
-                  <li key={i} className="grid grid-cols-[52px_minmax(0,1fr)] gap-2 border-t border-[#3c3d43] py-1.5 text-sm first:border-t-0">
-                    <span className="pt-1 font-[family-name:var(--font-race-px)] text-[8px] text-[#6f6f6a]">
-                      DAY {dayIndexOf(f.date, startDateStr)}
-                    </span>
-                    <span dangerouslySetInnerHTML={{ __html: f.text }} />
-                  </li>
-                ))
+                feed.map((f, i) => {
+                  const key = f.memberId ? feedEventKey(f) : null;
+                  return (
+                    <li
+                      key={i}
+                      className="grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-2 border-t border-[#3c3d43] py-1.5 text-sm first:border-t-0"
+                    >
+                      <span className="font-[family-name:var(--font-race-px)] text-[8px] text-[#6f6f6a]">
+                        DAY {dayIndexOf(f.date, startDateStr)}
+                      </span>
+                      <span dangerouslySetInnerHTML={{ __html: f.text }} />
+                      {key && (
+                        <RaceHifiveButton
+                          targetType="FEED"
+                          targetId={key}
+                          targetMemberId={f.memberId!}
+                          initialCount={reactionCountByKey.get(`FEED:${key}`) ?? 0}
+                          initialActive={myReactedKeys.has(`FEED:${key}`)}
+                          loggedIn={!!raceSession}
+                        />
+                      )}
+                    </li>
+                  );
+                })
               )}
             </ul>
           </section>
