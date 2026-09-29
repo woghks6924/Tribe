@@ -27,6 +27,11 @@ type Section = {
   build: (form: RunningMessageFormInfo) => string | null;
 };
 
+// 세션마다 거의 항상 같은 계좌를 쓰길래, 폼에 계좌를 안 채워놨어도 문자에는 이 계좌가
+// 나가도록 기본값으로 둔다. 특정 세션만 다른 계좌를 쓰고 싶으면 폼의 계좌 필드를 채우면
+// 그 값이 우선한다.
+const DEFAULT_BANK = { name: "카카오뱅크", accountNumber: "3333-01-1142378", holder: "김재환" };
+
 function formatEventDate(iso: string): string {
   return new Date(iso).toLocaleString("ko-KR", {
     month: "long",
@@ -105,15 +110,18 @@ const SECTIONS: Section[] = [
     label: "입금 계좌 안내",
     defaultChecked: true,
     group: "payment",
-    build: (f) =>
-      f.entryFee != null && f.bankName && f.bankAccountNumber
-        ? [
-            "입금 계좌",
-            `${f.bankName} ${f.bankAccountNumber}${f.bankAccountHolder ? ` ${f.bankAccountHolder}` : ""}`,
-            `참가비는 입금하시고 "입금완료"회신부탁드립니다.`,
-            "해당 시간에 참여가 어려우신 경우, 다른 분들이 참여하실 수 있도록 빠른 회신 부탁드립니다.",
-          ].join("\n")
-        : null,
+    build: (f) => {
+      if (f.entryFee == null) return null;
+      const name = f.bankName || DEFAULT_BANK.name;
+      const number = f.bankAccountNumber || DEFAULT_BANK.accountNumber;
+      const holder = f.bankAccountHolder || DEFAULT_BANK.holder;
+      return [
+        "입금 계좌",
+        `${name} ${number}${holder ? ` ${holder}` : ""}`,
+        `참가비는 입금하시고 "입금완료"회신부탁드립니다.`,
+        "해당 시간에 참여가 어려우신 경우, 다른 분들이 참여하실 수 있도록 빠른 회신 부탁드립니다.",
+      ].join("\n");
+    },
   },
   {
     key: "noticeContent",
