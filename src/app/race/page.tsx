@@ -462,6 +462,20 @@ export default async function RacePage() {
           <li>
             <b className="text-[#f1f1ee]">방명록 위치 이동</b> — 코스 현황 바로 아래로 옮겨서 더 잘 보이게 했어요.
           </li>
+          <li>
+            <b className="text-[#f1f1ee]">하이파이브</b> — 인증샷과 크루 소식 항목에 👏를 눌러 반응을 남길 수 있어요.
+          </li>
+          <li>
+            <b className="text-[#f1f1ee]">공격 / 응원</b> — 기록을 올릴 때 그 기록의 일부(공격 5% · 응원 15%)를 크루원 한 명에게
+            나눠줄 수 있어요. 공격은 순위가 가까운 사람만, 응원은 누구나 대상이 될 수 있고, 내 기록은 그대로 다 쌓여요.
+          </li>
+          <li>
+            <b className="text-[#f1f1ee]">레벨업 소식</b> — 크루원이 레벨업하면 크루 소식에 획득한 장비와 함께 알려줘요.
+          </li>
+          <li>
+            <b className="text-[#f1f1ee]">옷장 미리보기</b> — 아직 못 가진 장비도 캐릭터에 미리 입혀볼 수 있고, 다음 장비 선택까지
+            남은 거리도 옷장에서 바로 확인할 수 있어요.
+          </li>
         </ul>
       </section>
     </div>
