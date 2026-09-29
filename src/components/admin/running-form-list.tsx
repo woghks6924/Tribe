@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import type { RunningFormStatus } from "@/lib/running";
+import { getEffectiveRunningFormStatus, type RunningFormStatus } from "@/lib/running-status";
 
 type FormSummary = {
   id: string;
@@ -78,8 +78,17 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
     router.refresh();
   }
 
-  // eslint-disable-next-line react-hooks/purity -- 지난 세션 흐리게 표시용, 정확한 실시간 갱신은 필요 없다.
+  // eslint-disable-next-line react-hooks/purity -- 지난 세션 흐리게 표시·자동 마감 판정용, 정확한 실시간 갱신은 필요 없다.
   const now = useMemo(() => Date.now(), []);
+  // 신청기간이 지나면 status 필드를 안 건드려도 공개 페이지에서는 자동으로 마감 처리된다(getEffectiveRunningFormStatus).
+  // 관리자 목록의 상태 드롭다운은 수동 오버라이드용 원본 값을 그대로 보여주므로, 여기서 계산한
+  // "실제로는 마감된 상태"를 별도 배지로 알려준다.
+  // eslint-disable-next-line react-hooks/purity -- 위와 같은 이유로 지금 시각 기준 계산이 필요하다.
+  const effectiveStatusById = useMemo(() => {
+    const map = new Map<string, RunningFormStatus>();
+    for (const f of forms) map.set(f.id, getEffectiveRunningFormStatus(f, f.submissionCount));
+    return map;
+  }, [forms]);
 
   if (forms.length === 0) {
     return <p className="border border-line px-4 py-6 text-sm text-ink-faint">No running forms yet.</p>;
@@ -89,6 +98,8 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
     <div className="flex flex-col gap-3">
       {forms.map((f) => {
         const past = new Date(f.eventDate).getTime() < now;
+        const effectiveStatus = effectiveStatusById.get(f.id)!;
+        const autoClosed = effectiveStatus === "CLOSED" && f.status !== "CLOSED";
         return (
         <div
           key={f.id}
@@ -146,6 +157,14 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
                 </option>
               ))}
             </select>
+            {autoClosed && (
+              <span
+                className="border border-red-400 px-2 py-1 text-xs text-red-400"
+                title="신청기간이 지나서 공개 페이지에는 이미 마감으로 보여요. 위 드롭다운은 수동 설정 값이라 그대로 둬도 되고, 확정으로 바꾸고 싶으면 마감으로 바꿔주세요."
+              >
+                신청기간 지남 → 자동 마감
+              </span>
+            )}
 
             <Link
               href={`/admin/running-forms/${f.id}/submissions`}
