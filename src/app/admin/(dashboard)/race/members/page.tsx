@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminRaceMembersPage() {
   const members = await prisma.raceMember.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { logs: true } } },
+    include: { _count: { select: { logs: true } }, items: { select: { itemId: true } } },
   });
 
   return (
@@ -27,6 +27,7 @@ export default async function AdminRaceMembersPage() {
           failedLoginCount: m.failedLoginCount,
           lockedUntil: m.lockedUntil ? m.lockedUntil.toISOString() : null,
           logCount: m._count.logs,
+          ownedItemIds: m.items.map((it) => it.itemId),
         }))}
       />
     </div>

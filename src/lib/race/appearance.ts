@@ -7,10 +7,12 @@ import {
   DEFAULT_MAX_LEVEL,
   DEFAULT_NEARBY_RANK_RANGE,
   DEFAULT_PICK_LEVELS,
+  itemById,
   type RaceExpr,
 } from "@/lib/race/constants";
 import { computeExpression } from "@/lib/race/expression";
 import { levelFromKm, type RaceLevelConfig } from "@/lib/race/level";
+import { addDaysToDateStr, dayIndexOf, escapeHtml, type RaceFeedEvent } from "@/lib/race/stats";
 import type { RaceEquipment } from "@/lib/race/sprite";
 
 export type RaceMemberAppearance = {
@@ -127,4 +129,47 @@ export async function computeMemberAppearances(
     });
   }
   return result;
+}
+
+// 크루 소식에 "OO Lv.N 달성! [아이템] 획득" 메시지를 넣기 위해 하루 단위로 레벨업을 재현한다.
+// 레벨은 시즌 무관 전체 누적이라 allTimeLogs는 시즌 필터 없이 넘겨야 한다.
+export function buildLevelUpFeed(
+  members: { id: string; name: string }[],
+  allTimeLogs: { memberId: string; date: string; convertedKm: number }[],
+  itemsByMemberLevel: Map<string, string>,
+  config: RaceLevelConfig,
+  seasonStartDateStr: string,
+  todayDateStr: string,
+): RaceFeedEvent[] {
+  const todayDay = dayIndexOf(todayDateStr, seasonStartDateStr);
+  const logsByMember = new Map<string, { date: string; convertedKm: number }[]>();
+  for (const log of allTimeLogs) {
+    const arr = logsByMember.get(log.memberId);
+    if (arr) arr.push(log);
+    else logsByMember.set(log.memberId, [log]);
+  }
+
+  const events: RaceFeedEvent[] = [];
+  for (const m of members) {
+    const logs = logsByMember.get(m.id);
+    if (!logs || logs.length === 0) continue;
+    const totalAsOf = (dateStr: string) => logs.reduce((sum, l) => (l.date <= dateStr ? sum + l.convertedKm : sum), 0);
+
+    for (let d = 2; d <= todayDay; d++) {
+      const dateStr = addDaysToDateStr(seasonStartDateStr, d - 1);
+      const prevDateStr = addDaysToDateStr(seasonStartDateStr, d - 2);
+      const levelBefore = levelFromKm(totalAsOf(prevDateStr), config);
+      const levelAfter = levelFromKm(totalAsOf(dateStr), config);
+      for (let lvl = levelBefore + 1; lvl <= levelAfter; lvl++) {
+        const itemId = itemsByMemberLevel.get(`${m.id}:${lvl}`);
+        const item = itemId ? itemById(itemId) : undefined;
+        events.push({
+          date: dateStr,
+          memberId: m.id,
+          text: `<b>${escapeHtml(m.name)}</b> Lv.${lvl} 달성!${item ? ` · [${escapeHtml(item.name)}] 획득` : ""}`,
+        });
+      }
+    }
+  }
+  return events;
 }

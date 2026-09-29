@@ -5,7 +5,7 @@ import { getCurrentRaceMember } from "@/lib/auth/race-session";
 import { KIND_LABEL, TYPE_LABEL, destinationNameOf, type RaceEye } from "@/lib/race/constants";
 import { raceProofPublicUrl } from "@/lib/race/storage";
 import { feedEventKey } from "@/lib/race/reaction-key";
-import { computeMemberAppearances } from "@/lib/race/appearance";
+import { buildLevelUpFeed, computeMemberAppearances, getRaceLevelConfig } from "@/lib/race/appearance";
 import {
   addDaysToDateStr,
   buildSeasonFeed,
@@ -81,8 +81,21 @@ export default async function RacePage() {
   const cur = computeMemberStats(members, logs, startDateStr, uptoDateStr, influences);
   const prev = computeMemberStats(members, logs, startDateStr, addDaysToDateStr(uptoDateStr, -1), influences);
   const prevRankByMember = new Map(prev.map((s) => [s.member.id, s.rank]));
-  const feed = buildSeasonFeed(members, logs, startDateStr, uptoDateStr, season.goalKm, influences).slice(-14).reverse();
   const awards = computeAwards(cur);
+
+  const memberIds = members.map((m) => m.id);
+  const [levelConfig, allTimeLogs, levelupItems] = await Promise.all([
+    getRaceLevelConfig(),
+    prisma.raceLog.findMany({ where: { memberId: { in: memberIds } }, select: { memberId: true, date: true, convertedKm: true } }),
+    prisma.raceMemberItem.findMany({ where: { memberId: { in: memberIds }, source: "levelup" } }),
+  ]);
+  const itemsByMemberLevel = new Map(levelupItems.map((it) => [`${it.memberId}:${it.acquiredLevel}`, it.itemId]));
+  const levelUpFeed = buildLevelUpFeed(members, allTimeLogs, itemsByMemberLevel, levelConfig, startDateStr, uptoDateStr);
+
+  const feed = [...buildSeasonFeed(members, logs, startDateStr, uptoDateStr, season.goalKm, influences), ...levelUpFeed]
+    .sort((a, b) => dayIndexOf(a.date, startDateStr) - dayIndexOf(b.date, startDateStr))
+    .slice(-14)
+    .reverse();
 
   const proofIds = recentProofs.map((p) => p.id);
   const feedKeys = feed.filter((f) => f.memberId).map((f) => feedEventKey(f));

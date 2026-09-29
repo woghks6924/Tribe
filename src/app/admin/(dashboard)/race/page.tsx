@@ -21,6 +21,12 @@ export default async function AdminRacePage() {
           <Link href="/admin/race/logs" className="text-sm text-ink-muted hover:text-ink">
             기록 관리 →
           </Link>
+          <Link href="/admin/race/config" className="text-sm text-ink-muted hover:text-ink">
+            설정 →
+          </Link>
+          <Link href="/admin/race/summary" className="text-sm text-ink-muted hover:text-ink">
+            오늘의 요약 →
+          </Link>
         </div>
       </div>
       <RaceSeasonManager
