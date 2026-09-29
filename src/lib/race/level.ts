@@ -28,6 +28,14 @@ export function remainingPicks(level: number, levelupItemCount: number, config: 
   return Math.max(0, pickLevelsReached(level, config).length - levelupItemCount);
 }
 
+// 아직 도달 안 한 선택 레벨 중 가장 가까운 것 — "몇 레벨 더 가면 다음 장비를 고를 수 있는지"
+// 보여줄 때 쓴다(옷장 화면). 이미 도달했지만 아직 안 고른 pending 레벨은 nextPendingPickLevel이
+// 따로 담당하므로 여긴 관여하지 않는다.
+export function nextUpcomingPickLevel(level: number, config: RaceLevelConfig): number | null {
+  const upcoming = [...config.pickLevels].filter((l) => l > level).sort((a, b) => a - b);
+  return upcoming[0] ?? null;
+}
+
 // 다음으로 팝업을 띄워야 할 "선택 레벨" — 없으면 null. 여러 레벨이 밀려 있으면 낮은 것부터.
 export function nextPendingPickLevel(level: number, levelupItemCount: number, config: RaceLevelConfig): number | null {
   const reached = pickLevelsReached(level, config);

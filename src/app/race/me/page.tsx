@@ -5,7 +5,7 @@ import { getCurrentRaceMember } from "@/lib/auth/race-session";
 import { CHECKPOINTS, TYPE_LABEL } from "@/lib/race/constants";
 import { computeMemberStats, dayIndexOf, formatBreakdown, todayKstDateStr, addDaysToDateStr } from "@/lib/race/stats";
 import { computeMemberAppearances, getRaceLevelConfig, getRaceInfluenceConfig } from "@/lib/race/appearance";
-import { nextPendingPickLevel } from "@/lib/race/level";
+import { kmForLevel, nextPendingPickLevel, nextUpcomingPickLevel } from "@/lib/race/level";
 import { RaceLoginForm } from "@/components/race/race-login-form";
 import { RaceLogoutButton } from "@/components/race/race-logout-button";
 import { RaceAvatarImg } from "@/components/race/race-avatar";
@@ -81,17 +81,21 @@ export default async function RaceMePage() {
   });
   const myAppearance = appearances.get(member.id) ?? { level: 0, gold: false, expr: "n" as const, eq: {} };
 
-  const [ownedItems, levelupPickCount, pendingPokes] = await Promise.all([
+  const [ownedItems, levelupPickCount, pendingPokes, allTimeKmRow] = await Promise.all([
     prisma.raceMemberItem.findMany({ where: { memberId: member.id } }),
     prisma.raceMemberItem.count({ where: { memberId: member.id, source: "levelup" } }),
     prisma.racePoke.findMany({
       where: { seasonId: season.id, targetId: member.id, acknowledgedAt: null },
       include: { poker: true },
     }),
+    prisma.raceLog.aggregate({ where: { memberId: member.id }, _sum: { convertedKm: true } }),
   ]);
   const levelConfig = await getRaceLevelConfig();
-  const nextPickLevel = nextPendingPickLevel(myAppearance.level, levelupPickCount, levelConfig);
+  const nextPickLevel =
+    nextPendingPickLevel(myAppearance.level, levelupPickCount, levelConfig) ?? nextUpcomingPickLevel(myAppearance.level, levelConfig);
   const pokerNames = pendingPokes.map((p) => p.poker.name);
+  const kmToNextPick =
+    nextPickLevel != null ? Math.max(0, kmForLevel(nextPickLevel, levelConfig) - (allTimeKmRow._sum.convertedKm ?? 0)) : null;
 
   const influenceConfig = await getRaceInfluenceConfig();
   const roster = stats.map((s) => ({ id: s.member.id, name: s.member.name, rank: s.rank }));
@@ -226,6 +230,7 @@ export default async function RaceMePage() {
             ownedItemIds={ownedItems.map((it) => it.itemId)}
             eq={myAppearance.eq}
             nextPickLevel={nextPickLevel}
+            kmToNextPick={kmToNextPick}
           />
         </div>
       </details>
