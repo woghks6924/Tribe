@@ -72,11 +72,18 @@ export default async function RunningEventsPage() {
                       <img
                         src={f.thumbnailUrl}
                         alt=""
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className={`h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 ${isPastEvent ? "grayscale" : ""}`}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-xs text-ink-faint">
                         TRI.BE
+                      </div>
+                    )}
+                    {isPastEvent && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+                        <span className="border border-white/70 px-3 py-1.5 text-xs font-bold tracking-[0.1em] text-white uppercase">
+                          지난 세션입니다
+                        </span>
                       </div>
                     )}
                     <span
