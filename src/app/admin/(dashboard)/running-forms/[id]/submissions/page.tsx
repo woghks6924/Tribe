@@ -64,6 +64,7 @@ export default async function RunningFormSubmissionsPage({
           answers: (s.answers ?? {}) as Record<string, string | string[]>,
           status: s.status,
           notified: s.notified,
+          attended: s.attended,
           memo: s.memo,
           createdAt: s.createdAt.toISOString(),
           personalDataPurgedAt: s.personalDataPurgedAt?.toISOString() ?? null,

@@ -16,6 +16,7 @@ type Submission = {
   answers: Record<string, string | string[]>;
   status: "PENDING" | "WINNER" | "NOT_WINNER" | "CONFIRMED" | "CANCELLED" | "DECLINED";
   notified: boolean;
+  attended: boolean;
   memo: string | null;
   createdAt: string;
   personalDataPurgedAt: string | null;
@@ -68,6 +69,10 @@ export function RunningSubmissionsManager({
   );
   // 입금까지 마쳐 최종 확정된 인원.
   const confirmedCounts = useMemo(() => genderCountsOf(submissions.filter((s) => s.status === "CONFIRMED")), [submissions]);
+  const attendedCount = useMemo(
+    () => submissions.filter((s) => s.status === "CONFIRMED" && s.attended).length,
+    [submissions],
+  );
   // 안내는 했지만 무응답/거절로 최종 불참 확정된 인원.
   const declinedCounts = useMemo(() => genderCountsOf(submissions.filter((s) => s.status === "DECLINED")), [submissions]);
 
@@ -113,6 +118,15 @@ export function RunningSubmissionsManager({
     router.refresh();
   }
 
+  async function updateAttended(id: string, attended: boolean) {
+    await fetch(`/api/admin/running-forms/${formId}/submissions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ attended }),
+    });
+    router.refresh();
+  }
+
   async function updateMemo(id: string, memo: string) {
     await fetch(`/api/admin/running-forms/${formId}/submissions/${id}`, {
       method: "PATCH",
@@ -139,6 +153,8 @@ export function RunningSubmissionsManager({
           {confirmedCounts.unspecified > 0 && (
             <span className="text-ink-muted">(성별 미상 {confirmedCounts.unspecified}명)</span>
           )}
+          <span className="text-ink-muted">·</span>
+          <span>출석 {attendedCount}/{confirmedCounts.total}명</span>
         </div>
       )}
 
@@ -276,6 +292,11 @@ export function RunningSubmissionsManager({
                         입금완료
                       </span>
                     )}
+                    {s.status === "CONFIRMED" && s.attended && (
+                      <span className="ml-2 bg-ink px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--color-base)] uppercase">
+                        ✓ 출석
+                      </span>
+                    )}
                     {s.status === "DECLINED" && (
                       <span className="ml-2 border border-ink-faint px-1.5 py-0.5 text-[10px] font-bold text-ink-faint uppercase">
                         무응답/거절
@@ -326,6 +347,17 @@ export function RunningSubmissionsManager({
                         className="cursor-pointer"
                       />
                       문자 보냄
+                    </label>
+                  )}
+                  {s.status === "CONFIRMED" && (
+                    <label className="flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-ink">
+                      <input
+                        type="checkbox"
+                        checked={s.attended}
+                        onChange={(e) => updateAttended(s.id, e.target.checked)}
+                        className="cursor-pointer"
+                      />
+                      출석
                     </label>
                   )}
                   <select

@@ -13,6 +13,7 @@ export async function PATCH(
   const body = (await request.json()) as {
     status?: "PENDING" | "WINNER" | "NOT_WINNER" | "CONFIRMED" | "CANCELLED" | "DECLINED";
     notified?: boolean;
+    attended?: boolean;
     memo?: string;
   };
 
@@ -21,6 +22,7 @@ export async function PATCH(
     data: {
       ...(body.status !== undefined ? { status: body.status } : {}),
       ...(body.notified !== undefined ? { notified: body.notified } : {}),
+      ...(body.attended !== undefined ? { attended: body.attended } : {}),
       ...(body.memo !== undefined ? { memo: body.memo.trim() || null } : {}),
     },
   });
@@ -29,6 +31,7 @@ export async function PATCH(
     id: submission.id,
     status: submission.status,
     notified: submission.notified,
+    attended: submission.attended,
     memo: submission.memo,
   });
 }

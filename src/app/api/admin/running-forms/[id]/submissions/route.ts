@@ -44,6 +44,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       "마케팅동의",
       "상태",
       "문자보냄",
+      "출석",
       "메모",
       "신청일시",
       ...fields.map((f) => f.label),
@@ -60,6 +61,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         s.marketingConsent ? "Y" : "N",
         STATUS_LABEL[s.status] ?? s.status,
         s.notified ? "Y" : "N",
+        s.attended ? "Y" : "N",
         s.memo ?? "",
         s.createdAt.toISOString(),
         ...fields.map((f) => {
@@ -95,6 +97,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       answers: s.answers ?? {},
       status: s.status,
       notified: s.notified,
+      attended: s.attended,
       memo: s.memo,
       createdAt: s.createdAt.toISOString(),
       personalDataPurgedAt: s.personalDataPurgedAt?.toISOString() ?? null,

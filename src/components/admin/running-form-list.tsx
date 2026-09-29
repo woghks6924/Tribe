@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { RunningFormStatus } from "@/lib/running";
 
@@ -77,14 +78,22 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
     router.refresh();
   }
 
+  // eslint-disable-next-line react-hooks/purity -- 지난 세션 흐리게 표시용, 정확한 실시간 갱신은 필요 없다.
+  const now = useMemo(() => Date.now(), []);
+
   if (forms.length === 0) {
     return <p className="border border-line px-4 py-6 text-sm text-ink-faint">No running forms yet.</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
-      {forms.map((f) => (
-        <div key={f.id} className="flex flex-col gap-3 border border-line px-4 py-3 text-sm">
+      {forms.map((f) => {
+        const past = new Date(f.eventDate).getTime() < now;
+        return (
+        <div
+          key={f.id}
+          className={`flex flex-col gap-3 border border-line px-4 py-3 text-sm ${past ? "opacity-50 grayscale" : ""}`}
+        >
           <div className="flex items-center gap-4">
             <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-line-strong bg-base-elevated">
               {f.thumbnailUrl ? (
@@ -94,7 +103,14 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate font-semibold">{f.title}</span>
+              <span className="truncate font-semibold">
+                {f.title}
+                {past && (
+                  <span className="ml-2 border border-line-strong px-1.5 py-0.5 text-[10px] font-bold text-ink-faint uppercase">
+                    지난 세션
+                  </span>
+                )}
+              </span>
               <span className="text-xs text-ink-faint">
                 {CATEGORY_LABEL[f.category]} · {new Date(f.eventDate).toLocaleDateString()} ·{" "}
                 {f.submissionCount}
@@ -154,7 +170,8 @@ export function RunningFormList({ forms }: { forms: FormSummary[] }) {
             </button>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
