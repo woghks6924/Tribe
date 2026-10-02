@@ -53,6 +53,7 @@ export function RunningSubmissionsManager({
   const [previousFilter, setPreviousFilter] = useState<"ALL" | "PREVIOUS" | "NEW">("ALL");
   const [sortPreviousFirst, setSortPreviousFirst] = useState(false);
   const [sortWinnersFirst, setSortWinnersFirst] = useState(false);
+  const [attendanceMode, setAttendanceMode] = useState(false);
 
   function genderCountsOf(list: Submission[]) {
     const male = list.filter((s) => s.gender === "남").length;
@@ -158,6 +159,20 @@ export function RunningSubmissionsManager({
           )}
           <span className="text-ink-muted">·</span>
           <span>출석 {attendedCount}/{confirmedCounts.total}명</span>
+          <button
+            type="button"
+            onClick={() => {
+              setAttendanceMode((prev) => !prev);
+              if (!attendanceMode) setStatusFilter("CONFIRMED");
+            }}
+            className={`ml-auto cursor-pointer rounded border px-3 py-1.5 text-xs font-bold uppercase ${
+              attendanceMode
+                ? "border-green-500 bg-green-500 text-white"
+                : "border-green-500 text-green-500 hover:bg-green-500/10"
+            }`}
+          >
+            {attendanceMode ? "출석체크 모드 끄기" : "📋 출석체크 모드"}
+          </button>
         </div>
       )}
 
@@ -181,6 +196,52 @@ export function RunningSubmissionsManager({
         </div>
       )}
 
+      {attendanceMode ? (
+        <div className="flex flex-col gap-3">
+          <input
+            placeholder="이름 / 연락처 검색"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
+          />
+          {filtered.length === 0 ? (
+            <p className="border border-line px-4 py-6 text-sm text-ink-faint">입금완료자가 없습니다.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {filtered.map((s) => (
+                <div
+                  key={s.id}
+                  className={`flex items-center justify-between gap-3 border p-3 ${
+                    s.attended ? "border-line-strong bg-ink-faint/5 opacity-60" : "border-green-500 bg-green-500/5"
+                  }`}
+                >
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate font-semibold">
+                      {s.name} {s.gender ? `· ${s.gender}` : ""}
+                      {s.previousParticipant && (
+                        <span className="ml-2 border border-accent px-1.5 py-0.5 text-[10px] font-bold text-accent uppercase">
+                          재참여
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-xs text-ink-muted">{s.phone}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateAttended(s.id, !s.attended)}
+                    className={`shrink-0 cursor-pointer rounded px-4 py-2.5 text-sm font-bold whitespace-nowrap ${
+                      s.attended ? "bg-green-500 text-white" : "border-2 border-green-500 text-green-500"
+                    }`}
+                  >
+                    {s.attended ? "✓ 출석완료" : "출석 체크"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
       <div className="flex flex-wrap items-center gap-3">
         <input
           placeholder="이름 / 연락처 / 인스타 검색"
@@ -339,34 +400,36 @@ export function RunningSubmissionsManager({
                     )}
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-ink-faint">{new Date(s.createdAt).toLocaleString()}</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="shrink-0 text-xs whitespace-nowrap text-ink-faint">
+                    {new Date(s.createdAt).toLocaleString()}
+                  </span>
                   {(s.status === "WINNER" || s.status === "CONFIRMED" || s.status === "DECLINED") && (
-                    <label className="flex cursor-pointer items-center gap-1.5 text-xs text-ink-muted">
-                      <input
-                        type="checkbox"
-                        checked={s.notified}
-                        onChange={(e) => updateNotified(s.id, e.target.checked)}
-                        className="cursor-pointer"
-                      />
+                    <button
+                      type="button"
+                      onClick={() => updateNotified(s.id, !s.notified)}
+                      className={`shrink-0 cursor-pointer rounded border px-2.5 py-1.5 text-xs whitespace-nowrap ${
+                        s.notified ? "border-ink bg-ink text-[color:var(--color-base)]" : "border-line-strong text-ink-muted"
+                      }`}
+                    >
                       문자 보냄
-                    </label>
+                    </button>
                   )}
                   {s.status === "CONFIRMED" && (
-                    <label className="flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-ink">
-                      <input
-                        type="checkbox"
-                        checked={s.attended}
-                        onChange={(e) => updateAttended(s.id, e.target.checked)}
-                        className="cursor-pointer"
-                      />
-                      출석
-                    </label>
+                    <button
+                      type="button"
+                      onClick={() => updateAttended(s.id, !s.attended)}
+                      className={`shrink-0 cursor-pointer rounded border px-2.5 py-1.5 text-xs font-bold whitespace-nowrap ${
+                        s.attended ? "border-green-500 bg-green-500 text-white" : "border-line-strong text-ink-muted"
+                      }`}
+                    >
+                      {s.attended ? "✓ 출석" : "출석 체크"}
+                    </button>
                   )}
                   <select
                     value={s.status}
                     onChange={(e) => updateStatus(s.id, e.target.value as Submission["status"])}
-                    className={`border border-line-strong bg-base px-2 py-1.5 text-xs outline-none ${
+                    className={`shrink-0 border border-line-strong bg-base px-2 py-1.5 text-xs outline-none ${
                       s.status === "WINNER"
                         ? "font-bold text-accent"
                         : s.status === "CONFIRMED"
@@ -384,7 +447,7 @@ export function RunningSubmissionsManager({
                   </select>
                   <button
                     onClick={() => deleteSubmission(s.id)}
-                    className="cursor-pointer text-xs text-ink-faint hover:text-red-400"
+                    className="shrink-0 cursor-pointer text-xs whitespace-nowrap text-ink-faint hover:text-red-400"
                   >
                     Delete
                   </button>
@@ -420,6 +483,8 @@ export function RunningSubmissionsManager({
             </div>
           ))}
         </div>
+      )}
+        </>
       )}
     </div>
   );
