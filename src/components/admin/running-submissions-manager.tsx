@@ -97,6 +97,9 @@ export function RunningSubmissionsManager({
     if (sortWinnersFirst) {
       result = [...result].sort((a, b) => Number(b.status === "WINNER") - Number(a.status === "WINNER"));
     }
+    // 출석 체크 화면에서 이미 체크한 사람은 맨 아래로 내려서, 아직 안 온 사람들이 항상
+    // 위쪽에 모여 있게 한다 — 당일 체크해나갈 때 가장 우선순위가 높은 정렬이라 맨 마지막에 적용.
+    result = [...result].sort((a, b) => Number(a.attended) - Number(b.attended));
     return result;
   }, [submissions, query, statusFilter, previousFilter, sortPreviousFirst, sortWinnersFirst]);
 
