@@ -50,6 +50,12 @@ export default async function RunningEventsPage() {
               events={forms.map((f) => ({ id: f.id, title: f.title, eventDate: f.eventDate }))}
             />
             <RaceEntryButton />
+            <Link
+              href="/wod-display"
+              className="w-fit cursor-pointer border border-line-strong px-3 py-1.5 text-xs tracking-[0.06em] text-ink-muted uppercase hover:border-ink hover:text-ink"
+            >
+              WOD Display
+            </Link>
           </div>
         </div>
       </div>
