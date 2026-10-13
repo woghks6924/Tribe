@@ -1,4 +1,5 @@
 // 기존 동글이 캐릭터 데이터 → v4(사람 캐릭터) 외형으로 옮기는 매핑. DOM 의존성 없음 — 서버에서도 쓸 수 있다.
+import type { RaceItemSlot } from "@/lib/race/constants";
 import type { RaceEquipment } from "@/lib/race/sprite";
 import { DEFAULT_COLORS, type V4Look } from "@/lib/race/v4/sprite";
 
@@ -32,3 +33,13 @@ export function defaultV4Look(memberColor: string, eq: RaceEquipment): V4Look {
     colors: { ...DEFAULT_COLORS, top: memberColor },
   };
 }
+
+// v4 옷장에 나오는 아이템(옛 아이템 중 새 캐릭터에 있는 6종). 이 목록에 없는 옛 아이템은 v4 옷장에서 숨긴다.
+export const V4_CLOSET_ITEMS: { legacyId: string; v4Key: string; slot: RaceItemSlot }[] = [
+  { legacyId: "cap", v4Key: "item_cap", slot: "head" },
+  { legacyId: "beanie", v4Key: "item_beanie", slot: "head" },
+  { legacyId: "band", v4Key: "item_headband", slot: "head" },
+  { legacyId: "phones", v4Key: "item_headphones", slot: "head" },
+  { legacyId: "shades", v4Key: "item_sunglasses", slot: "face" },
+  { legacyId: "scarf", v4Key: "item_scarf", slot: "neck" },
+];

@@ -182,7 +182,9 @@ export function isSleeping(idleDays: number): boolean {
   return idleDays >= SLEEP_IDLE_DAYS;
 }
 
-export type RaceFeedEvent = { date: string; text: string; memberId?: string };
+// anim: 새 캐릭터(v4)로 소식 카드를 꾸밀 때 쓰는 연출 힌트. 기록·순위 계산에는 쓰이지 않는다.
+export type RaceFeedAnim = "jumping" | "backflip" | "falling_back_death";
+export type RaceFeedEvent = { date: string; text: string; memberId?: string; anim?: RaceFeedAnim };
 
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -215,6 +217,7 @@ export function eventsBetween(
       events.push({
         date,
         memberId: s.member.id,
+        anim: cp.km === goal ? "backflip" : undefined,
         text:
           cp.km === goal
             ? `<b>${n}</b> ${destinationNameOf(goal)} 도착! 완주 배지 획득`
@@ -282,6 +285,7 @@ export function buildSeasonFeed(
       feed.push({
         date: dateStr,
         memberId: inf.targetId,
+        anim: inf.mode === "CHEER" ? undefined : "falling_back_death",
         text:
           inf.mode === "CHEER"
             ? `<b>${actorName}</b> → <b>${targetName}</b> 응원! +${inf.km.toFixed(1)}km`

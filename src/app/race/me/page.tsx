@@ -16,6 +16,12 @@ import { RaceStoryCard, type RaceStoryInput } from "@/components/race/race-story
 import { RaceCloset } from "@/components/race/race-closet";
 import { RaceLevelupModal } from "@/components/race/race-levelup-modal";
 import { RacePokeModal } from "@/components/race/race-poke-modal";
+import { RACE_CHAR_V4 } from "@/lib/race/v4/flag";
+import { v4LookOf } from "@/lib/race/v4/look";
+import { V4Avatar } from "@/components/race/v4/v4-avatar";
+import { V4Customizer } from "@/components/race/v4/v4-customizer";
+import { V4Closet } from "@/components/race/v4/v4-closet";
+import { V4StoryCard } from "@/components/race/v4/v4-story-card";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +86,11 @@ export default async function RaceMePage() {
     rankDroppedByMember: new Map([[member.id, myYesterday ? my.rank > myYesterday.rank : false]]),
   });
   const myAppearance = appearances.get(member.id) ?? { level: 0, gold: false, expr: "n" as const, eq: {} };
+
+  const myV4Look = v4LookOf(member, myAppearance.eq);
+  // 도착지(목표 거리)에 도착한 사람은 프로필에서 백플립을 한 번 보여준다.
+  const myArrived = my.pts >= season.goalKm;
+  const myV4Logged = logs.some((l) => l.memberId === member.id && l.date === today);
 
   const [ownedItems, levelupPickCount, pendingPokes, allTimeKmRow] = await Promise.all([
     prisma.raceMemberItem.findMany({ where: { memberId: member.id } }),
@@ -148,7 +159,12 @@ export default async function RaceMePage() {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6 px-5 py-8 sm:px-8">
-      <RaceLevelupModal color={member.color} eye={member.eye as RaceStoryInput["eye"]} type={my.type} />
+      <RaceLevelupModal
+        color={member.color}
+        eye={member.eye as RaceStoryInput["eye"]}
+        type={my.type}
+        v4Look={RACE_CHAR_V4 ? myV4Look : undefined}
+      />
       <RacePokeModal pokerNames={pokerNames} />
 
       <div className="flex items-center justify-between gap-2">
@@ -161,7 +177,10 @@ export default async function RaceMePage() {
         <RaceLogoutButton />
       </div>
 
-      <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-3.5 rounded bg-[#323338] p-3">
+      <div className={`grid items-center gap-3.5 rounded bg-[#323338] p-3 ${RACE_CHAR_V4 ? "grid-cols-[96px_minmax(0,1fr)]" : "grid-cols-[88px_minmax(0,1fr)]"}`}>
+        {RACE_CHAR_V4 ? (
+          <V4Avatar look={myV4Look} scale={2} animated dir="south" anim={myArrived ? "backflip" : myV4Logged ? "running" : "breathing_idle"} once={myArrived} label={`${member.name} 캐릭터`} />
+        ) : (
         <RaceAvatarImg
           appearance={{
             color: member.color,
@@ -175,6 +194,7 @@ export default async function RaceMePage() {
           className="[image-rendering:pixelated]"
           alt={`${member.name} 캐릭터`}
         />
+        )}
         <div>
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[17px] font-bold">{member.name}</span>
@@ -207,6 +227,14 @@ export default async function RaceMePage() {
       <details className="rounded border border-[#3c3d43] p-3">
         <summary className="cursor-pointer text-[15px] font-bold">캐릭터 꾸미기</summary>
         <div className="mt-3">
+          {RACE_CHAR_V4 ? (
+            <V4Customizer
+              initial={{ hairStyle: member.hairStyle, colors: myV4Look.colors, bib: member.bibNumber }}
+              item={myV4Look.item}
+              igHandle={member.igHandle ?? ""}
+              todayLogged={myV4Logged}
+            />
+          ) : (
           <RaceEditForm
             initial={{
               color: member.color,
@@ -215,6 +243,7 @@ export default async function RaceMePage() {
             }}
             type={my.type}
           />
+          )}
         </div>
       </details>
 
@@ -223,6 +252,16 @@ export default async function RaceMePage() {
           옷장 {ownedItems.length > 0 && <span className="text-xs font-normal text-[#6f6f6a]">({ownedItems.length}개 보유)</span>}
         </summary>
         <div className="mt-3">
+          {RACE_CHAR_V4 ? (
+            <V4Closet
+              look={myV4Look}
+              equippedLegacyIds={{ head: member.eqHead, face: member.eqFace, neck: member.eqNeck }}
+              ownedItemIds={ownedItems.map((it) => it.itemId)}
+              nextPickLevel={nextPickLevel}
+              kmToNextPick={kmToNextPick}
+              todayLogged={myV4Logged}
+            />
+          ) : (
           <RaceCloset
             color={member.color}
             eye={member.eye as RaceStoryInput["eye"]}
@@ -232,6 +271,7 @@ export default async function RaceMePage() {
             nextPickLevel={nextPickLevel}
             kmToNextPick={kmToNextPick}
           />
+          )}
         </div>
       </details>
 
@@ -248,7 +288,26 @@ export default async function RaceMePage() {
 
       <RaceMyLogs logs={myLogs} />
 
-      <RaceStoryCard input={storyInput} />
+      {RACE_CHAR_V4 ? (
+        <V4StoryCard
+          input={{
+            memberId: member.id,
+            name: member.name,
+            look: myV4Look,
+            igHandle: member.igHandle,
+            type: my.type,
+            rank: my.rank,
+            totalCount: stats.length,
+            pts: my.pts,
+            goalKm: season.goalKm,
+            todaySummary,
+            dayLabel: `SEASON · DAY ${dayNum}/${season.durationDays}`,
+            todayLogged: myV4Logged,
+          }}
+        />
+      ) : (
+        <RaceStoryCard input={storyInput} />
+      )}
 
       <Link href="/race" className="text-sm text-[#6f6f6a] underline">
         ← 레이스 현황으로

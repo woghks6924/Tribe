@@ -606,6 +606,15 @@ model RaceMember {
   eqWrist String?
   eqFeet  String?
 
+  // v4(사람 캐릭터) 외형. 기존 color/eye/acc는 지우지 않고 그대로 둔다(기능 플래그를 끄면 옛 동글이로 즉시 복귀).
+  // topColor는 기존 color로 백필했다. hairStyle null = 기본(짧은 머리).
+  hairStyle   String?
+  topColor    String  @default("#2b2b30")
+  bottomColor String  @default("#2c3e66")
+  shoesColor  String  @default("#f2f2ee")
+  hairColor   String  @default("#2a2430")
+  bibNumber   Int?
+
   logs             RaceLog[]
   guestbookEntries RaceGuestbookEntry[]
   pokesSent        RacePoke[]     @relation("PokesSent")

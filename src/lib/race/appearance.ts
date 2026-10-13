@@ -166,6 +166,7 @@ export function buildLevelUpFeed(
         events.push({
           date: dateStr,
           memberId: m.id,
+          anim: "jumping",
           text: `<b>${escapeHtml(m.name)}</b> Lv.${lvl} 달성!${item ? ` · [${escapeHtml(item.name)}] 획득` : ""}`,
         });
       }

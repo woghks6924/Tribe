@@ -22,6 +22,13 @@ import { RaceAvatarImg } from "@/components/race/race-avatar";
 import { RaceGuestbook } from "@/components/race/race-guestbook";
 import { RacePokeButton } from "@/components/race/race-poke-button";
 import { RaceHifiveButton } from "@/components/race/race-hifive-button";
+import { RACE_CHAR_V4 } from "@/lib/race/v4/flag";
+import { v4LookOf } from "@/lib/race/v4/look";
+import { segmentAt } from "@/lib/race/v4/course";
+import { V4Avatar } from "@/components/race/v4/v4-avatar";
+import { V4RaceScene } from "@/components/race/v4/v4-race-scene";
+import { V4Track } from "@/components/race/v4/v4-track";
+import type { V4Runner } from "@/components/race/v4/types";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +150,28 @@ export default async function RacePage() {
     };
   });
 
+  // 새 캐릭터(v4) 플래그가 켜져 있을 때만 쓰는 데이터. 꺼져 있으면 아래는 전부 기존 그대로.
+  const memberById = new Map(members.map((m) => [m.id, m]));
+  const loggedToday = new Set(logs.filter((l) => l.date === today).map((l) => l.memberId));
+  const lookOf = (memberId: string) => {
+    const m = memberById.get(memberId)!;
+    return v4LookOf(m, appearanceOf(memberId).eq);
+  };
+  const v4Runners: V4Runner[] = RACE_CHAR_V4
+    ? cur.map((s) => ({
+        id: s.member.id,
+        name: s.member.name,
+        km: s.pts,
+        type: s.type,
+        todayLogged: loggedToday.has(s.member.id),
+        look: lookOf(s.member.id),
+        nameColor: s.member.color,
+        isMe: raceSession?.sub === s.member.id,
+      }))
+    : [];
+  const myKm = raceSession ? (cur.find((s) => s.member.id === raceSession.sub)?.pts ?? null) : null;
+  const sceneSegKey = segmentAt(myKm ?? cur[0]?.pts ?? 0).key;
+
   const leader = cur[0];
   const endDateStr = addDaysToDateStr(startDateStr, season.durationDays - 1);
   const seasonOver = todayDay >= season.durationDays;
@@ -211,6 +240,8 @@ export default async function RacePage() {
         </div>
       </header>
 
+      {RACE_CHAR_V4 && <V4RaceScene runners={v4Runners} defaultSegKey={sceneSegKey} />}
+
       <section className="rounded border border-[#3c3d43] bg-[#2a2b2e] p-4 sm:p-[18px]">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -223,7 +254,11 @@ export default async function RacePage() {
             )}
           </div>
         </div>
-        <RaceTrack entries={trackEntries} goalKm={season.goalKm} />
+        {RACE_CHAR_V4 ? (
+          <V4Track runners={v4Runners} goalKm={season.goalKm} />
+        ) : (
+          <RaceTrack entries={trackEntries} goalKm={season.goalKm} />
+        )}
         <p className="mt-2.5 text-xs text-[#a3a29a]">
           환산 기준 <b className="text-[#f1f1ee]">1km</b> = 러닝 1km · WOD·헬스 {season.wodMinutesPerKm}분 · 수영{" "}
           {season.swimMetersPerKm}m. 훈련 비율에 따라 캐릭터 체형이 바뀌고, 3일 동안 기록이 없으면 캐릭터가 잠들어요.
@@ -264,7 +299,7 @@ export default async function RacePage() {
                 return (
                   <li
                     key={s.member.id}
-                    className="grid grid-cols-[40px_44px_minmax(0,1fr)_auto] items-center gap-3 border-t border-[#3c3d43] py-2.5 first:border-t-0"
+                    className={`grid items-center gap-3 border-t border-[#3c3d43] py-2.5 first:border-t-0 ${RACE_CHAR_V4 ? "grid-cols-[40px_48px_minmax(0,1fr)_auto]" : "grid-cols-[40px_44px_minmax(0,1fr)_auto]"}`}
                   >
                     <div className="flex flex-col items-center gap-1">
                       <span className={`font-[family-name:var(--font-race-px)] text-[13px] ${i === 0 ? "text-[#f0b84a]" : ""}`}>
@@ -278,11 +313,15 @@ export default async function RacePage() {
                         <span className="text-[11px] font-medium text-[#6f6f6a]">–</span>
                       )}
                     </div>
-                    <RaceAvatarImg
-                      appearance={{ color: s.member.color, eye: s.member.eye as RaceEye, type: s.type, expr: a.expr, eq: a.eq, gold: a.gold }}
-                      scale={1.4}
-                      className="block [image-rendering:pixelated]"
-                    />
+                    {RACE_CHAR_V4 ? (
+                      <V4Avatar look={lookOf(s.member.id)} scale={1} label={`${s.member.name} 캐릭터`} />
+                    ) : (
+                      <RaceAvatarImg
+                        appearance={{ color: s.member.color, eye: s.member.eye as RaceEye, type: s.type, expr: a.expr, eq: a.eq, gold: a.gold }}
+                        scale={1.4}
+                        className="block [image-rendering:pixelated]"
+                      />
+                    )}
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5 font-bold">
                         <span>{s.member.name}</span>
@@ -340,18 +379,22 @@ export default async function RacePage() {
                     const ha = appearanceOf(holder.member.id);
                     return (
                       <div className="mt-auto flex items-center gap-2">
-                        <RaceAvatarImg
-                          appearance={{
-                            color: holder.member.color,
-                            eye: holder.member.eye as RaceEye,
-                            type: holder.type,
-                            expr: ha.expr,
-                            eq: ha.eq,
-                            gold: ha.gold,
-                          }}
-                          scale={1.4}
-                          className="[image-rendering:pixelated]"
-                        />
+                        {RACE_CHAR_V4 ? (
+                          <V4Avatar look={lookOf(holder.member.id)} scale={1} label={`${holder.member.name} 캐릭터`} />
+                        ) : (
+                          <RaceAvatarImg
+                            appearance={{
+                              color: holder.member.color,
+                              eye: holder.member.eye as RaceEye,
+                              type: holder.type,
+                              expr: ha.expr,
+                              eq: ha.eq,
+                              gold: ha.gold,
+                            }}
+                            scale={1.4}
+                            className="[image-rendering:pixelated]"
+                          />
+                        )}
                         <div>
                           <b className="text-sm">
                             {holder.member.name} <span className="font-normal text-[#f0b84a]">Lv.{ha.level}</span>
@@ -419,14 +462,21 @@ export default async function RacePage() {
               ) : (
                 feed.map((f, i) => {
                   const key = f.memberId ? feedEventKey(f) : null;
+                  // 새 캐릭터: 레벨업(점프)·완주(백플립)·공격당함(넘어짐) 소식에는 해당 캐릭터를 한 번 연기시킨다.
+                  const feedAnim = RACE_CHAR_V4 && f.memberId && f.anim && memberById.has(f.memberId) ? f.anim : null;
                   return (
                     <li
                       key={i}
-                      className="grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-2 border-t border-[#3c3d43] py-1.5 text-sm first:border-t-0"
+                      className={`grid items-center gap-2 border-t border-[#3c3d43] py-1.5 text-sm first:border-t-0 ${
+                        feedAnim ? "grid-cols-[52px_48px_minmax(0,1fr)_auto]" : "grid-cols-[52px_minmax(0,1fr)_auto]"
+                      }`}
                     >
                       <span className="font-[family-name:var(--font-race-px)] text-[8px] text-[#6f6f6a]">
                         DAY {dayIndexOf(f.date, startDateStr)}
                       </span>
+                      {feedAnim && (
+                        <V4Avatar look={lookOf(f.memberId!)} anim={feedAnim} dir="south" animated once scale={1} />
+                      )}
                       <span dangerouslySetInnerHTML={{ __html: f.text }} />
                       {key && (
                         <RaceHifiveButton
