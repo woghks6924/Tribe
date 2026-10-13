@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { COURSE, SEGMENTS, drawCourse, segmentAt, timeOfDay, type CourseSegment, type Tod } from "@/lib/race/v4/course";
+import { COURSE, SEGMENTS, drawCourse, segmentAt, timeOfDay, type Tod } from "@/lib/race/v4/course";
 import { TypeFX, drawTypeIcon, type Character } from "@/lib/race/v4/sprite";
 import { useCanvasLoop, type LabMember } from "./lab-shared";
 
@@ -15,46 +15,9 @@ const TODS: [Tod | "auto", string][] = [
   ["night", "밤"],
 ];
 
-function SegThumb({
-  seg,
-  tod,
-  count,
-  active,
-  onClick,
-}: {
-  seg: CourseSegment;
-  tod: Tod | "auto";
-  count: number;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const lastRef = useRef(0);
-  useCanvasLoop(ref, (now) => {
-    if (now - lastRef.current < 120) return;
-    lastRef.current = now;
-    const ctx = ref.current!.getContext("2d")!;
-    ctx.imageSmoothingEnabled = false;
-    drawCourse(ctx, seg.key, now, { S: 1, tod: tod === "auto" ? timeOfDay() : tod });
-  });
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`flex flex-col gap-1 rounded border p-1.5 text-left text-[11px] leading-snug ${
-        active ? "border-[#f0b84a] bg-[#f0b84a]/10" : "border-[#3c3d43] bg-[#2a2b2e]"
-      }`}
-    >
-      <canvas ref={ref} width={COURSE.W} height={COURSE.H} className="block w-full [image-rendering:pixelated]" />
-      <span>
-        <b>{seg.name}</b> {seg.to === Infinity ? `${seg.from}km 도착` : `${seg.from}–${seg.to}km`}
-        <span className="text-[#a3a29a]"> · {count}명</span>
-        <br />
-        <span className="text-[#a3a29a]">{seg.desc}</span>
-      </span>
-    </button>
-  );
+// 구간 안에서의 상대 위치(0~1). 부산(도착)은 끝이 없어서 가장 멀리 간 사람 기준으로 폭을 잡는다.
+function segmentSpanTo(seg: { from: number; to: number }, maxKm: number) {
+  return seg.to === Infinity ? Math.max(seg.from + 75, maxKm + 5) : seg.to;
 }
 
 export function LabCourse({ members, getChar }: { members: LabMember[]; getChar: (id: string) => Character }) {
@@ -62,6 +25,14 @@ export function LabCourse({ members, getChar }: { members: LabMember[]; getChar:
   const [seg, setSeg] = useState(segmentAt(leaderKm).key);
   const [tod, setTod] = useState<Tod | "auto">("auto");
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const swipeRef = useRef<{ x: number; y: number } | null>(null);
+
+  const segIndex = SEGMENTS.findIndex((x) => x.key === seg);
+  const curSeg = SEGMENTS[segIndex];
+  function go(delta: number) {
+    const next = SEGMENTS[Math.max(0, Math.min(SEGMENTS.length - 1, segIndex + delta))];
+    setSeg(next.key);
+  }
 
   const countBySeg = useMemo(() => {
     const m = new Map<string, number>();
@@ -72,12 +43,25 @@ export function LabCourse({ members, getChar }: { members: LabMember[]; getChar:
     return m;
   }, [members]);
 
+  // 코스 전체 진행바: 구간 8칸을 같은 폭으로 나누고, 멤버를 자기 구간 안의 상대 위치에 점으로 찍는다.
+  const routeDots = useMemo(() => {
+    const maxKmBy = new Map<string, number>();
+    for (const m of members) {
+      const k = segmentAt(m.km).key;
+      maxKmBy.set(k, Math.max(maxKmBy.get(k) ?? 0, m.km));
+    }
+    return members.map((m) => {
+      const sg = segmentAt(m.km);
+      const u = (m.km - sg.from) / (segmentSpanTo(sg, maxKmBy.get(sg.key) ?? m.km) - sg.from);
+      return { id: m.id, name: m.name, color: m.legacy.color, seg: sg.key, u: Math.max(0, Math.min(1, u)) };
+    });
+  }, [members]);
+
   const runners = useMemo(() => {
     const inSeg = members.filter((m) => segmentAt(m.km).key === seg).sort((a, b) => b.km - a.km);
     const cur = SEGMENTS.find((s) => s.key === seg)!;
     const maxKm = inSeg.reduce((mx, m) => Math.max(mx, m.km), 0);
-    // 부산(도착)은 끝이 없어서, 가장 멀리 간 사람 기준으로 폭을 잡는다.
-    const to = cur.to === Infinity ? Math.max(cur.from + 75, maxKm + 5) : cur.to;
+    const to = segmentSpanTo(cur, maxKm);
     return inSeg.map((m, i) => ({
       m,
       fx: new TypeFX(m.type),
@@ -160,17 +144,98 @@ export function LabCourse({ members, getChar }: { members: LabMember[]; getChar:
       <div>
         <h2 className="text-base font-bold">코스 장면</h2>
         <p className="text-xs text-[#a3a29a]">
-          실제 시즌 참가자(총 {members.length}명)가 자기 구간 배경에서 달려요. 오늘 기록이 있으면 달리기, 없으면 숨쉬기 대기.
+          실제 시즌 참가자(총 {members.length}명)가 자기 구간 배경에서 달려요. 처음엔 1등이 있는 구간이 열리고, 좌우 화살표·스와이프·아래
+          진행바로 구간을 옮겨요.
         </p>
       </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => go(-1)}
+          disabled={segIndex === 0}
+          aria-label="이전 구간"
+          className="h-9 w-9 shrink-0 cursor-pointer rounded border border-[#3c3d43] text-lg leading-none text-[#f1f1ee] hover:border-[#f0b84a] disabled:cursor-default disabled:opacity-30"
+        >
+          ◀
+        </button>
+        <div className="min-w-0 text-center">
+          <b className="text-sm">{curSeg.name}</b>{" "}
+          <span className="text-xs text-[#a3a29a]">
+            {curSeg.to === Infinity ? `${curSeg.from}km 도착` : `${curSeg.from}–${curSeg.to}km`} · {curSeg.desc} ·{" "}
+            {countBySeg.get(seg) ?? 0}명
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => go(1)}
+          disabled={segIndex === SEGMENTS.length - 1}
+          aria-label="다음 구간"
+          className="h-9 w-9 shrink-0 cursor-pointer rounded border border-[#3c3d43] text-lg leading-none text-[#f1f1ee] hover:border-[#f0b84a] disabled:cursor-default disabled:opacity-30"
+        >
+          ▶
+        </button>
+      </div>
+
       <canvas
         ref={canvasRef}
         width={COURSE.W * S}
         height={COURSE.H * S}
         role="img"
         aria-label="선택한 구간 배경을 달리는 크루 캐릭터들"
-        className="block w-full rounded [image-rendering:pixelated]"
+        onPointerDown={(e) => {
+          swipeRef.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={(e) => {
+          const st = swipeRef.current;
+          swipeRef.current = null;
+          if (!st) return;
+          const dx = e.clientX - st.x;
+          const dy = e.clientY - st.y;
+          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
+        }}
+        onPointerCancel={() => {
+          swipeRef.current = null;
+        }}
+        className="block w-full touch-pan-y rounded [image-rendering:pixelated]"
       />
+
+      <div className="flex flex-col gap-1.5">
+        <div className="grid grid-cols-8 gap-0.5" role="group" aria-label="코스 전체 진행바">
+          {SEGMENTS.map((sg, i) => (
+            <button
+              key={sg.key}
+              type="button"
+              onClick={() => setSeg(sg.key)}
+              aria-pressed={sg.key === seg}
+              aria-label={`${sg.name} 구간으로 이동, ${countBySeg.get(sg.key) ?? 0}명`}
+              className={`relative h-7 cursor-pointer border-y border-[#3c3d43] ${i === 0 ? "rounded-l border-l" : ""} ${
+                i === SEGMENTS.length - 1 ? "rounded-r border-r" : ""
+              } ${sg.key === seg ? "bg-[#f0b84a]/25 outline outline-1 outline-[#f0b84a]" : "bg-[#17181b] hover:bg-[#323338]"}`}
+            >
+              {routeDots
+                .filter((d) => d.seg === sg.key)
+                .map((d) => (
+                  <span
+                    key={d.id}
+                    aria-hidden
+                    title={d.name}
+                    className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/50"
+                    style={{ left: `${6 + d.u * 88}%`, background: d.color }}
+                  />
+                ))}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-8 gap-0.5 text-center text-[10px] text-[#a3a29a]">
+          {SEGMENTS.map((sg) => (
+            <span key={sg.key} className={sg.key === seg ? "font-bold text-[#f0b84a]" : ""}>
+              {sg.name}
+            </span>
+          ))}
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-1.5">
         {TODS.map(([k, label]) => (
           <button
@@ -184,18 +249,6 @@ export function LabCourse({ members, getChar }: { members: LabMember[]; getChar:
           >
             {label}
           </button>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {SEGMENTS.map((s) => (
-          <SegThumb
-            key={s.key}
-            seg={s}
-            tod={tod}
-            count={countBySeg.get(s.key) ?? 0}
-            active={s.key === seg}
-            onClick={() => setSeg(s.key)}
-          />
         ))}
       </div>
     </section>
