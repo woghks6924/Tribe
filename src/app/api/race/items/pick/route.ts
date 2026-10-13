@@ -5,10 +5,7 @@ import { getRaceLevelConfig } from "@/lib/race/appearance";
 import { levelFromKm, nextPendingPickLevel, pickCandidates } from "@/lib/race/level";
 import { itemById } from "@/lib/race/constants";
 import { RACE_CHAR_V4 } from "@/lib/race/v4/flag";
-import { V4_CLOSET_ITEMS } from "@/lib/race/v4/map";
-
-// 새 캐릭터 플래그가 켜져 있으면 화면에 보이는 6종 안에서 후보를 뽑는다(꺼져 있으면 undefined = 기존 그대로).
-const PREFER_IDS = RACE_CHAR_V4 ? V4_CLOSET_ITEMS.map((it) => it.legacyId) : undefined;
+import { v4Pick, v4PickState } from "@/lib/race/v4/pick";
 
 const SLOT_TO_COLUMN = {
   head: "eqHead",
@@ -24,6 +21,9 @@ export async function GET() {
   const { session, response } = await requireRaceMember();
   if (response) return response;
 
+  // 새 캐릭터(v4): 레벨업 선택 규칙이 달라서 별도 로직. 플래그가 꺼져 있으면 아래 기존 로직 그대로.
+  if (RACE_CHAR_V4) return NextResponse.json(await v4PickState(session.sub));
+
   const [config, sumRow, ownedItems] = await Promise.all([
     getRaceLevelConfig(),
     prisma.raceLog.aggregate({ where: { memberId: session.sub }, _sum: { convertedKm: true } }),
@@ -35,7 +35,7 @@ export async function GET() {
   if (pendingLevel == null) {
     return NextResponse.json({ pendingLevel: null, candidates: [] });
   }
-  const candidates = pickCandidates(session.sub, pendingLevel, ownedItems.map((it) => it.itemId), 3, PREFER_IDS);
+  const candidates = pickCandidates(session.sub, pendingLevel, ownedItems.map((it) => it.itemId));
   return NextResponse.json({ pendingLevel, candidates });
 }
 
@@ -46,6 +46,12 @@ export async function POST(request: Request) {
   if (response) return response;
 
   const body = (await request.json()) as { itemId?: string };
+  if (RACE_CHAR_V4) {
+    if (!body.itemId) return NextResponse.json({ error: "잘못된 아이템이에요." }, { status: 400 });
+    const result = await v4Pick(session.sub, body.itemId);
+    if ("error" in result) return NextResponse.json({ error: result.error }, { status: 400 });
+    return NextResponse.json({ ok: true, equipped: body.itemId, nextPendingLevel: result.nextPendingLevel });
+  }
   const item = body.itemId ? itemById(body.itemId) : undefined;
   if (!item) {
     return NextResponse.json({ error: "잘못된 아이템이에요." }, { status: 400 });
@@ -67,20 +73,17 @@ export async function POST(request: Request) {
   if (ownedIds.includes(item.id)) {
     return NextResponse.json({ error: "이미 가지고 있는 장비예요." }, { status: 400 });
   }
-  const candidates = pickCandidates(session.sub, pendingLevel, ownedIds, 3, PREFER_IDS);
+  const candidates = pickCandidates(session.sub, pendingLevel, ownedIds);
   if (!candidates.some((c) => c.id === item.id)) {
     return NextResponse.json({ error: "지금 고를 수 있는 후보가 아니에요." }, { status: 400 });
   }
 
   const column = SLOT_TO_COLUMN[item.slot];
-  // 새 캐릭터는 장비가 1개라서, 보이는 장비를 새로 고르면 머리/얼굴/목의 다른 슬롯은 비운다(아이템 소유는 그대로).
-  const v4Single = RACE_CHAR_V4 && V4_CLOSET_ITEMS.some((it) => it.legacyId === item.id);
-  const slotData: Record<string, string | null> = v4Single ? { eqHead: null, eqFace: null, eqNeck: null } : {};
   await prisma.$transaction([
     prisma.raceMemberItem.create({
       data: { memberId: session.sub, itemId: item.id, source: "levelup", acquiredLevel: pendingLevel },
     }),
-    prisma.raceMember.update({ where: { id: session.sub }, data: { ...slotData, [column]: item.id } }),
+    prisma.raceMember.update({ where: { id: session.sub }, data: { [column]: item.id } }),
   ]);
 
   // 아직 선택 못 한 레벨이 더 있으면(여러 레벨이 한꺼번에 밀린 경우) 다음 것도 알려준다 —

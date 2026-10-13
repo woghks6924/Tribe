@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { COURSE, SEGMENTS, drawCourse, segmentAt, timeOfDay, type Tod } from "@/lib/race/v4/course";
 import type { RaceBodyType } from "@/lib/race/constants";
-import { TypeFX, drawTypeIcon, type Character, type Pet } from "@/lib/race/v4/sprite";
+import { TypeFX, drawTypeIcon, drawZz, type Character, type Pet } from "@/lib/race/v4/sprite";
 import { useCanvasLoop } from "./canvas-loop";
 
 const S = 3;
@@ -29,6 +29,7 @@ export type SceneMember = {
   todayLogged: boolean;
   dotColor: string; // 진행바에 찍는 점 색
   isMe?: boolean; // 이름표를 강조한다
+  sleeping?: boolean; // 잠수(3일 무기록): 숨쉬기 + 머리 위 Zz
 };
 
 /**
@@ -124,6 +125,7 @@ export function CourseScene({
       r.fx.drawBehind(cx, f, X, Y, S, now, dt);
       cx.drawImage(f.canvas, X, Y, f.canvas.width * S, f.canvas.height * S);
       r.fx.drawFront(cx, f, X, Y, S, now, dt);
+      if (r.m.sleeping && !r.m.todayLogged) drawZz(cx, X + (f.cx + 4) * S, Y + (f.top - 6) * S, S, now + r.phase);
       labels.push({ r, hx: X + f.cx * S, hy: (Math.round(y) - 50) * S });
     }
 

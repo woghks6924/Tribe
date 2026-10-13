@@ -101,7 +101,7 @@ export default async function RaceLabPage({ searchParams }: { searchParams: Prom
           hasSwim: kinds.swim,
           swimKm: kinds.swimKm,
           month,
-          ownedLegacy: ownedBy.get(s.member.id) ?? [],
+          owned: ownedBy.get(s.member.id) ?? [],
         },
       };
     });

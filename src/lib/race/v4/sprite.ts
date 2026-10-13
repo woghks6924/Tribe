@@ -591,6 +591,9 @@ export class Pet {
   ) {
     const P = this.P;
     if (!P) return;
+    // 펫 이미지는 쓰는 화면에서 따로 불러온다(ensurePetImages) — 아직 안 왔으면 이번 프레임은 건너뛴다.
+    const probe = (P.run && P.run[dir]) || P.still[dir] || P.still.south;
+    if (!this.A.imgs[probe.src]) return;
     const run = animated && moving && P.run && P.run[dir];
     let img: HTMLImageElement;
     let sx = 0;
@@ -607,6 +610,7 @@ export class Pet {
       ground = run.ground;
     } else {
       const still = P.still[dir] || P.still.south;
+      if (!this.A.imgs[still.src]) return;
       img = this.A.imgs[still.src];
       [w, h] = still.size;
       ground = still.ground;
@@ -624,4 +628,45 @@ export class Pet {
     const dy = Math.round(groundY - (ground + 1) * s - lift * s);
     ctx.drawImage(img, sx, 0, w, h, dx, dy + squash * s, w * s, (h - squash) * s);
   }
+}
+
+/** 쓰는 펫의 PNG만 골라서 불러온다(펫을 안 쓰는 화면은 31장을 받지 않는다). 이미 있으면 바로 끝난다. */
+export async function ensurePetImages(A: RaceAssets, names: string[], base = "/race-assets/"): Promise<void> {
+  const need = new Set<string>();
+  for (const n of names) {
+    const p = A.manifest.pets?.[n];
+    if (!p) continue;
+    for (const group of [p.still, p.run || {}]) for (const v of Object.values(group)) if (!A.imgs[v.src]) need.add(v.src);
+  }
+  await Promise.all([...need].map((src) => loadImage(base + src).then((im) => (A.imgs[src] = im))));
+}
+
+// ───────────────────────── 잠수 표시 ─────────────────────────
+
+const Z_GLYPH = ["###", "..#", ".#.", "#..", "###"];
+
+/**
+ * 머리 위에 떠오르는 "Zz". (x, y) = 첫 Z의 왼쪽 위(캔버스 픽셀), s = 도트 크기(캔버스 픽셀).
+ * 잠수(3일 무기록) 캐릭터에 붙인다.
+ */
+export function drawZz(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, timeMs: number) {
+  const draw = (gx: number, gy: number, k: number, alpha: number) => {
+    ctx.globalAlpha = alpha;
+    Z_GLYPH.forEach((row, r) =>
+      [...row].forEach((p, c) => {
+        if (p !== "#") return;
+        ctx.fillStyle = "#1a1a1a";
+        ctx.fillRect(gx + (c - 0.5) * k, gy + (r - 0.5) * k, k * 2, k * 2);
+        ctx.fillStyle = "#f4f4f0";
+        ctx.fillRect(gx + c * k, gy + r * k, k, k);
+      }),
+    );
+  };
+  const ph = (timeMs / 1600) % 1;
+  const rise = ph * 8 * s;
+  ctx.save();
+  draw(x, y - rise, s, 1 - ph * 0.6);
+  const ph2 = ((timeMs + 800) / 1600) % 1;
+  draw(x + 5 * s, y - 6 * s - ph2 * 8 * s, Math.max(1, Math.round(s * 0.66)), 1 - ph2 * 0.6);
+  ctx.restore();
 }

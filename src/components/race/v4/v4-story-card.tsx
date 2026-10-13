@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CHECKPOINTS, TYPE_LABEL, destinationNameOf, type RaceBodyType } from "@/lib/race/constants";
 import { COURSE, drawCourse, segmentAt, skyTopColor, timeOfDay } from "@/lib/race/v4/course";
-import { drawTypeIcon, type V4Look } from "@/lib/race/v4/sprite";
+import { Pet, drawTypeIcon, ensurePetImages, type V4Look } from "@/lib/race/v4/sprite";
 import { characterFor, loadRaceAssetsOnce } from "./assets";
 
 // 문자열 시드로 결정적 의사난수를 만든다(배경 노이즈 텍스처 전용, 통계 계산과는 무관).
@@ -92,6 +92,7 @@ export function V4StoryCard({ input }: { input: V4StoryInput }) {
         // 폰트 프리로드 실패해도 폴백 폰트로 그대로 그린다.
       }
       const A = await loadRaceAssetsOnce();
+      if (input.look.pet) await ensurePetImages(A, [input.look.pet]).catch(() => {});
 
       const W = 1080;
       const H = 1920;
@@ -151,7 +152,12 @@ export function V4StoryCard({ input }: { input: V4StoryInput }) {
 
       // 큰 캐릭터(정면)
       const f = characterFor(A, input.look).frameAt(input.todayLogged ? "running" : "breathing_idle", "south", 0);
-      g.drawImage(f.canvas, Math.round(W / 2 - f.cx * S), FEET_Y - (f.ground + 1) * S, f.canvas.width * S, f.canvas.height * S);
+      const charX = Math.round(W / 2 - f.cx * S);
+      // 펫: 프로필(정면)처럼 캐릭터 오른쪽 옆에 앉아 있다
+      if (input.look.pet && A.manifest.pets?.[input.look.pet]) {
+        new Pet(A, input.look.pet).draw(g, charX + (f.cx + 17) * S, FEET_Y, S, 0, { dir: "south", moving: false });
+      }
+      g.drawImage(f.canvas, charX, FEET_Y - (f.ground + 1) * S, f.canvas.width * S, f.canvas.height * S);
 
       g.font = `700 92px ${KR}`;
       g.fillStyle = "#f1f1ee";

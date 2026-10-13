@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentRaceMember } from "@/lib/auth/race-session";
 import { CHECKPOINTS, TYPE_LABEL } from "@/lib/race/constants";
-import { computeMemberStats, dayIndexOf, formatBreakdown, todayKstDateStr, addDaysToDateStr } from "@/lib/race/stats";
+import { computeMemberStats, dayIndexOf, isSleeping, formatBreakdown, todayKstDateStr, addDaysToDateStr } from "@/lib/race/stats";
 import { computeMemberAppearances, getRaceLevelConfig, getRaceInfluenceConfig } from "@/lib/race/appearance";
 import { kmForLevel, nextPendingPickLevel, nextUpcomingPickLevel } from "@/lib/race/level";
 import { RaceLoginForm } from "@/components/race/race-login-form";
@@ -18,9 +18,11 @@ import { RaceLevelupModal } from "@/components/race/race-levelup-modal";
 import { RacePokeModal } from "@/components/race/race-poke-modal";
 import { RACE_CHAR_V4 } from "@/lib/race/v4/flag";
 import { v4LookOf } from "@/lib/race/v4/look";
+import { loadV4Facts } from "@/lib/race/v4/facts";
+import { PET_UNLOCK_LEVEL, UNLOCK_ALL_LEVEL, nextUpcomingV4PickLevel, pendingV4PickLevel } from "@/lib/race/v4/unlock";
 import { V4Avatar } from "@/components/race/v4/v4-avatar";
 import { V4Customizer } from "@/components/race/v4/v4-customizer";
-import { V4Closet } from "@/components/race/v4/v4-closet";
+import { V4Closet, type V4ClosetProgress } from "@/components/race/v4/v4-closet";
 import { V4StoryCard } from "@/components/race/v4/v4-story-card";
 
 export const dynamic = "force-dynamic";
@@ -104,6 +106,24 @@ export default async function RaceMePage() {
   const levelConfig = await getRaceLevelConfig();
   const nextPickLevel =
     nextPendingPickLevel(myAppearance.level, levelupPickCount, levelConfig) ?? nextUpcomingPickLevel(myAppearance.level, levelConfig);
+  // 새 캐릭터 옷장: 해금 판정에 쓰는 사실들과 진행 표시(남은 km)는 서버에서 계산해서 넘긴다.
+  let v4Facts: Awaited<ReturnType<typeof loadV4Facts>>["facts"] | null = null;
+  let v4Progress: V4ClosetProgress | null = null;
+  if (RACE_CHAR_V4) {
+    const loaded = await loadV4Facts(member.id);
+    v4Facts = loaded.facts;
+    const totalKm = loaded.facts.totalKm;
+    const pending = pendingV4PickLevel(loaded.facts.level, loaded.facts.acquiredLevels ?? []);
+    const nextLv = pending ?? nextUpcomingV4PickLevel(loaded.facts.level);
+    const remainKm = (lv: number) => Math.max(0, kmForLevel(lv, loaded.config) - totalKm);
+    v4Progress = {
+      nextPickLevel: nextLv,
+      pickPending: pending != null,
+      kmToNextPick: pending == null && nextLv != null ? remainKm(nextLv) : null,
+      kmToPet: loaded.facts.level < PET_UNLOCK_LEVEL ? remainKm(PET_UNLOCK_LEVEL) : null,
+      kmToAll: loaded.facts.level < UNLOCK_ALL_LEVEL ? remainKm(UNLOCK_ALL_LEVEL) : null,
+    };
+  }
   const pokerNames = pendingPokes.map((p) => p.poker.name);
   const kmToNextPick =
     nextPickLevel != null ? Math.max(0, kmForLevel(nextPickLevel, levelConfig) - (allTimeKmRow._sum.convertedKm ?? 0)) : null;
@@ -177,9 +197,9 @@ export default async function RaceMePage() {
         <RaceLogoutButton />
       </div>
 
-      <div className={`grid items-center gap-3.5 rounded bg-[#323338] p-3 ${RACE_CHAR_V4 ? "grid-cols-[96px_minmax(0,1fr)]" : "grid-cols-[88px_minmax(0,1fr)]"}`}>
+      <div className={`grid items-center gap-3.5 rounded bg-[#323338] p-3 ${RACE_CHAR_V4 ? "grid-cols-[auto_minmax(0,1fr)]" : "grid-cols-[88px_minmax(0,1fr)]"}`}>
         {RACE_CHAR_V4 ? (
-          <V4Avatar look={myV4Look} scale={2} animated dir="south" anim={myArrived ? "backflip" : myV4Logged ? "running" : "breathing_idle"} once={myArrived} label={`${member.name} 캐릭터`} />
+          <V4Avatar look={myV4Look} scale={2} animated dir="south" anim={myArrived ? "backflip" : myV4Logged ? "running" : "breathing_idle"} once={myArrived} sleeping={isSleeping(my.idleDays)} label={`${member.name} 캐릭터`} />
         ) : (
         <RaceAvatarImg
           appearance={{
@@ -230,7 +250,8 @@ export default async function RaceMePage() {
           {RACE_CHAR_V4 ? (
             <V4Customizer
               initial={{ hairStyle: member.hairStyle, colors: myV4Look.colors, bib: member.bibNumber }}
-              item={myV4Look.item}
+              items={myV4Look.items ?? []}
+              pet={myV4Look.pet ?? null}
               igHandle={member.igHandle ?? ""}
               todayLogged={myV4Logged}
             />
@@ -252,13 +273,12 @@ export default async function RaceMePage() {
           옷장 {ownedItems.length > 0 && <span className="text-xs font-normal text-[#6f6f6a]">({ownedItems.length}개 보유)</span>}
         </summary>
         <div className="mt-3">
-          {RACE_CHAR_V4 ? (
+          {RACE_CHAR_V4 && v4Facts && v4Progress ? (
             <V4Closet
+              key={JSON.stringify([myV4Look.items, myV4Look.pet, v4Facts.owned])}
               look={myV4Look}
-              equippedLegacyIds={{ head: member.eqHead, face: member.eqFace, neck: member.eqNeck }}
-              ownedItemIds={ownedItems.map((it) => it.itemId)}
-              nextPickLevel={nextPickLevel}
-              kmToNextPick={kmToNextPick}
+              facts={v4Facts}
+              progress={v4Progress}
               todayLogged={myV4Logged}
             />
           ) : (

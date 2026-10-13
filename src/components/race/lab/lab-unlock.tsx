@@ -68,7 +68,7 @@ export function LabUnlock({ member, levelRows, A }: { member: LabMember; levelRo
           수영 기록 {f.swimLogCount}회 · 수영 누적 {f.swimKm.toFixed(1)}km · 기록한 종목{" "}
           {[f.hasRun && "러닝", f.hasWod && "WOD", f.hasSwim && "수영"].filter(Boolean).join("·") || "없음"}
         </li>
-        <li>예전 옷장에서 가진 새 캐릭터용 장비: {f.ownedLegacy.length ? f.ownedLegacy.map((k) => ITEM_LABELS[k] ?? k).join(", ") : "없음"}</li>
+        <li>예전 옷장에서 가진 새 캐릭터용 장비: {f.owned.length ? f.owned.map((k) => ITEM_LABELS[k] ?? k).join(", ") : "없음"}</li>
       </ul>
 
       <div className="flex flex-wrap gap-3 text-[11px] text-[#a3a29a]">

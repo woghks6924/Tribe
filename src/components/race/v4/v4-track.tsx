@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { CHECKPOINTS, destinationNameOf } from "@/lib/race/constants";
-import { TypeFX } from "@/lib/race/v4/sprite";
+import { TypeFX, drawZz } from "@/lib/race/v4/sprite";
 import { characterFor, useRaceAssets } from "./assets";
 import { useCanvasLoop } from "./canvas-loop";
 import type { V4Runner } from "./types";
@@ -178,6 +178,7 @@ export function V4Track({ runners, goalKm }: { runners: V4Runner[]; goalKm: numb
         fx.drawBehind(ctx, f, X0, Y0, 1, now, dt, gy);
         ctx.drawImage(f.canvas, X0, Y0);
         fx.drawFront(ctx, f, X0, Y0, 1, now, dt);
+        if (s.sleeping && !s.todayLogged) drawZz(ctx, cx + 3, Y0 + f.top - 8, 1, now + i * 137);
         if (i === 0 && s.km > 0) {
           // 1등 왕관
           const cy = Y0 + f.top - 9;

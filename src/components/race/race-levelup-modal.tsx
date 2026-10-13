@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { RaceBodyType, RaceEye, RaceItem } from "@/lib/race/constants";
 import { paint, SPRITE_GRID_SIZE } from "@/lib/race/sprite";
-import { V4_CLOSET_ITEMS } from "@/lib/race/v4/map";
 import type { V4Look } from "@/lib/race/v4/sprite";
 import { V4Avatar } from "@/components/race/v4/v4-avatar";
+import { useRaceAssets } from "@/components/race/v4/assets";
 
 const SCALE = 2.5;
 
@@ -41,6 +41,9 @@ export function RaceLevelupModal({
   v4Look?: V4Look;
 }) {
   const router = useRouter();
+  const A = useRaceAssets();
+  // 후보와 같은 부위의 지금 장비를 빼려고 부위를 manifest에서 찾는다.
+  const slotOfV4 = (k: string) => A?.manifest.slots?.[k];
   const [pendingLevel, setPendingLevel] = useState<number | null>(null);
   const [candidates, setCandidates] = useState<RaceItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,9 +105,15 @@ export function RaceLevelupModal({
               disabled={picking}
               className="flex flex-col items-center gap-1.5 rounded border border-[#3c3d43] bg-[#17181b] p-2 hover:border-[#f0b84a] disabled:opacity-40"
             >
-              {v4Look && V4_CLOSET_ITEMS.some((v) => v.legacyId === it.id) ? (
+              {v4Look ? (
+                // 새 캐릭터: 후보 id가 곧 v4 장비 키다. 그 부위의 지금 장비를 이 후보로 바꿔 입혀 보여준다.
                 <V4Avatar
-                  look={{ ...v4Look, item: V4_CLOSET_ITEMS.find((v) => v.legacyId === it.id)!.v4Key }}
+                  look={{
+                    ...v4Look,
+                    pet: null,
+                    item: null,
+                    items: [...(v4Look.items ?? []).filter((k) => slotOfV4(k) !== it.slot), it.id],
+                  }}
                   scale={1}
                   label={it.name}
                 />

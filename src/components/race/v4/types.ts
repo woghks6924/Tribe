@@ -11,4 +11,5 @@ export type V4Runner = {
   look: V4Look;
   nameColor: string; // 이름·진행바 점 색(기존 대표색)
   isMe?: boolean;
+  sleeping?: boolean; // 잠수(3일 무기록)
 };

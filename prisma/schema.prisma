@@ -614,6 +614,10 @@ model RaceMember {
   shoesColor  String  @default("#f2f2ee")
   hairColor   String  @default("#2a2430")
   bibNumber   Int?
+  // v4 B단계: 펫 1마리(manifest 키, 예: pet_cat)와 부위별 착용 장비 {head,face,neck,back,waist: v4 키}.
+  // equipV4가 null이면(=아직 새 옷장을 안 씀) 기존 eqHead/eqFace/eqNeck에서 하나를 골라 보여준다.
+  petKey      String?
+  equipV4     Json?
 
   logs             RaceLog[]
   guestbookEntries RaceGuestbookEntry[]

@@ -9,15 +9,17 @@ import { V4Avatar } from "./v4-avatar";
 type Parts = { hairStyle: string | null; colors: V4Look["colors"]; bib: number | null };
 
 // 프로필 꾸미기: 헤어(전부 무료) · 상의/하의/신발/머리 색 · 배번 · 인스타 아이디. 저장은 서버(/api/race/v4-look).
-// 장비는 옷장에서 따로 고르므로 미리보기에는 지금 입고 있는 장비가 그대로 보인다.
+// 장비·펫은 옷장에서 따로 고르므로 미리보기에는 지금 입고 있는 장비와 펫이 그대로 보인다.
 export function V4Customizer({
   initial,
-  item,
+  items,
+  pet,
   igHandle,
   todayLogged,
 }: {
   initial: { hairStyle: string | null; colors: V4Look["colors"]; bib: number | null };
-  item: string | null;
+  items: string[]; // 지금 입고 있는 장비(옷장에서 바꾼다)
+  pet: string | null;
   igHandle: string;
   todayLogged: boolean;
 }) {
@@ -29,7 +31,7 @@ export function V4Customizer({
   const [ok, setOk] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const look: V4Look = { hair: parts.hairStyle, item, bib: parts.bib, colors: parts.colors };
+  const look: V4Look = { hair: parts.hairStyle, item: null, items, pet, bib: parts.bib, colors: parts.colors };
 
   async function save(e: React.FormEvent) {
     e.preventDefault();

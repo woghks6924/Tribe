@@ -157,6 +157,8 @@ export default async function RacePage() {
     const m = memberById.get(memberId)!;
     return v4LookOf(m, appearanceOf(memberId).eq);
   };
+  // 리더보드·시상·소식의 작은 아바타에는 펫을 빼고(칸이 좁다), 코스 장면과 프로필에서 보여준다.
+  const smallLookOf = (memberId: string) => ({ ...lookOf(memberId), pet: null });
   const v4Runners: V4Runner[] = RACE_CHAR_V4
     ? cur.map((s) => ({
         id: s.member.id,
@@ -167,6 +169,7 @@ export default async function RacePage() {
         look: lookOf(s.member.id),
         nameColor: s.member.color,
         isMe: raceSession?.sub === s.member.id,
+        sleeping: isSleeping(s.idleDays),
       }))
     : [];
   const myKm = raceSession ? (cur.find((s) => s.member.id === raceSession.sub)?.pts ?? null) : null;
@@ -314,7 +317,7 @@ export default async function RacePage() {
                       )}
                     </div>
                     {RACE_CHAR_V4 ? (
-                      <V4Avatar look={lookOf(s.member.id)} scale={1} label={`${s.member.name} 캐릭터`} />
+                      <V4Avatar look={smallLookOf(s.member.id)} scale={1} sleeping={sleep} label={`${s.member.name} 캐릭터`} />
                     ) : (
                       <RaceAvatarImg
                         appearance={{ color: s.member.color, eye: s.member.eye as RaceEye, type: s.type, expr: a.expr, eq: a.eq, gold: a.gold }}
@@ -380,7 +383,7 @@ export default async function RacePage() {
                     return (
                       <div className="mt-auto flex items-center gap-2">
                         {RACE_CHAR_V4 ? (
-                          <V4Avatar look={lookOf(holder.member.id)} scale={1} label={`${holder.member.name} 캐릭터`} />
+                          <V4Avatar look={smallLookOf(holder.member.id)} scale={1} label={`${holder.member.name} 캐릭터`} />
                         ) : (
                           <RaceAvatarImg
                             appearance={{
@@ -475,7 +478,7 @@ export default async function RacePage() {
                         DAY {dayIndexOf(f.date, startDateStr)}
                       </span>
                       {feedAnim && (
-                        <V4Avatar look={lookOf(f.memberId!)} anim={feedAnim} dir="south" animated once scale={1} />
+                        <V4Avatar look={smallLookOf(f.memberId!)} anim={feedAnim} dir="south" animated once scale={1} />
                       )}
                       <span dangerouslySetInnerHTML={{ __html: f.text }} />
                       {key && (

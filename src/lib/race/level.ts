@@ -60,20 +60,8 @@ function stringSeed(s: string): number {
 
 // (멤버 ID + 레벨) 시드로 고정된 후보를 고른다 — 새로고침해도 안 바뀐다. 안 고른 장비는
 // 풀에 남아 있어서 다음 선택 때 다시 나올 수 있다. 남은 아이템이 count보다 적으면 그만큼만.
-// preferIds: 후보를 이 아이템들 안에서 먼저 뽑는다(새 캐릭터 플래그가 켜진 동안 화면에 보이는 아이템 우선).
-// 이 안에 남은 게 하나도 없으면 전체 풀로 되돌아간다.
-export function pickCandidates(
-  memberId: string,
-  level: number,
-  ownedItemIds: string[],
-  count = 3,
-  preferIds?: string[],
-): RaceItem[] {
-  let pool = ITEMS.filter((it) => !ownedItemIds.includes(it.id));
-  if (preferIds) {
-    const preferred = pool.filter((it) => preferIds.includes(it.id));
-    if (preferred.length > 0) pool = preferred;
-  }
+export function pickCandidates(memberId: string, level: number, ownedItemIds: string[], count = 3): RaceItem[] {
+  const pool = ITEMS.filter((it) => !ownedItemIds.includes(it.id));
   if (pool.length <= count) return pool;
   const rnd = mulberry32(stringSeed(`${memberId}:${level}`));
   const shuffled = [...pool];

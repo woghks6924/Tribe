@@ -35,7 +35,8 @@ export type UnlockFacts = {
   hasSwim: boolean;
   swimKm: number; // 수영 누적 km (전체 기간)
   month: number; // KST 월(1~12)
-  ownedLegacy: string[]; // 옛 옷장에서 이미 가진 아이템의 새 키(item_cap 등)
+  acquiredLevels?: number[]; // 레벨업으로 이미 장비를 받은 레벨들(있으면 남은 선택권을 정확히 센다)
+  owned: string[]; // 이미 가진 장비의 새 키 — 옛 옷장 아이템(item_cap 등)과 레벨업으로 고른 장비 모두
 };
 
 export type UnlockState = {
@@ -47,6 +48,32 @@ export type UnlockState = {
 const open = (label: string, detail = label): UnlockState => ({ status: "open", label, detail });
 const pick = (label: string, detail: string): UnlockState => ({ status: "pick", label, detail });
 const locked = (label: string, detail = label): UnlockState => ({ status: "locked", label, detail });
+
+// 선택권이 생기는 레벨(Lv2~9)과 그 레벨에서 고를 수 있는 장비 풀.
+export const V4_PICK_LEVELS = [...BASIC_PICK_LEVELS, ...RARE_PICK_LEVELS];
+export function pickPoolFor(pickLevel: number): string[] {
+  return BASIC_PICK_LEVELS.includes(pickLevel) ? BASIC_ITEMS : RARE_PICK_LEVELS.includes(pickLevel) ? RARE_ITEMS : [];
+}
+// 아직 안 고른 선택 레벨 중 가장 낮은 것. acquiredLevels = 레벨업으로 이미 장비를 받은 레벨들(옛 선택 포함).
+export function pendingV4PickLevel(level: number, acquiredLevels: number[]): number | null {
+  return V4_PICK_LEVELS.find((l) => l <= level && !acquiredLevels.includes(l)) ?? null;
+}
+// 아직 도달 못 한 가장 가까운 선택 레벨(진행 표시용).
+export function nextUpcomingV4PickLevel(level: number): number | null {
+  return V4_PICK_LEVELS.find((l) => l > level) ?? null;
+}
+
+// 아직 안 쓴 선택권 수. acquiredLevels를 모르면 도달한 레벨 수로 센다(미리보기용).
+function remainingPicks(levels: number[], f: UnlockFacts) {
+  const reached = levels.filter((l) => l <= f.level);
+  return f.acquiredLevels ? reached.filter((l) => !f.acquiredLevels!.includes(l)).length : reached.length;
+}
+
+// 선택권을 다 쓴 뒤 안내 문구: 다음 선택 레벨이 남아 있으면 그걸, 없으면 Lv.10 자유 선택을.
+function nextOpen(levels: number[], level: number) {
+  const next = levels.find((l) => l > level);
+  return next != null ? `다음 선택권은 Lv.${next}, Lv.${UNLOCK_ALL_LEVEL}에는 전부 열려요` : `Lv.${UNLOCK_ALL_LEVEL}에 전부 열려요`;
+}
 
 export function basicPicks(level: number) {
   return BASIC_PICK_LEVELS.filter((l) => l <= level).length;
@@ -70,16 +97,18 @@ export function itemUnlock(key: string, f: UnlockFacts): UnlockState {
   if (key === "head_santa") {
     return f.month === SANTA_MONTH ? open("12월 한정", "12월에 열려요") : locked("12월 한정", "12월에만 열려요");
   }
-  if (f.ownedLegacy.includes(key)) return open("보유", "예전 옷장에서 이미 가지고 있어요");
+  if (f.owned.includes(key)) return open("보유", "이미 가지고 있어요");
   if (f.level >= UNLOCK_ALL_LEVEL) return open(`Lv.${UNLOCK_ALL_LEVEL}+ 자유`, `Lv.${UNLOCK_ALL_LEVEL} 이상은 전부 자유 선택`);
   if (BASIC_ITEMS.includes(key)) {
-    const n = basicPicks(f.level);
+    const n = remainingPicks(BASIC_PICK_LEVELS, f);
+    if (n === 0 && basicPicks(f.level) > 0) return locked("선택권 사용", `기본 장비 선택권을 다 썼어요 — ${nextOpen(BASIC_PICK_LEVELS, f.level)}`);
     return n > 0
       ? pick("선택 가능", `기본 장비 선택권 ${n}개(Lv.${BASIC_PICK_LEVELS[0]}~${BASIC_PICK_LEVELS[BASIC_PICK_LEVELS.length - 1]} 레벨업마다 1개)`)
       : locked(`Lv.${BASIC_PICK_LEVELS[0]}~`, `Lv.${BASIC_PICK_LEVELS[0]}부터 레벨업마다 1개 선택`);
   }
   if (RARE_ITEMS.includes(key)) {
-    const n = rarePicks(f.level);
+    const n = remainingPicks(RARE_PICK_LEVELS, f);
+    if (n === 0 && rarePicks(f.level) > 0) return locked("선택권 사용", `레어 장비 선택권을 다 썼어요 — ${nextOpen(RARE_PICK_LEVELS, f.level)}`);
     return n > 0
       ? pick("선택 가능", `레어 장비 선택권 ${n}개(Lv.${RARE_PICK_LEVELS[0]}~${RARE_PICK_LEVELS[RARE_PICK_LEVELS.length - 1]} 레벨업마다 1개)`)
       : locked(`Lv.${RARE_PICK_LEVELS[0]}~`, `Lv.${RARE_PICK_LEVELS[0]}부터 레벨업마다 1개 선택`);
