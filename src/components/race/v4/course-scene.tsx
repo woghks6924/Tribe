@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { COURSE, SEGMENTS, drawCourse, segmentAt, timeOfDay, type Tod } from "@/lib/race/v4/course";
 import type { RaceBodyType } from "@/lib/race/constants";
-import { TypeFX, drawTypeIcon, type Character } from "@/lib/race/v4/sprite";
+import { TypeFX, drawTypeIcon, type Character, type Pet } from "@/lib/race/v4/sprite";
 import { useCanvasLoop } from "./canvas-loop";
 
 const S = 3;
@@ -38,11 +38,13 @@ export type SceneMember = {
 export function CourseScene({
   members,
   getChar,
+  getPet,
   defaultSegKey,
   description,
 }: {
   members: SceneMember[];
   getChar: (id: string) => Character;
+  getPet?: (id: string) => Pet | null; // 펫을 그리는 화면(/race/lab)만 넘긴다
   defaultSegKey?: string;
   description?: string;
 }) {
@@ -116,6 +118,9 @@ export function CourseScene({
       const f = getChar(r.m.id).frameAt(anim, "east", now + r.phase, r.m.todayLogged ? 11 : 6);
       const X = Math.round(x) * S;
       const Y = (Math.round(y) - f.ground - 1) * S;
+      // 펫: 캐릭터 바로 뒤(왼쪽 15px)에서 같은 땅을 달린다
+      const pet = getPet?.(r.m.id);
+      if (pet) pet.draw(cx, X + (f.cx - 15) * S, Math.round(y) * S, S, now + r.phase, { moving: r.m.todayLogged });
       r.fx.drawBehind(cx, f, X, Y, S, now, dt);
       cx.drawImage(f.canvas, X, Y, f.canvas.width * S, f.canvas.height * S);
       r.fx.drawFront(cx, f, X, Y, S, now, dt);

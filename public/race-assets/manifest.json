@@ -619,6 +619,210 @@
     "dx": -16.0,
     "dy": 17
    }
+  },
+  "head_bucket": {
+   "south": {
+    "src": "items/head_bucket_south.png",
+    "dx": -14.5,
+    "dy": 0
+   },
+   "east": {
+    "src": "items/head_bucket_east.png",
+    "dx": -12.0,
+    "dy": -1
+   }
+  },
+  "head_visor": {
+   "south": {
+    "src": "items/head_visor_south.png",
+    "dx": -9.5,
+    "dy": 7
+   },
+   "east": {
+    "src": "items/head_visor_east.png",
+    "dx": -10.0,
+    "dy": 6
+   }
+  },
+  "head_earmuffs": {
+   "south": {
+    "src": "items/head_earmuffs_south.png",
+    "dx": -14.5,
+    "dy": 1
+   },
+   "east": {
+    "src": "items/head_earmuffs_east.png",
+    "dx": -11.0,
+    "dy": -1
+   }
+  },
+  "head_swimcap": {
+   "south": {
+    "src": "items/head_swimcap_south.png",
+    "dx": -9.5,
+    "dy": 1
+   },
+   "east": {
+    "src": "items/head_swimcap_east.png",
+    "dx": -10.0,
+    "dy": 1
+   }
+  },
+  "head_helmet": {
+   "south": {
+    "src": "items/head_helmet_south.png",
+    "dx": -11.5,
+    "dy": 1
+   },
+   "east": {
+    "src": "items/head_helmet_east.png",
+    "dx": -16.0,
+    "dy": 1
+   }
+  },
+  "head_crown": {
+   "south": {
+    "src": "items/head_crown_south.png",
+    "dx": -4.5,
+    "dy": -1
+   },
+   "east": {
+    "src": "items/head_crown_east.png",
+    "dx": -9.0,
+    "dy": -2
+   }
+  },
+  "head_santa": {
+   "south": {
+    "src": "items/head_santa_south.png",
+    "dx": -11.5,
+    "dy": -1
+   },
+   "east": {
+    "src": "items/head_santa_east.png",
+    "dx": -17.0,
+    "dy": -1
+   }
+  },
+  "neck_medal": {
+   "south": {
+    "src": "items/neck_medal_south.png",
+    "dx": -6.5,
+    "dy": 23
+   },
+   "east": {
+    "src": "items/neck_medal_east.png",
+    "dx": -3.0,
+    "dy": 21
+   }
+  },
+  "neck_towel": {
+   "south": {
+    "src": "items/neck_towel_south.png",
+    "dx": -7.5,
+    "dy": 20
+   },
+   "east": {
+    "src": "items/neck_towel_east.png",
+    "dx": -6.0,
+    "dy": 21
+   }
+  },
+  "neck_gaiter": {
+   "south": {
+    "src": "items/neck_gaiter_south.png",
+    "dx": -8.5,
+    "dy": 22
+   },
+   "east": {
+    "src": "items/neck_gaiter_east.png",
+    "dx": -7.0,
+    "dy": 20
+   }
+  },
+  "back_pack": {
+   "south": {
+    "src": "items/back_pack_south.png",
+    "dx": -6.5,
+    "dy": 23
+   },
+   "east": {
+    "src": "items/back_pack_east.png",
+    "dx": -10.0,
+    "dy": 22
+   }
+  },
+  "back_vest": {
+   "south": {
+    "src": "items/back_vest_south.png",
+    "dx": -6.5,
+    "dy": 23
+   },
+   "east": {
+    "src": "items/back_vest_east.png",
+    "dx": -8.0,
+    "dy": 22
+   }
+  },
+  "back_flag": {
+   "south": {
+    "src": "items/back_flag_south.png",
+    "dx": -9.5,
+    "dy": 13
+   },
+   "east": {
+    "src": "items/back_flag_east.png",
+    "dx": -20.0,
+    "dy": -1
+   }
+  },
+  "back_cape": {
+   "south": {
+    "src": "items/back_cape_south.png",
+    "dx": 7.5,
+    "dy": 28
+   },
+   "east": {
+    "src": "items/back_cape_east.png",
+    "dx": -12.0,
+    "dy": 22
+   }
+  },
+  "back_wings": {
+   "south": {
+    "src": "items/back_wings_south.png",
+    "dx": -10.5,
+    "dy": 13
+   },
+   "east": {
+    "src": "items/back_wings_east.png",
+    "dx": -10.0,
+    "dy": 22
+   }
+  },
+  "waist_jacket": {
+   "south": {
+    "src": "items/waist_jacket_south.png",
+    "dx": -9.5,
+    "dy": 30
+   },
+   "east": {
+    "src": "items/waist_jacket_east.png",
+    "dx": -9.0,
+    "dy": 27
+   }
+  },
+  "waist_belt": {
+   "south": {
+    "src": "items/waist_belt_south.png",
+    "dx": -4.5,
+    "dy": 30
+   },
+   "east": {
+    "src": "items/waist_belt_east.png",
+    "dx": -5.0,
+    "dy": 29
+   }
   }
  },
  "lut": {
@@ -795,6 +999,40 @@
    "keep": 1.0
   }
  },
+ "slots": {
+  "hair_ponytail": "hair",
+  "hair_twoblock": "hair",
+  "hair_sidepart": "hair",
+  "hair_pomade": "hair",
+  "hair_bun": "hair",
+  "hair_curly": "hair",
+  "hair_long": "hair",
+  "hair_twintail": "hair",
+  "hair_braid": "hair",
+  "item_cap": "head",
+  "item_beanie": "head",
+  "item_headphones": "head",
+  "item_headband": "head",
+  "item_sunglasses": "face",
+  "item_scarf": "neck",
+  "head_bucket": "head",
+  "head_visor": "head",
+  "head_earmuffs": "head",
+  "head_swimcap": "head",
+  "head_helmet": "head",
+  "head_crown": "head",
+  "head_santa": "head",
+  "neck_medal": "neck",
+  "neck_towel": "neck",
+  "neck_gaiter": "neck",
+  "back_pack": "back",
+  "back_vest": "back",
+  "back_flag": "back",
+  "back_cape": "back",
+  "back_wings": "back",
+  "waist_jacket": "waist",
+  "waist_belt": "waist"
+ },
  "bands": {
   "topMax": 32,
   "bottomMax": 36
@@ -807,6 +1045,338 @@
  },
  "hats": [
   "item_cap",
-  "item_beanie"
- ]
+  "item_beanie",
+  "head_bucket",
+  "head_helmet",
+  "head_santa",
+  "head_swimcap"
+ ],
+ "behind": [
+  "back_cape",
+  "back_wings",
+  "back_flag"
+ ],
+ "pets": {
+  "pet_cat": {
+   "still": {
+    "south": {
+     "src": "pets/pet_cat_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 21
+    },
+    "east": {
+     "src": "pets/pet_cat_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 21
+    }
+   },
+   "run": {
+    "east": {
+     "src": "pets/pet_cat_run_east.png",
+     "frames": 8,
+     "size": [
+      28,
+      28
+     ],
+     "ground": 23
+    }
+   }
+  },
+  "pet_corgi": {
+   "still": {
+    "south": {
+     "src": "pets/pet_corgi_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 21
+    },
+    "east": {
+     "src": "pets/pet_corgi_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 20
+    }
+   },
+   "run": {
+    "east": {
+     "src": "pets/pet_corgi_run_east.png",
+     "frames": 8,
+     "size": [
+      28,
+      28
+     ],
+     "ground": 22
+    }
+   }
+  },
+  "pet_bichon": {
+   "still": {
+    "south": {
+     "src": "pets/pet_bichon_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 22
+    },
+    "east": {
+     "src": "pets/pet_bichon_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 22
+    }
+   },
+   "run": {
+    "east": {
+     "src": "pets/pet_bichon_run_east.png",
+     "frames": 8,
+     "size": [
+      32,
+      32
+     ],
+     "ground": 25
+    }
+   }
+  },
+  "pet_retriever": {
+   "still": {
+    "south": {
+     "src": "pets/pet_retriever_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 21
+    },
+    "east": {
+     "src": "pets/pet_retriever_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 21
+    }
+   },
+   "run": {
+    "east": {
+     "src": "pets/pet_retriever_run_east.png",
+     "frames": 8,
+     "size": [
+      30,
+      30
+     ],
+     "ground": 23
+    }
+   }
+  },
+  "pet_maltese": {
+   "still": {
+    "south": {
+     "src": "pets/pet_maltese_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 21
+    },
+    "east": {
+     "src": "pets/pet_maltese_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 21
+    }
+   },
+   "run": {
+    "east": {
+     "src": "pets/pet_maltese_run_east.png",
+     "frames": 8,
+     "size": [
+      30,
+      30
+     ],
+     "ground": 24
+    }
+   }
+  },
+  "pet_bird": {
+   "still": {
+    "south": {
+     "src": "pets/pet_bird_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 20
+    },
+    "east": {
+     "src": "pets/pet_bird_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 20
+    }
+   },
+   "run": {}
+  },
+  "pet_dolphin": {
+   "still": {
+    "south": {
+     "src": "pets/pet_dolphin_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 20
+    },
+    "east": {
+     "src": "pets/pet_dolphin_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 18
+    }
+   },
+   "run": {}
+  },
+  "pet_hamster": {
+   "still": {
+    "south": {
+     "src": "pets/pet_hamster_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 22
+    },
+    "east": {
+     "src": "pets/pet_hamster_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 22
+    }
+   },
+   "run": {
+    "east": {
+     "src": "pets/pet_hamster_run_east.png",
+     "frames": 8,
+     "size": [
+      32,
+      32
+     ],
+     "ground": 26
+    }
+   }
+  },
+  "pet_quokka": {
+   "still": {
+    "south": {
+     "src": "pets/pet_quokka_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 20
+    },
+    "east": {
+     "src": "pets/pet_quokka_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 19
+    }
+   },
+   "run": {
+    "east": {
+     "src": "pets/pet_quokka_run_east.png",
+     "frames": 8,
+     "size": [
+      30,
+      30
+     ],
+     "ground": 22
+    }
+   }
+  },
+  "pet_capybara": {
+   "still": {
+    "south": {
+     "src": "pets/pet_capybara_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 21
+    },
+    "east": {
+     "src": "pets/pet_capybara_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 20
+    }
+   },
+   "run": {
+    "east": {
+     "src": "pets/pet_capybara_run_east.png",
+     "frames": 4,
+     "size": [
+      32,
+      32
+     ],
+     "ground": 25
+    }
+   }
+  },
+  "pet_squirrel": {
+   "still": {
+    "south": {
+     "src": "pets/pet_squirrel_south.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 21
+    },
+    "east": {
+     "src": "pets/pet_squirrel_east.png",
+     "size": [
+      24,
+      24
+     ],
+     "ground": 20
+    }
+   },
+   "run": {
+    "east": {
+     "src": "pets/pet_squirrel_run_east.png",
+     "frames": 8,
+     "size": [
+      32,
+      32
+     ],
+     "ground": 24
+    }
+   }
+  }
+ }
 }

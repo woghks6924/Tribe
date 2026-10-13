@@ -37,3 +37,45 @@ export const PALETTE = {
 };
 export const COLOR_NAMES = { top: "상의", bottom: "하의", shoes: "신발", hair: "머리" };
 
+
+// 장비·펫 한글 이름표. 목록 자체는 manifest에서 읽고, 여기엔 이름만 둔다(없는 키는 키 이름 그대로 보여준다).
+export const SLOT_LABELS: Record<string, string> = { head: "머리", face: "얼굴", neck: "목", back: "등", waist: "허리" };
+export const ITEM_LABELS: Record<string, string> = {
+  item_cap: "캡",
+  item_beanie: "비니",
+  item_headband: "헤어밴드",
+  item_headphones: "헤드폰",
+  head_bucket: "버킷햇",
+  head_visor: "바이저",
+  head_earmuffs: "귀마개",
+  head_swimcap: "수영모",
+  head_helmet: "헬멧",
+  head_crown: "왕관",
+  head_santa: "산타모자",
+  item_sunglasses: "선글라스",
+  item_scarf: "스카프",
+  neck_medal: "완주 메달",
+  neck_towel: "수건",
+  neck_gaiter: "넥게이터",
+  back_pack: "백팩",
+  back_vest: "러닝 베스트",
+  back_flag: "깃발",
+  back_cape: "망토",
+  back_wings: "날개",
+  waist_belt: "러닝 벨트",
+  waist_jacket: "허리 재킷",
+};
+export const PET_NAMES: Record<string, string> = {
+  pet_cat: "고양이",
+  pet_corgi: "코기",
+  pet_bichon: "비숑",
+  pet_retriever: "리트리버",
+  pet_maltese: "말티즈",
+  pet_bird: "새",
+  pet_shark: "상어",
+  pet_dolphin: "돌고래",
+  pet_hamster: "햄스터",
+  pet_quokka: "쿼카",
+  pet_capybara: "카피바라",
+  pet_squirrel: "다람쥐",
+};

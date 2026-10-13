@@ -17,6 +17,16 @@ from pathlib import Path
 from PIL import Image
 
 DIRS = ["south", "east"]
+# 부위(슬롯): 이름 앞부분으로 정한다. 예전 item_* 이름은 아래 표로 매핑
+SLOT_PREFIXES = ("head_", "face_", "neck_", "back_", "waist_")
+LEGACY_SLOT = {"item_cap": "head", "item_beanie": "head", "item_headband": "head", "item_headphones": "head",
+               "item_sunglasses": "face", "item_scarf": "neck"}
+# 모자류: 챙 위로 솟는 머리를 잘라야 하는 것
+HATS = ["item_cap", "item_beanie", "head_bucket", "head_helmet", "head_santa", "head_swimcap"]
+# 등 장비: 캐릭터 뒤에 그린다(옆모습에서 몸에 가려지는 부분이 자연스럽게)
+FINE = {"back_flag": {"east": {"thresh": 25, "gap": 12, "xmax": 16}, "south": {"thresh": 25, "gap": 3}},
+        "back_wings": {"thresh": 30, "gap": 3}}
+BEHIND = ["back_cape", "back_wings", "back_flag"]
 
 
 def head_anchor(im):
@@ -111,7 +121,7 @@ def extract_hair(base_im, state_im, base_hair_mask, thresh=45):
     return _paint(state_im, _grow(_components(pts), gap=3))
 
 
-def extract_item(base_im, state_im, thresh=60):
+def extract_item(base_im, state_im, thresh=60, gap=2, xmax=None):
     """장비 State에서 base와 달라진 픽셀 중 큰 덩어리 + 주변 조각(스카프 꼬리, 선글라스 렌즈 등)."""
     pb, ps = base_im.load(), state_im.load()
     W, H = base_im.size
@@ -119,7 +129,9 @@ def extract_item(base_im, state_im, thresh=60):
     comps = _components(diff)
     if not comps:
         return None
-    return _paint(state_im, _grow(comps, gap=2))
+    if xmax is not None:  # 몸 앞쪽 잡티 제외 (등 장비용)
+        comps = [comps[0]] + [c for c in comps[1:] if min(p[0] for p in c) <= xmax]
+    return _paint(state_im, _grow(comps, gap=gap))
 
 
 def _grow(comps, gap):
@@ -184,7 +196,7 @@ def main(src, dst):
 
     # 2) hair / item 레이어
     for key, st in S.items():
-        if not (key.startswith("hair_") or key.startswith("item_") or key == "short_curly_hair"):
+        if not (key.startswith(("hair_", "item_") + SLOT_PREFIXES) or key == "short_curly_hair"):
             continue
         if key == "item_bib":  # 흰 셔츠 위 흰 배번은 차이가 안 잡혀서 코드로 그린다(참가번호 표시)
             continue
@@ -196,19 +208,23 @@ def main(src, dst):
                 cmi = Image.open(src / S["colormap"]["frames"]["rotations"][d]).convert("RGBA")
                 layer = extract_hair(b, s, hair_mask(b, cmi))
             else:
-                layer = extract_item(b, s)
+                # 가는 깃대처럼 기본 옷색과 비슷한 부분이 있는 장비는 더 민감하게
+                opt = FINE.get(lname, {})
+                layer = extract_item(b, s, **opt.get(d, opt if "thresh" in opt else {}))
             if layer is None or layer.getbbox() is None:
                 continue
             bb = layer.getbbox()
             t, cx = head_anchor(b)
             crop = layer.crop(bb)
             kind = "hair" if lname.startswith("hair_") else "items"
+            slot = "hair" if kind == "hair" else LEGACY_SLOT.get(lname, lname.split("_")[0])
             path = dst / kind / f"{lname}_{d}.png"
             path.parent.mkdir(parents=True, exist_ok=True)
             crop.save(path)
             manifest["layers"].setdefault(lname, {})[d] = {
                 "src": str(path.relative_to(dst)), "dx": round(bb[0] - cx, 1), "dy": bb[1] - t,
             }
+            manifest.setdefault("slots", {})[lname] = slot
 
     # 3) 색 → 부위 대응표 (정지 8방향 전부 사용)
     lut = defaultdict(Counter)
@@ -243,10 +259,15 @@ def main(src, dst):
     q = lambda v, f: sorted(v)[int(len(v) * f)]
     manifest["bands"] = {"topMax": min(rel["bottom"]) - 1, "bottomMax": min(rel["shoes"]) - 1}
     manifest["regionLum"] = {r: round(sum(v) / len(v), 1) for r, v in lum.items()}
-    manifest["hats"] = ["item_cap", "item_beanie"]
+    manifest["hats"] = HATS
+    manifest["behind"] = BEHIND
     for r, v in rel.items():
         print(r, "rel y", min(v), max(v))
 
+    # 펫은 build_pets.py가 따로 관리하므로 기존 값을 유지
+    old = dst / "manifest.json"
+    if old.exists():
+        manifest["pets"] = json.loads(old.read_text()).get("pets", {})
     (dst / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1))
     print("anims:", {k: list(v) for k, v in manifest["anims"].items()})
     print("layers:", sorted(manifest["layers"]))

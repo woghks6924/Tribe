@@ -1,20 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Character, loadRaceAssets, type RaceAssets, type V4Look } from "@/lib/race/v4/sprite";
+import { Character, Pet, loadRaceAssets, type RaceAssets, type V4Look } from "@/lib/race/v4/sprite";
 import { LabCompare } from "./lab-compare";
 import { LabCourse } from "./lab-course";
-import type { LabMember, LookPatch } from "./lab-shared";
+import type { LabMember, LevelRow, LookPatch } from "./lab-shared";
 import { LabStory } from "./lab-story";
 import { LabStudio } from "./lab-studio";
+import { LabUnlock } from "./lab-unlock";
 
-const STORAGE_KEY = "race-lab-looks-v1";
+// v2: 장비가 부위별 items 배열이 되고 펫이 생겨서 저장 형식이 바뀌었다(v1 값은 읽지 않는다).
+const STORAGE_KEY = "race-lab-looks-v2";
 
 function mergeLook(base: V4Look, patch: LookPatch): V4Look {
   return { ...base, ...patch, colors: { ...base.colors, ...(patch.colors || {}) } };
 }
 
-export function RaceLab({ members }: { members: LabMember[] }) {
+export function RaceLab({ members, levelRows }: { members: LabMember[]; levelRows: LevelRow[] }) {
   const [A, setA] = useState<RaceAssets | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [looks, setLooks] = useState<Record<string, V4Look>>(() => Object.fromEntries(members.map((m) => [m.id, m.defaultLook])));
@@ -22,10 +24,11 @@ export function RaceLab({ members }: { members: LabMember[] }) {
   const [showCompare, setShowCompare] = useState(true);
   const [allRun, setAllRun] = useState(false);
   const charsRef = useRef(new Map<string, Character>());
+  const petsRef = useRef(new Map<string, Pet>());
 
   useEffect(() => {
     let alive = true;
-    loadRaceAssets("/race-assets/")
+    loadRaceAssets("/race-assets/", { pets: true })
       .then((a) => alive && setA(a))
       .catch(() => alive && setError("에셋을 불러오지 못했어요."));
     return () => {
@@ -64,6 +67,21 @@ export function RaceLab({ members }: { members: LabMember[] }) {
         charsRef.current.set(id, c);
       }
       return c;
+    },
+    [A, looks],
+  );
+
+  // 펫은 상태가 없어서 이름별로 하나씩만 만들어 같이 쓴다.
+  const getPet = useCallback(
+    (id: string) => {
+      const name = looks[id]?.pet;
+      if (!name || !A) return null;
+      let p = petsRef.current.get(name);
+      if (!p) {
+        p = new Pet(A, name);
+        petsRef.current.set(name, p);
+      }
+      return p;
     },
     [A, looks],
   );
@@ -120,7 +138,7 @@ export function RaceLab({ members }: { members: LabMember[] }) {
         </span>
       </div>
 
-      <LabCourse members={shown} getChar={getChar} />
+      <LabCourse members={shown} getChar={getChar} getPet={getPet} />
 
       <section className="flex flex-col gap-3 rounded border border-[#3c3d43] bg-[#2a2b2e] p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -140,7 +158,11 @@ export function RaceLab({ members }: { members: LabMember[] }) {
         {showCompare && <LabCompare members={shown} getChar={getChar} />}
       </section>
 
+      <LabUnlock member={selected} levelRows={levelRows} A={A} />
+
       <LabStudio
+        A={A}
+        getPet={getPet}
         members={members}
         selectedId={selected.id}
         onSelect={setSelectedId}
@@ -150,7 +172,7 @@ export function RaceLab({ members }: { members: LabMember[] }) {
         getChar={getChar}
       />
 
-      <LabStory member={shown.find((m) => m.id === selected.id) ?? selected} getChar={getChar} />
+      <LabStory member={shown.find((m) => m.id === selected.id) ?? selected} getChar={getChar} getPet={getPet} />
     </div>
   );
 }

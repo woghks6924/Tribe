@@ -59,6 +59,7 @@ export async function loadRaceAssets(base = '/race-assets/', opts = {}) {
   const srcs = []
   for (const dirs of Object.values(manifest.anims)) for (const a of Object.values(dirs)) srcs.push(a.src)
   for (const dirs of Object.values(manifest.layers)) for (const l of Object.values(dirs)) srcs.push(l.src)
+  for (const p of Object.values(manifest.pets || {})) for (const k of ['still', 'run']) for (const v of Object.values(p[k] || {})) srcs.push(v.src)
   await Promise.all(srcs.map((s) => loadImage(urlFor(s)).then((im) => (imgs[s] = im))))
   const lut = new Map(Object.entries(manifest.lut))
   const lutRgb = [...lut.keys()].map((k) => [k, hexToRgb(k)])
@@ -66,7 +67,12 @@ export async function loadRaceAssets(base = '/race-assets/', opts = {}) {
 }
 
 export const HAIR_STYLES = ['hair_twoblock', 'hair_sidepart', 'hair_pomade', 'hair_curly', 'hair_bun', 'hair_ponytail', 'hair_twintail', 'hair_long', 'hair_braid']
-export const ITEMS = ['item_cap', 'item_beanie', 'item_headband', 'item_headphones', 'item_sunglasses', 'item_scarf']
+export const ITEMS = [
+  'item_cap', 'item_beanie', 'item_headband', 'item_headphones', 'head_bucket', 'head_visor', 'head_earmuffs',
+  'head_swimcap', 'head_helmet', 'head_crown', 'head_santa', 'item_sunglasses',
+  'item_scarf', 'neck_medal', 'neck_towel', 'neck_gaiter',
+  'back_pack', 'back_vest', 'back_flag', 'back_cape', 'back_wings', 'waist_belt', 'waist_jacket',
+]
 
 // 색 → 부위 판정. 옷 색은 상의/하의/신발이 같은 회색 팔레트를 공유하므로 머리 꼭대기 기준 높이로 나눈다.
 function regionOf(A, r, g, b, relY) {
@@ -100,16 +106,24 @@ function tint(d, i, target, meanL) {
   d[i + 2] = clamp(Math.round(target[2] + k))
 }
 
+// 앞쪽 장비를 그리는 순서 (뒤에 있는 것부터)
+const FRONT_ORDER = ['waist', 'back', 'neck', 'face', 'head']
+// 달릴 때 펄럭이는 장비: 프레임마다 1px씩 흔든다
+const SWAYING = ['back_cape', 'back_flag']
+const SWAY = [0, -1, -1, 0, 0, -1, -1, 0]
+
 const DEFAULT_COLORS = { top: '#2b2b30', bottom: '#2c3e66', shoes: '#f2f2ee', hair: '#2a2430' }
 
 export class Character {
   /**
-   * look = { hair: 'hair_long' | null, item: 'item_cap' | null,
+   * look = { hair: 'hair_long' | null,
+   *          items: ['item_cap', 'neck_medal', 'back_pack'],  // 부위(head/face/neck/back/waist)마다 1개
    *          colors: { top, bottom, shoes, hair }, bib: 숫자 | null }
+   * (예전 형식 item: 'item_cap' 도 받는다)
    */
   constructor(A, look = {}) {
     this.A = A
-    this.look = { hair: null, item: null, bib: null, ...look, colors: { ...DEFAULT_COLORS, ...(look.colors || {}) } }
+    this.look = { hair: null, items: [], bib: null, ...look, colors: { ...DEFAULT_COLORS, ...(look.colors || {}) } }
     this.cache = {}
     this.layerCache = {}
   }
@@ -138,9 +152,15 @@ export class Character {
       const [cx, top] = a.anchors[f]
       const c = canvas(fw, fh)
       const ctx = c.getContext('2d')
-      ctx.drawImage(sheet, f * fw, 0, fw, fh, 0, 0, fw, fh)
-      const bottom = this._recolorBody(ctx, fw, fh, top)
-      this._drawLayers(ctx, dir, cx, top)
+      // 몸통만 먼저 따로 구워서 색을 바꾸고, 등 뒤 장비 → 몸 → 머리 → 앞 장비 순서로 합친다
+      const body = canvas(fw, fh)
+      const bctx = body.getContext('2d')
+      bctx.drawImage(sheet, f * fw, 0, fw, fh, 0, 0, fw, fh)
+      const bottom = this._recolorBody(bctx, fw, fh, top)
+      const sway = SWAY[f % SWAY.length]
+      this._drawLayers(ctx, dir, cx, top, 'behind', sway)
+      ctx.drawImage(body, 0, 0)
+      this._drawLayers(ctx, dir, cx, top, 'front', sway)
       const prevTop = a.anchors[(f - 1 + a.frames) % a.frames][1]
       out.push({ canvas: c, cx, top, bottom, landing: top > prevTop })
     }
@@ -204,14 +224,36 @@ export class Character {
     return (this.layerCache[key] = { canvas: c, dx: L.dx, dy: L.dy })
   }
 
-  _drawLayers(ctx, dir, cx, top) {
-    const { hair, item, bib } = this.look
+  _items() {
+    const { item, items } = this.look
+    const list = [...(items || []), ...(item ? [item] : [])]
+    const M = this.A.manifest, seen = {}
+    // 같은 부위는 마지막 것만
+    for (const n of list) if (M.layers[n]) seen[(M.slots && M.slots[n]) || n] = n
+    return Object.values(seen)
+  }
+
+  _drawLayers(ctx, dir, cx, top, pass, sway = 0) {
+    const M = this.A.manifest
+    const items = this._items()
+    const behind = M.behind || []
+    const put = (name) => {
+      const L = this._layer(name, dir)
+      if (!L) return
+      const s = SWAYING.includes(name) ? sway : 0
+      ctx.drawImage(L.canvas, Math.round(cx + L.dx) + (dir === 'south' ? 0 : s), top + L.dy + (dir === 'south' ? s : 0))
+    }
+    if (pass === 'behind') {
+      items.filter((n) => behind.includes(n)).forEach(put)
+      return
+    }
+    const { hair, bib } = this.look
     const H = hair && this._layer(hair, dir)
-    const I = item && this._layer(item, dir)
-    const isHat = item && this.A.manifest.hats.includes(item)
+    const hatName = items.find((n) => M.hats.includes(n))
+    const I = hatName && this._layer(hatName, dir)
     if (H) {
       const hx = Math.round(cx + H.dx), hy = top + H.dy
-      if (isHat && I) {
+      if (I) {
         // 모자 규칙: 모자 챙(맨 아래 줄) 위로 삐져나오는 머리는 자른다.
         // 묶은 머리·땋은 머리·트윈테일처럼 모자 옆/아래로 내려오는 부분은 남는다. 번은 모자 속으로 숨긴다.
         const tmp = canvas(ctx.canvas.width, ctx.canvas.height)
@@ -226,8 +268,9 @@ export class Character {
         ctx.drawImage(H.canvas, hx, hy)
       }
     }
-    if (I) ctx.drawImage(I.canvas, Math.round(cx + I.dx), top + I.dy)
     if (bib != null) this._drawBib(ctx, dir, cx, top, String(bib))
+    const slot = (n) => (M.slots && M.slots[n]) || 'head'
+    for (const s of FRONT_ORDER) items.filter((n) => !behind.includes(n) && slot(n) === s).forEach(put)
   }
 
   // 배번: 흰 천 + 3x5 픽셀 숫자 (정면에서만)
@@ -256,6 +299,62 @@ const DIGITS = {
   3: ['###', '..#', '.##', '..#', '###'], 4: ['#.#', '#.#', '###', '..#', '..#'], 5: ['###', '#..', '###', '..#', '###'],
   6: ['###', '#..', '###', '#.#', '###'], 7: ['###', '..#', '.#.', '.#.', '.#.'], 8: ['###', '#.#', '###', '#.#', '###'],
   9: ['###', '#.#', '###', '..#', '###'],
+}
+
+// ───────────────────────── 펫 ─────────────────────────
+
+export const PETS = {
+  pet_cat: '고양이', pet_corgi: '코기', pet_bichon: '비숑', pet_retriever: '리트리버', pet_maltese: '말티즈',
+  pet_bird: '새', pet_shark: '상어', pet_dolphin: '돌고래', pet_hamster: '햄스터', pet_quokka: '쿼카',
+  pet_capybara: '카피바라', pet_squirrel: '다람쥐',
+}
+// 다리 없는 펫: 떠서 따라온다
+const FLOATING = ['pet_bird', 'pet_shark', 'pet_dolphin']
+
+/**
+ * 펫. 달리기 애니메이션이 있으면 그걸 쓰고, 없으면 정지 그림을 코드로 깡총(또는 둥실) 움직인다.
+ *   const pet = new Pet(A, 'pet_cat')
+ *   pet.draw(ctx, footX, groundY, scale, timeMs, { dir: 'east', moving: true })
+ *   (animated: false 로 주면 달리기 애니메이션이 있어도 깡총 버전으로 그린다)
+ *   footX = 펫 몸 가운데 x, groundY = 발 밑 y (캐릭터와 같은 땅)
+ */
+export class Pet {
+  constructor(A, name) {
+    this.A = A
+    this.name = name
+    this.P = (A.manifest.pets || {})[name]
+  }
+
+  draw(ctx, x, groundY, s, t, { dir = 'east', moving = true, animated = true } = {}) {
+    const P = this.P
+    if (!P) return
+    const run = animated && moving && P.run && P.run[dir]
+    let img, sx = 0, w, h, ground, lift = 0, squash = 0
+    if (run) {
+      const f = Math.floor((t / 1000) * 12) % run.frames
+      img = this.A.imgs[run.src]
+      ;[w, h] = run.size
+      sx = f * w
+      ground = run.ground
+    } else {
+      const still = P.still[dir] || P.still.south
+      img = this.A.imgs[still.src]
+      ;[w, h] = still.size
+      ground = still.ground
+      if (FLOATING.includes(this.name)) {
+        lift = 6 + Math.round(Math.sin(t / 260) * 2)
+      } else if (moving) {
+        const ph = (t / 300) % 1 // 깡총: 0.3초에 한 번
+        lift = Math.round(Math.sin(ph * Math.PI) * 4)
+        squash = ph < 0.08 || ph > 0.92 ? 1 : 0 // 착지 순간 살짝 납작
+      } else {
+        squash = Math.floor(t / 900) % 2 // 숨쉬기
+      }
+    }
+    const dx = Math.round(x - (w / 2) * s)
+    const dy = Math.round(groundY - (ground + 1) * s - lift * s)
+    ctx.drawImage(img, sx, 0, w, h, dx, dy + squash * s, w * s, (h - squash) * s)
+  }
 }
 
 // ───────────────────────── 훈련 유형 연출 ─────────────────────────

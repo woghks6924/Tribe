@@ -2,8 +2,24 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { RaceBodyType } from "@/lib/race/constants";
-import { TYPES, TypeFX, drawTypeIcon, type Character, type V4Look } from "@/lib/race/v4/sprite";
-import { ANIM_NAMES, COLOR_NAMES, HAIR_NAMES, ITEM_NAMES, PALETTE, useCanvasLoop, type LabMember, type LookPatch } from "./lab-shared";
+import { TYPES, TypeFX, drawTypeIcon, type Character, type Pet, type RaceAssets, type V4Look } from "@/lib/race/v4/sprite";
+import { itemUnlock, petUnlock } from "@/lib/race/v4/unlock";
+import {
+  ANIM_NAMES,
+  COLOR_NAMES,
+  HAIR_NAMES,
+  ITEM_LABELS,
+  PALETTE,
+  PET_NAMES,
+  SLOT_LABELS,
+  SLOT_ORDER,
+  STATUS_ICON,
+  itemsBySlot,
+  petKeys,
+  useCanvasLoop,
+  type LabMember,
+  type LookPatch,
+} from "./lab-shared";
 
 const SIZE = 400;
 const GROUND_Y = 320;
@@ -43,6 +59,8 @@ function Chips<T extends string | null>({
 }
 
 export function LabStudio({
+  A,
+  getPet,
   members,
   selectedId,
   onSelect,
@@ -51,6 +69,8 @@ export function LabStudio({
   onReset,
   getChar,
 }: {
+  A: RaceAssets;
+  getPet: (id: string) => Pet | null;
   members: LabMember[];
   selectedId: string;
   onSelect: (id: string) => void;
@@ -62,6 +82,7 @@ export function LabStudio({
   const member = members.find((m) => m.id === selectedId) ?? members[0];
   const [anim, setAnim] = useState("running");
   const [dir, setDir] = useState("east");
+  const [petHop, setPetHop] = useState(false); // 펫 달리기 시트 대신 깡총 버전으로 보기
   // 유형은 실제 기록에서 계산된 값이 기본. 연출을 확인해 보려고 바꿔볼 수만 있다(저장 안 됨).
   const [typeOverride, setTypeOverride] = useState<Record<string, RaceBodyType>>({});
   const type = typeOverride[member.id] ?? member.type;
@@ -78,10 +99,28 @@ export function LabStudio({
     const f = getChar(member.id).frameAt(anim, dir, now, anim === "breathing_idle" ? 6 : 10);
     const X = Math.round(cv.width / 2 - f.cx * SC);
     const Y = GROUND_Y - (f.ground + 1) * SC;
+    // 펫: 옆모습에서는 캐릭터 바로 뒤(왼쪽), 정면(프로필)에서는 오른쪽 옆에 앉아 있는다
+    const pet = getPet(member.id);
+    if (pet) {
+      if (dir === "east") pet.draw(ctx, X + (f.cx - 17) * SC, GROUND_Y, SC, now, { moving: anim === "running", animated: !petHop });
+      else pet.draw(ctx, X + (f.cx + 17) * SC, GROUND_Y, SC, now, { dir: "south", moving: false });
+    }
     fx.drawBehind(ctx, f, X, Y, SC, now, dt, GROUND_Y);
     ctx.drawImage(f.canvas, X, Y, f.canvas.width * SC, f.canvas.height * SC);
     fx.drawFront(ctx, f, X, Y, SC, now, dt);
   });
+
+  // 부위(head/face/neck/back/waist)마다 지금 입고 있는 장비. 예전 형식 item도 함께 본다.
+  const bySlot = useMemo(() => itemsBySlot(A), [A]);
+  const slotOf = (k: string) => A.manifest.slots?.[k] ?? "head";
+  const wornList = [...(look.items ?? []), ...(look.item ? [look.item] : [])];
+  const worn: Record<string, string> = {};
+  for (const k of wornList) worn[slotOf(k)] = k;
+  function setSlotItem(slot: string, key: string | null) {
+    const next = wornList.filter((k) => slotOf(k) !== slot);
+    if (key) next.push(key);
+    onLookChange({ items: next, item: null });
+  }
 
   const typeIconRef = useRef<HTMLCanvasElement>(null);
   useCanvasLoop(typeIconRef, () => {
@@ -140,7 +179,34 @@ export function LabStudio({
             onPick={setDir}
           />
           <Chips label="헤어" entries={HAIR_NAMES} value={look.hair} onPick={(v) => onLookChange({ hair: v })} />
-          <Chips label="장비" entries={ITEM_NAMES} value={look.item} onPick={(v) => onLookChange({ item: v })} />
+          {SLOT_ORDER.filter((slot) => bySlot[slot]?.length).map((slot) => (
+            <Chips
+              key={slot}
+              label={`${SLOT_LABELS[slot] ?? slot} 장비 (부위마다 1개)`}
+              entries={[
+                [null, "없음"],
+                ...bySlot[slot].map((k): [string, string] => [k, `${STATUS_ICON[itemUnlock(k, member.facts).status]} ${ITEM_LABELS[k] ?? k}`]),
+              ]}
+              value={worn[slot] ?? null}
+              onPick={(v) => setSlotItem(slot, v)}
+            />
+          ))}
+          <Chips
+            label="펫 (1마리)"
+            entries={[
+              [null, "없음"],
+              ...petKeys(A).map((k): [string, string] => [k, `${STATUS_ICON[petUnlock(k, member.facts).status]} ${PET_NAMES[k] ?? k}`]),
+            ]}
+            value={look.pet ?? null}
+            onPick={(v) => onLookChange({ pet: v })}
+          />
+          <label className="flex items-center gap-2 text-xs text-[#a3a29a]">
+            <input type="checkbox" checked={petHop} onChange={(e) => setPetHop(e.target.checked)} />
+            펫을 달리기 시트 대신 깡총 버전으로 보기 (새·돌고래는 원래 깡총/둥실)
+          </label>
+          <p className="text-[11px] text-[#6f6f6a]">
+            장비·펫 칩의 아이콘은 이 멤버 기준 해금 상태예요({STATUS_ICON.open} 열림 · {STATUS_ICON.pick} 선택권 · {STATUS_ICON.locked} 잠김). 테스트라서 잠겨 있어도 입어볼 수 있어요.
+          </p>
           <div className="flex flex-col gap-1.5">
             <span className="text-xs text-[#a3a29a]">훈련 유형 연출 (기록에서 계산된 값 {TYPES[member.type].name}, 여기서 바꿔도 저장 안 됨)</span>
             <div className="flex flex-wrap gap-1.5">

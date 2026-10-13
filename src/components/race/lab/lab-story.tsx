@@ -2,7 +2,7 @@
 
 import { useMemo, useRef } from "react";
 import { COURSE, drawCourse, segmentAt, skyTopColor, timeOfDay } from "@/lib/race/v4/course";
-import { TYPES, TypeFX, drawTypeIcon, type Character } from "@/lib/race/v4/sprite";
+import { TYPES, TypeFX, drawTypeIcon, type Character, type Pet } from "@/lib/race/v4/sprite";
 import { useCanvasLoop, type LabMember } from "./lab-shared";
 
 // 9:16 스토리 카드 미리보기 (실제 공유 이미지를 만들지는 않는다 — 1단계는 보기 전용).
@@ -12,7 +12,15 @@ const S = 4;
 const SCENE_Y = 330;
 const FEET_Y = SCENE_Y + 128 * S;
 
-export function LabStory({ member, getChar }: { member: LabMember; getChar: (id: string) => Character }) {
+export function LabStory({
+  member,
+  getChar,
+  getPet,
+}: {
+  member: LabMember;
+  getChar: (id: string) => Character;
+  getPet: (id: string) => Pet | null;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
   const fx = useMemo(() => new TypeFX(member.type), [member.type]);
   const seg = segmentAt(member.km);
@@ -39,6 +47,8 @@ export function LabStory({ member, getChar }: { member: LabMember; getChar: (id:
     const f = getChar(member.id).frameAt(anim, "south", now, member.todayLogged ? 11 : 6);
     const X = Math.round(W / 2 - f.cx * S);
     const Y = FEET_Y - (f.ground + 1) * S;
+    // 펫: 프로필(정면)에서는 캐릭터 오른쪽 옆에 앉아 있는다
+    getPet(member.id)?.draw(ctx, X + (f.cx + 17) * S, FEET_Y, S, now, { dir: "south", moving: false });
     fx.drawBehind(ctx, f, X, Y, S, now, dt, FEET_Y);
     ctx.drawImage(f.canvas, X, Y, f.canvas.width * S, f.canvas.height * S);
     fx.drawFront(ctx, f, X, Y, S, now, dt);
@@ -69,7 +79,7 @@ export function LabStory({ member, getChar }: { member: LabMember; getChar: (id:
     <section className="flex flex-col gap-3 rounded border border-[#3c3d43] bg-[#2a2b2e] p-3 sm:p-4">
       <div>
         <h2 className="text-base font-bold">스토리 카드 미리보기 (9:16)</h2>
-        <p className="text-xs text-[#a3a29a]">꾸미기 패널에서 고른 멤버의 구간 배경 + 정면 캐릭터 + 유형 아이콘.</p>
+        <p className="text-xs text-[#a3a29a]">꾸미기 패널에서 고른 멤버의 구간 배경 + 정면 캐릭터 + 펫 + 유형 아이콘.</p>
       </div>
       <canvas
         ref={ref}
