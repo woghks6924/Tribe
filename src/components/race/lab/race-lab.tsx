@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Character, loadRaceAssets, type RaceAssets, type V4Look } from "@/lib/race/v4/sprite";
 import { LabCompare } from "./lab-compare";
 import { LabCourse } from "./lab-course";
@@ -20,6 +20,7 @@ export function RaceLab({ members }: { members: LabMember[] }) {
   const [looks, setLooks] = useState<Record<string, V4Look>>(() => Object.fromEntries(members.map((m) => [m.id, m.defaultLook])));
   const [selectedId, setSelectedId] = useState(members[0]?.id ?? "");
   const [showCompare, setShowCompare] = useState(true);
+  const [allRun, setAllRun] = useState(false);
   const charsRef = useRef(new Map<string, Character>());
 
   useEffect(() => {
@@ -90,6 +91,9 @@ export function RaceLab({ members }: { members: LabMember[] }) {
     persist(next);
   }
 
+  // 테스트용: 오늘 기록과 상관없이 모두 달리게 해서 달리기 동작을 바로 볼 수 있다(기본은 기록 기준).
+  const shown = useMemo(() => (allRun ? members.map((m) => ({ ...m, todayLogged: true })) : members), [allRun, members]);
+
   if (members.length === 0) {
     return <p className="rounded border border-[#3c3d43] p-4 text-sm text-[#a3a29a]">시즌 참가자가 아직 없어요.</p>;
   }
@@ -100,7 +104,23 @@ export function RaceLab({ members }: { members: LabMember[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <LabCourse members={members} getChar={getChar} />
+      <div className="flex flex-wrap items-center gap-2 text-xs text-[#a3a29a]">
+        <button
+          type="button"
+          aria-pressed={allRun}
+          onClick={() => setAllRun((v) => !v)}
+          className={`cursor-pointer rounded border px-3 py-1.5 ${
+            allRun ? "border-[#f0b84a] bg-[#f0b84a]/10 text-[#f0b84a]" : "border-[#3c3d43] hover:border-[#f0b84a] hover:text-[#f0b84a]"
+          }`}
+        >
+          {allRun ? "전원 달리기 켜짐" : "전원 달리기로 보기"}
+        </button>
+        <span>
+          꺼져 있으면 오늘 기록이 있는 사람만 달리고, 없는 사람은 숨쉬기 대기예요(오늘 달린 사람 {members.filter((m) => m.todayLogged).length}명).
+        </span>
+      </div>
+
+      <LabCourse members={shown} getChar={getChar} />
 
       <section className="flex flex-col gap-3 rounded border border-[#3c3d43] bg-[#2a2b2e] p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -117,7 +137,7 @@ export function RaceLab({ members }: { members: LabMember[] }) {
             {showCompare ? "비교 숨기기" : "비교 보기"}
           </button>
         </div>
-        {showCompare && <LabCompare members={members} getChar={getChar} />}
+        {showCompare && <LabCompare members={shown} getChar={getChar} />}
       </section>
 
       <LabStudio
@@ -130,7 +150,7 @@ export function RaceLab({ members }: { members: LabMember[] }) {
         getChar={getChar}
       />
 
-      <LabStory member={selected} getChar={getChar} />
+      <LabStory member={shown.find((m) => m.id === selected.id) ?? selected} getChar={getChar} />
     </div>
   );
 }
