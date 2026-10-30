@@ -89,7 +89,9 @@ def main():
     args = ap.parse_args()
 
     tz = parse_tz(args.tz)
-    ids = read_csv(args.ids)
+    ids_raw = read_csv(args.ids)
+    # 드라이브 파일명과 로컬 파일명이 대소문자·확장자만 달라도 짝이 맞게 이름(확장자 뺀 것, 소문자)으로 비교한다.
+    ids = {os.path.splitext(k)[0].lower(): v for k, v in ids_raw.items()}
     bibs = {k: v.replace(",", " ").split() for k, v in read_csv(args.bibs).items()}
 
     files = sorted(f for f in os.listdir(args.src) if os.path.splitext(f)[1].lower() in EXTS)
@@ -124,7 +126,7 @@ def main():
         tpath = os.path.join(thumb_dir, f"{pid}.jpg")
         im.save(tpath, "JPEG", quality=args.quality, optimize=True, progressive=True)
         total += os.path.getsize(tpath)
-        drive_id = ids.get(name)
+        drive_id = ids.get(os.path.splitext(name)[0].lower())
         if not drive_id:
             missing_ids += 1
             drive_id = f"TEMP_{pid}"
@@ -159,6 +161,8 @@ def main():
         print(f"  주의: 촬영 시각(EXIF)이 없어서 파일 수정 시각을 쓴 사진 {no_exif}장")
     if missing_ids:
         print(f"  주의: 드라이브 파일 ID가 없는 사진 {missing_ids}장 (원본 보기/다운로드 링크는 아직 동작 안 함)")
+    if ids_raw and missing_ids:
+        print(f"  참고: ids.csv에는 {len(ids_raw)}개가 있는데 짝이 안 맞은 사진이 {missing_ids}장이에요. 파일명이 같은지 확인하세요")
     if not any(p["bibs"] for p in photos):
         print("  참고: 배번이 없어서 시간대 검색만 가능해요")
 
