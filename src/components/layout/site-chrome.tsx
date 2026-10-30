@@ -22,7 +22,10 @@ export function SiteChrome({
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
   const isStandaloneTool =
-    pathname.startsWith("/wod-admin") || pathname.startsWith("/wod-display") || pathname.startsWith("/race");
+    pathname.startsWith("/wod-admin") ||
+    pathname.startsWith("/wod-display") ||
+    pathname.startsWith("/race") ||
+    pathname.startsWith("/photos"); // /photos(대회 사진 찾기)는 쇼핑몰 메뉴 없이 독립 페이지로 보여준다
   // 러닝 신청 공지는 쇼핑몰 내비게이션 없이 공지만 딱 보이는 독립 페이지로 노출한다.
   const isMinimalChrome = pathname.startsWith("/running");
 
