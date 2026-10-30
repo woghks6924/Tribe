@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { listRacePhotoEvents } from "@/lib/race-photos-server";
 
-// 정적 페이지: 빌드할 때 public/race-photos 폴더를 읽어서 만든다. 새 대회를 넣으면 다시 배포해야 목록에 뜬다.
+// 정적 페이지: 빌드할 때 public/race-photos 폴더와 관리자 대회 정보를 읽어서 만든다. 새 대회 폴더는 배포해야 뜨고, 이름·링크·공개 여부는 관리자에서 저장하면 바로 반영된다.
 export const dynamic = "force-static";
+export const revalidate = 300;
 
 export default async function PhotosIndexPage() {
   const events = await listRacePhotoEvents();

@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/admin/notices", label: "Notices" },
   { href: "/admin/running-forms", label: "Running Forms" },
   { href: "/admin/race", label: "Race" },
+  { href: "/admin/photo-events", label: "Race Photos" },
   { href: "/admin/banner-slides", label: "Banner Slides" },
   { href: "/admin/lookbook", label: "Lookbook" },
   { href: "/admin/studio-portfolio", label: "Studio Portfolio" },

@@ -12,6 +12,7 @@ import {
   targetTimeMs,
   thumbUrl,
   type RacePhoto,
+  type RacePhotoEvent,
   type RacePhotoIndex,
 } from "@/lib/race-photos";
 import { PhotoLightbox } from "./photo-lightbox";
@@ -26,7 +27,8 @@ type Query =
 
 type Load = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: RacePhotoIndex };
 
-export function PhotoFinder({ event }: { event: string }) {
+// override: 관리자가 등록한 대회 정보(있으면 index.json의 event 값보다 우선).
+export function PhotoFinder({ event, override = null }: { event: string; override?: RacePhotoEvent | null }) {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -72,15 +74,17 @@ export function PhotoFinder({ event }: { event: string }) {
   }, [event]);
 
   const data = load.status === "ready" ? load.data : null;
+  // 시간대 검색 기준일: 관리자가 등록한 대회 날짜가 우선
+  const eventDate = override?.date ?? data?.event.date ?? "";
   // 배번 → 사진 맵은 JSON을 받은 뒤 한 번만 만든다.
   const bibMap = useMemo(() => (data ? buildBibMap(data.photos) : null), [data]);
 
   const results: RacePhoto[] | null = useMemo(() => {
     if (!data || !bibMap || !query) return null;
     if (query.mode === "bib") return searchByBib(bibMap, query.bib);
-    const ms = targetTimeMs(data.event.date, query.time);
+    const ms = targetTimeMs(eventDate, query.time);
     return ms == null ? [] : searchByTime(data.photos, query.spot, ms, query.range);
-  }, [data, bibMap, query]);
+  }, [data, bibMap, query, eventDate]);
 
   const sig = query ? JSON.stringify(query) : "";
   const visibleCount = shown.sig === sig ? shown.n : PAGE_SIZE;
@@ -112,7 +116,7 @@ export function PhotoFinder({ event }: { event: string }) {
 
   function submitTime(e: React.FormEvent) {
     e.preventDefault();
-    if (!data || targetTimeMs(data.event.date, timeInput) == null) {
+    if (!data || targetTimeMs(eventDate, timeInput) == null) {
       setInputError("통과 시각을 HH:MM 형식으로 입력해 주세요. 예: 09:42");
       return;
     }
@@ -136,7 +140,8 @@ export function PhotoFinder({ event }: { event: string }) {
     );
   }
 
-  const { event: info, spots } = data;
+  const { spots } = data;
+  const info: RacePhotoEvent = { ...data.event, ...(override ?? {}) };
   const modeTabClass = (active: boolean) =>
     `cursor-pointer border px-4 py-2 text-sm ${active ? "border-ink bg-ink text-base" : "border-line-strong text-ink-muted hover:border-ink hover:text-ink"}`;
   const fieldClass =

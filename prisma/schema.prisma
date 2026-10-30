@@ -770,3 +770,18 @@ model RaceConfig {
 
   updatedAt DateTime @updatedAt
 }
+
+// 대회 사진 찾기(/photos) 대회 정보 — 관리자가 드라이브 폴더 링크·문의처·공개 여부를 관리한다.
+// 사진 목록(index.json)과 썸네일은 public/race-photos/[slug]/ 정적 파일이고, 같은 slug의 행이 있으면
+// 여기 값이 index.json의 event 정보를 덮어쓴다. 행이 없으면 index.json 값을 그대로 쓴다.
+model RacePhotoEvent {
+  id             String   @id @default(cuid())
+  slug           String   @unique // public/race-photos 아래 폴더 이름과 같아야 한다
+  name           String
+  date           String // YYYY-MM-DD (KST, 대회 날짜 — 시간대 검색의 기준일)
+  driveFolderUrl String
+  contact        String
+  published      Boolean  @default(true) // false면 /photos에서 숨긴다
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
