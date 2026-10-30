@@ -1,0 +1,194 @@
+{
+  "event": {
+    "slug": "sample-event",
+    "name": "샘플 대회 (테스트용)",
+    "date": "2026-11-01",
+    "driveFolderUrl": "https://drive.google.com/drive/folders/SAMPLE_FOLDER_ID",
+    "contact": "@tri.be 인스타그램 DM"
+  },
+  "spots": [
+    "10km 지점",
+    "25km 지점",
+    "결승선"
+  ],
+  "photos": [
+    {
+      "id": "p0001",
+      "driveId": "SAMPLE_DRIVE_ID_p0001",
+      "takenAt": "2026-11-01T08:41:05+09:00",
+      "spot": "10km 지점",
+      "bibs": [
+        "12345"
+      ]
+    },
+    {
+      "id": "p0002",
+      "driveId": "SAMPLE_DRIVE_ID_p0002",
+      "takenAt": "2026-11-01T08:42:20+09:00",
+      "spot": "10km 지점",
+      "bibs": [
+        "2301",
+        "12345"
+      ]
+    },
+    {
+      "id": "p0003",
+      "driveId": "SAMPLE_DRIVE_ID_p0003",
+      "takenAt": "2026-11-01T08:44:51+09:00",
+      "spot": "10km 지점",
+      "bibs": [
+        "777"
+      ]
+    },
+    {
+      "id": "p0004",
+      "driveId": "SAMPLE_DRIVE_ID_p0004",
+      "takenAt": "2026-11-01T08:46:10+09:00",
+      "spot": "10km 지점",
+      "bibs": []
+    },
+    {
+      "id": "p0005",
+      "driveId": "SAMPLE_DRIVE_ID_p0005",
+      "takenAt": "2026-11-01T08:48:33+09:00",
+      "spot": "10km 지점",
+      "bibs": [
+        "2301"
+      ]
+    },
+    {
+      "id": "p0006",
+      "driveId": "SAMPLE_DRIVE_ID_p0006",
+      "takenAt": "2026-11-01T08:52:02+09:00",
+      "spot": "10km 지점",
+      "bibs": [
+        "4010",
+        "88"
+      ]
+    },
+    {
+      "id": "p0007",
+      "driveId": "SAMPLE_DRIVE_ID_p0007",
+      "takenAt": "2026-11-01T09:42:13+09:00",
+      "spot": "25km 지점",
+      "bibs": [
+        "12345",
+        "2301"
+      ]
+    },
+    {
+      "id": "p0008",
+      "driveId": "SAMPLE_DRIVE_ID_p0008",
+      "takenAt": "2026-11-01T09:43:40+09:00",
+      "spot": "25km 지점",
+      "bibs": [
+        "12345"
+      ]
+    },
+    {
+      "id": "p0009",
+      "driveId": "SAMPLE_DRIVE_ID_p0009",
+      "takenAt": "2026-11-01T09:47:28+09:00",
+      "spot": "25km 지점",
+      "bibs": []
+    },
+    {
+      "id": "p0010",
+      "driveId": "SAMPLE_DRIVE_ID_p0010",
+      "takenAt": "2026-11-01T09:51:09+09:00",
+      "spot": "25km 지점",
+      "bibs": [
+        "777",
+        "4010"
+      ]
+    },
+    {
+      "id": "p0011",
+      "driveId": "SAMPLE_DRIVE_ID_p0011",
+      "takenAt": "2026-11-01T09:55:44+09:00",
+      "spot": "25km 지점",
+      "bibs": [
+        "88"
+      ]
+    },
+    {
+      "id": "p0012",
+      "driveId": "SAMPLE_DRIVE_ID_p0012",
+      "takenAt": "2026-11-01T10:02:17+09:00",
+      "spot": "25km 지점",
+      "bibs": [
+        "5150"
+      ]
+    },
+    {
+      "id": "p0013",
+      "driveId": "SAMPLE_DRIVE_ID_p0013",
+      "takenAt": "2026-11-01T10:05:30+09:00",
+      "spot": "25km 지점",
+      "bibs": []
+    },
+    {
+      "id": "p0014",
+      "driveId": "SAMPLE_DRIVE_ID_p0014",
+      "takenAt": "2026-11-01T10:58:12+09:00",
+      "spot": "결승선",
+      "bibs": [
+        "12345"
+      ]
+    },
+    {
+      "id": "p0015",
+      "driveId": "SAMPLE_DRIVE_ID_p0015",
+      "takenAt": "2026-11-01T10:59:47+09:00",
+      "spot": "결승선",
+      "bibs": [
+        "2301"
+      ]
+    },
+    {
+      "id": "p0016",
+      "driveId": "SAMPLE_DRIVE_ID_p0016",
+      "takenAt": "2026-11-01T11:03:25+09:00",
+      "spot": "결승선",
+      "bibs": [
+        "777"
+      ]
+    },
+    {
+      "id": "p0017",
+      "driveId": "SAMPLE_DRIVE_ID_p0017",
+      "takenAt": "2026-11-01T11:07:59+09:00",
+      "spot": "결승선",
+      "bibs": [
+        "4010",
+        "5150"
+      ]
+    },
+    {
+      "id": "p0018",
+      "driveId": "SAMPLE_DRIVE_ID_p0018",
+      "takenAt": "2026-11-01T11:12:36+09:00",
+      "spot": "결승선",
+      "bibs": []
+    },
+    {
+      "id": "p0019",
+      "driveId": "SAMPLE_DRIVE_ID_p0019",
+      "takenAt": "2026-11-01T11:20:01+09:00",
+      "spot": "결승선",
+      "bibs": [
+        "88"
+      ]
+    },
+    {
+      "id": "p0020",
+      "driveId": "SAMPLE_DRIVE_ID_p0020",
+      "takenAt": "2026-11-01T11:24:48+09:00",
+      "spot": "결승선",
+      "bibs": [
+        "5150",
+        "12345"
+      ]
+    }
+  ]
+}
