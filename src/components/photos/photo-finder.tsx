@@ -7,6 +7,7 @@ import {
   buildBibMap,
   formatTakenAt,
   indexUrl,
+  STATIC_DATA_BASE,
   searchByBib,
   searchByTime,
   targetTimeMs,
@@ -28,7 +29,17 @@ type Query =
 type Load = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: RacePhotoIndex };
 
 // override: 관리자가 등록한 대회 정보(있으면 index.json의 event 값보다 우선).
-export function PhotoFinder({ event, override = null }: { event: string; override?: RacePhotoEvent | null }) {
+export function PhotoFinder({
+  event,
+  override = null,
+  dataBase = STATIC_DATA_BASE,
+  version,
+}: {
+  event: string;
+  override?: RacePhotoEvent | null;
+  dataBase?: string; // 사진 데이터가 있는 곳(정적 폴더 또는 Storage 공개 URL)
+  version?: number; // 데이터를 다시 올렸을 때 캐시를 피하는 값
+}) {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -61,7 +72,7 @@ export function PhotoFinder({ event, override = null }: { event: string; overrid
 
   useEffect(() => {
     let alive = true;
-    fetch(indexUrl(event))
+    fetch(indexUrl(event, dataBase, version))
       .then((res) => {
         if (!res.ok) throw new Error(res.status === 404 ? "대회 정보를 찾을 수 없어요." : "사진 목록을 불러오지 못했어요.");
         return res.json() as Promise<RacePhotoIndex>;
@@ -71,7 +82,7 @@ export function PhotoFinder({ event, override = null }: { event: string; overrid
     return () => {
       alive = false;
     };
-  }, [event]);
+  }, [event, dataBase, version]);
 
   const data = load.status === "ready" ? load.data : null;
   // 시간대 검색 기준일: 관리자가 등록한 대회 날짜가 우선
@@ -291,7 +302,7 @@ export function PhotoFinder({ event, override = null }: { event: string; overrid
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element -- next/image 최적화를 쓰지 않는 정적 썸네일 */}
                       <img
-                        src={thumbUrl(event, p.id)}
+                        src={thumbUrl(event, p.id, dataBase)}
                         alt=""
                         loading="lazy"
                         decoding="async"
@@ -331,6 +342,7 @@ export function PhotoFinder({ event, override = null }: { event: string; overrid
       {results && lightboxIndex != null && results.length > 0 && (
         <PhotoLightbox
           event={event}
+          dataBase={dataBase}
           photos={results}
           index={Math.min(lightboxIndex, results.length - 1)}
           onIndex={(i) => setOpenIndex({ sig, i })}

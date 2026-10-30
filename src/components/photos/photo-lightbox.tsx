@@ -6,12 +6,14 @@ import { driveDownloadUrl, driveViewUrl, formatTakenAt, thumbUrl, type RacePhoto
 // 라이트박스: 좌우 화살표/키보드/스와이프로 넘기고, 원본 보기·다운로드는 구글 드라이브로 연결한다.
 export function PhotoLightbox({
   event,
+  dataBase,
   photos,
   index,
   onIndex,
   onClose,
 }: {
   event: string;
+  dataBase: string;
   photos: RacePhoto[];
   index: number;
   onIndex: (i: number) => void;
@@ -80,7 +82,7 @@ export function PhotoLightbox({
         {/* eslint-disable-next-line @next/next/no-img-element -- next/image 최적화를 쓰지 않는 정적 썸네일 */}
         <img
           key={photo.id}
-          src={thumbUrl(event, photo.id)}
+          src={thumbUrl(event, photo.id, dataBase)}
           alt={`${photo.spot} ${formatTakenAt(photo.takenAt)}`}
           className="max-h-full max-w-full object-contain"
           draggable={false}
@@ -110,23 +112,26 @@ export function PhotoLightbox({
           {photo.spot} · {formatTakenAt(photo.takenAt)}
           {photo.bibs.length > 0 && <> · 배번 {photo.bibs.join(", ")}</>}
         </p>
-        <div className="flex flex-wrap gap-2">
-          <a
-            href={driveViewUrl(photo.driveId)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="border border-white/40 px-4 py-2.5 text-sm font-medium hover:border-white"
-          >
-            원본 보기
-          </a>
-          <a
-            href={driveDownloadUrl(photo.driveId)}
-            rel="noopener noreferrer"
-            className="bg-white px-4 py-2.5 text-sm font-bold text-black hover:bg-white/85"
-          >
-            원본 다운로드
-          </a>
-        </div>
+        {/* 드라이브 파일 ID를 못 찾은 사진은 원본 버튼을 숨긴다 */}
+        {photo.driveId && (
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={driveViewUrl(photo.driveId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border border-white/40 px-4 py-2.5 text-sm font-medium hover:border-white"
+            >
+              원본 보기
+            </a>
+            <a
+              href={driveDownloadUrl(photo.driveId)}
+              rel="noopener noreferrer"
+              className="bg-white px-4 py-2.5 text-sm font-bold text-black hover:bg-white/85"
+            >
+              원본 다운로드
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

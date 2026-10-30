@@ -11,8 +11,7 @@ export default async function AdminPhotoEventsPage() {
       <div className="flex flex-col gap-1">
         <h1 className="font-sans text-2xl font-extrabold tracking-[0.02em]">Race Photos</h1>
         <p className="text-sm text-ink-muted">
-          대회 사진 찾기(/photos)에 보일 대회 정보를 관리해요. 사진 목록(index.json)과 썸네일은{" "}
-          <code className="text-ink">public/race-photos/&lt;slug&gt;/</code> 폴더에 넣고 배포하면 돼요.
+          대회 사진 찾기(/photos)에 보일 대회 정보를 관리해요. 대회를 등록한 뒤 각 대회의 &quot;사진 올리기&quot;에서 원본 사진을 고르면 썸네일 생성부터 검색용 목록까지 한 번에 올라가요.
         </p>
       </div>
       <PhotoEventManager
@@ -24,6 +23,7 @@ export default async function AdminPhotoEventsPage() {
           driveFolderUrl: e.driveFolderUrl,
           contact: e.contact,
           published: e.published,
+          version: e.updatedAt.getTime(),
         }))}
       />
     </div>

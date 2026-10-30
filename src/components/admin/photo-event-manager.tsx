@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { PhotoUploader } from "@/components/admin/photo-uploader";
+import { storageDataBase } from "@/lib/race-photos";
 
 type PhotoEvent = {
   id: string;
@@ -12,9 +14,10 @@ type PhotoEvent = {
   driveFolderUrl: string;
   contact: string;
   published: boolean;
+  version: number; // 대회 정보·사진 데이터가 마지막으로 바뀐 시각(캐시 구분용)
 };
 
-type Draft = Omit<PhotoEvent, "id">;
+type Draft = Omit<PhotoEvent, "id" | "version">;
 
 const EMPTY: Draft = { slug: "", name: "", date: "", driveFolderUrl: "", contact: "@tri.be 인스타그램 DM", published: true };
 
@@ -63,30 +66,34 @@ function Fields({ draft, onChange, slugLocked }: { draft: Draft; onChange: (d: D
   );
 }
 
-// 사진 데이터(index.json)가 배포돼 있는지 브라우저에서 바로 확인한다.
-function DataStatus({ slug }: { slug: string }) {
-  const [state, setState] = useState<"checking" | "ok" | "missing">("checking");
+// 사진 데이터(index.json)가 어디에 있는지 브라우저에서 바로 확인한다(업로드한 저장소 우선, 없으면 배포된 정적 폴더).
+function DataStatus({ slug, version }: { slug: string; version: number }) {
+  const [state, setState] = useState<"checking" | "storage" | "static" | "missing">("checking");
   useEffect(() => {
     let alive = true;
-    fetch(`/race-photos/${slug}/index.json`, { method: "HEAD" })
-      .then((r) => alive && setState(r.ok ? "ok" : "missing"))
-      .catch(() => alive && setState("missing"));
+    const head = (url: string) => fetch(url, { method: "HEAD", cache: "no-store" }).then((r) => r.ok).catch(() => false);
+    (async () => {
+      const inStorage = await head(`${storageDataBase()}/${slug}/index.json?v=${version}`);
+      if (!alive) return;
+      if (inStorage) return setState("storage");
+      const inStatic = await head(`/race-photos/${slug}/index.json`);
+      if (alive) setState(inStatic ? "static" : "missing");
+    })();
     return () => {
       alive = false;
     };
-  }, [slug]);
+  }, [slug, version]);
   if (state === "checking") return <span className="text-xs text-ink-faint">확인 중…</span>;
-  return state === "ok" ? (
-    <span className="text-xs text-[#86d494]">사진 데이터 있음</span>
-  ) : (
-    <span className="text-xs text-[#f0b84a]">사진 데이터 없음 — public/race-photos/{slug}/ 배포 필요</span>
-  );
+  if (state === "storage") return <span className="text-xs text-[#86d494]">사진 데이터 있음 (업로드)</span>;
+  if (state === "static") return <span className="text-xs text-[#86d494]">사진 데이터 있음 (배포된 폴더)</span>;
+  return <span className="text-xs text-[#f0b84a]">사진 데이터 없음 — 아래 &quot;사진 올리기&quot;로 올려 주세요</span>;
 }
 
 export function PhotoEventManager({ events }: { events: PhotoEvent[] }) {
   const router = useRouter();
   const [creating, setCreating] = useState<Draft>(EMPTY);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Draft>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -172,6 +179,13 @@ export function PhotoEventManager({ events }: { events: PhotoEvent[] }) {
                   </a>
                   <button
                     type="button"
+                    onClick={() => setUploadingId(uploadingId === e.id ? null : e.id)}
+                    className="cursor-pointer font-bold text-ink hover:underline"
+                  >
+                    {uploadingId === e.id ? "올리기 닫기" : "사진 올리기"}
+                  </button>
+                  <button
+                    type="button"
                     disabled={busy}
                     onClick={() => {
                       if (window.confirm(`'${e.name}' 정보를 삭제할까요? (사진 파일은 지워지지 않아요)`)) void call(`/api/admin/photo-events/${e.id}`, "DELETE");
@@ -187,8 +201,9 @@ export function PhotoEventManager({ events }: { events: PhotoEvent[] }) {
               </a>
               <div className="flex flex-wrap gap-3 text-xs text-ink-faint">
                 <span>문의처: {e.contact}</span>
-                <DataStatus slug={e.slug} />
+                <DataStatus slug={e.slug} version={e.version} />
               </div>
+              {uploadingId === e.id && <PhotoUploader eventId={e.id} slug={e.slug} hasDriveLink={!!e.driveFolderUrl} />}
             </div>
           ),
         )}

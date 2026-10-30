@@ -23,13 +23,24 @@ export type RacePhotoIndex = {
   photos: RacePhoto[];
 };
 
-// 썸네일은 환경변수로 base만 바꾸면 다른 저장소(R2 등)로 옮길 수 있다.
-const THUMB_BASE = (process.env.NEXT_PUBLIC_RACE_PHOTO_THUMB_BASE ?? "/race-photos").replace(/\/+$/, "");
+// 사진 데이터(index.json + thumbs)가 있는 곳. 두 가지가 있다.
+//  - 정적: 사이트에 같이 배포되는 public/race-photos/<slug>/ (STATIC_DATA_BASE)
+//  - 저장소: 관리자 화면에서 올린 Supabase Storage 공개 버킷 (storageDataBase())
+export const STATIC_DATA_BASE = "/race-photos";
+export const RACE_PHOTO_BUCKET = "race-photos";
+export const storageDataBase = () =>
+  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${RACE_PHOTO_BUCKET}`;
 
-export const thumbUrl = (event: string, id: string) => `${THUMB_BASE}/${event}/thumbs/${id}.jpg`;
+// 썸네일은 환경변수로 base만 바꾸면 다른 저장소(R2 등)로 옮길 수 있다(설정하면 위 두 곳보다 우선).
+const THUMB_BASE_ENV = process.env.NEXT_PUBLIC_RACE_PHOTO_THUMB_BASE;
+
+export const thumbUrl = (event: string, id: string, dataBase: string = STATIC_DATA_BASE) =>
+  `${(THUMB_BASE_ENV ?? dataBase).replace(/\/+$/, "")}/${event}/thumbs/${id}.jpg`;
 export const driveViewUrl = (driveId: string) => `https://drive.google.com/file/d/${driveId}/view`;
 export const driveDownloadUrl = (driveId: string) => `https://drive.google.com/uc?export=download&id=${driveId}`;
-export const indexUrl = (event: string) => `/race-photos/${event}/index.json`;
+// version: 사진 데이터를 다시 올렸을 때 브라우저·CDN 캐시를 피하려고 붙이는 숫자(대회 정보가 바뀐 시각).
+export const indexUrl = (event: string, dataBase: string = STATIC_DATA_BASE, version?: number) =>
+  `${dataBase.replace(/\/+$/, "")}/${event}/index.json${version ? `?v=${version}` : ""}`;
 
 // 배번 비교용 정규화: 공백 제거, 대문자, 앞의 0 제거("0123" == "123").
 export function normalizeBib(raw: string): string {
