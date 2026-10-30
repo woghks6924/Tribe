@@ -1,0 +1,56 @@
+{
+  "event": {
+    "slug": "test-run",
+    "name": "테스트 대회 (사진 6장)",
+    "date": "2025-11-16",
+    "driveFolderUrl": "https://drive.google.com/drive/folders/1I0i2CxboZj_Hr210YWz575bUjkKh-wwq",
+    "contact": "@tri.be 인스타그램 DM"
+  },
+  "spots": [
+    "촬영 지점"
+  ],
+  "photos": [
+    {
+      "id": "p0001",
+      "driveId": "TEMP_p0001",
+      "takenAt": "2025-11-16T08:57:01+09:00",
+      "spot": "촬영 지점",
+      "bibs": []
+    },
+    {
+      "id": "p0002",
+      "driveId": "TEMP_p0002",
+      "takenAt": "2025-11-16T08:59:20+09:00",
+      "spot": "촬영 지점",
+      "bibs": []
+    },
+    {
+      "id": "p0003",
+      "driveId": "TEMP_p0003",
+      "takenAt": "2025-11-16T09:00:58+09:00",
+      "spot": "촬영 지점",
+      "bibs": []
+    },
+    {
+      "id": "p0004",
+      "driveId": "TEMP_p0004",
+      "takenAt": "2025-11-16T09:10:21+09:00",
+      "spot": "촬영 지점",
+      "bibs": []
+    },
+    {
+      "id": "p0005",
+      "driveId": "TEMP_p0005",
+      "takenAt": "2025-11-16T09:20:31+09:00",
+      "spot": "촬영 지점",
+      "bibs": []
+    },
+    {
+      "id": "p0006",
+      "driveId": "TEMP_p0006",
+      "takenAt": "2025-11-16T09:38:35+09:00",
+      "spot": "촬영 지점",
+      "bibs": []
+    }
+  ]
+}

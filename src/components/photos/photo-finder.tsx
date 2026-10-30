@@ -192,8 +192,9 @@ export function PhotoFinder({ event, override = null }: { event: string; overrid
             <p className="text-xs leading-relaxed text-ink-muted">
               배번이 인식되지 않은 사진은 시간으로 찾을 수 있어요. 공식 기록 조회에서 구간 통과 시각을 확인하고 입력하세요.
             </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {spots.length > 0 && (
+            <div className={`grid grid-cols-1 gap-3 ${spots.length > 1 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+              {/* 지점이 한 곳뿐이면 선택 칸을 숨긴다 */}
+              {spots.length > 1 && (
                 <label className="flex flex-col gap-1 text-xs text-ink-muted">
                   촬영 지점
                   <select value={spotInput} onChange={(e) => setSpotInput(e.target.value)} className={fieldClass}>
@@ -250,7 +251,7 @@ export function PhotoFinder({ event, override = null }: { event: string; overrid
       {results && query && (
         <section className="flex flex-col gap-4" aria-live="polite">
           <h2 className="text-[16px] font-bold">
-            {query.mode === "bib" ? `배번 ${query.bib}` : `${query.spot || "전체 지점"} · ${query.time} ±${query.range}분`}
+            {query.mode === "bib" ? `배번 ${query.bib}` : `${query.spot ? `${query.spot} · ` : spots.length > 1 ? "전체 지점 · " : ""}${query.time} ±${query.range}분`}
             <span className="ml-2 text-sm font-normal text-ink-muted">사진 {results.length}장</span>
           </h2>
 
