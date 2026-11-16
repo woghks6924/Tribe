@@ -18,6 +18,12 @@ type FieldInput = {
   type: RunningFormFieldType;
   required: boolean;
   optionsText: string; // 줄바꿈으로 구분한 선택지
+  // 협찬 품목(type "item") 전용
+  url: string;
+  askSize: boolean;
+  askColor: boolean;
+  sizeOptionsText: string;
+  colorOptionsText: string;
 };
 
 const STATUS_LABEL: Record<RunningFormStatus, string> = {
@@ -42,7 +48,16 @@ const FIELD_TYPE_LABEL: Record<RunningFormFieldType, string> = {
   select: "드롭다운",
   radio: "객관식(단일)",
   checkbox: "체크박스(복수)",
+  item: "협찬 품목 (링크 + 사이즈·색상)",
 };
+
+function itemDefaults() {
+  return { url: "", askSize: true, askColor: true, sizeOptionsText: "", colorOptionsText: "" };
+}
+
+function splitLines(text: string): string[] {
+  return text.split("\n").map((o) => o.trim()).filter(Boolean);
+}
 
 function emptyField(): FieldInput {
   return {
@@ -52,6 +67,7 @@ function emptyField(): FieldInput {
     type: "text",
     required: false,
     optionsText: "",
+    ...itemDefaults(),
   };
 }
 
@@ -65,6 +81,7 @@ function defaultFields(): FieldInput[] {
       type: "checkbox",
       required: true,
       optionsText: "팔로우 완료",
+      ...itemDefaults(),
     },
     {
       id: crypto.randomUUID(),
@@ -73,6 +90,7 @@ function defaultFields(): FieldInput[] {
       type: "radio",
       required: true,
       optionsText: "동의합니다\n동의하지 않습니다",
+      ...itemDefaults(),
     },
   ];
 }
@@ -85,6 +103,11 @@ function fieldsToInput(fields: RunningFormField[]): FieldInput[] {
     type: f.type,
     required: f.required,
     optionsText: (f.options ?? []).join("\n"),
+    url: f.url ?? "",
+    askSize: f.askSize !== false,
+    askColor: f.askColor !== false,
+    sizeOptionsText: (f.sizeOptions ?? []).join("\n"),
+    colorOptionsText: (f.colorOptions ?? []).join("\n"),
   }));
 }
 
@@ -276,6 +299,15 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
               f.type === "select" || f.type === "radio" || f.type === "checkbox"
                 ? f.optionsText.split("\n").map((o) => o.trim()).filter(Boolean)
                 : undefined,
+            ...(f.type === "item"
+              ? {
+                  url: f.url.trim() ? normalizeExternalUrl(f.url) : undefined,
+                  askSize: f.askSize,
+                  askColor: f.askColor,
+                  sizeOptions: f.askSize ? splitLines(f.sizeOptionsText) : undefined,
+                  colorOptions: f.askColor ? splitLines(f.colorOptionsText) : undefined,
+                }
+              : {}),
           })),
       };
 
@@ -626,7 +658,7 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
           <div key={f.id} className="flex flex-col gap-2 border border-line-strong p-3">
             <div className="flex items-center gap-2">
               <input
-                placeholder="질문 (예: 러닝화 사이즈)"
+                placeholder={f.type === "item" ? "품목 이름 (예: Tri.be 러닝 베스트)" : "질문 (예: 러닝화 사이즈)"}
                 value={f.label}
                 onChange={(e) => updateField(f.id, { label: e.target.value })}
                 className="flex-1 border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint"
@@ -681,6 +713,56 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
               rows={2}
               className="border border-line-strong bg-transparent px-3 py-2 text-xs outline-none placeholder:text-ink-faint"
             />
+            {f.type === "item" && (
+              <div className="flex flex-col gap-2 border border-dashed border-line-strong p-3">
+                <input
+                  placeholder="품목 링크 (선택 — 신청자 화면에서 품목 이름을 누르면 이 주소로 이동해요)"
+                  value={f.url}
+                  onChange={(e) => updateField(f.id, { url: e.target.value })}
+                  className="border border-line-strong bg-transparent px-3 py-2 text-xs outline-none placeholder:text-ink-faint"
+                />
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="flex items-center gap-1.5 text-xs text-ink-muted">
+                      <input
+                        type="checkbox"
+                        checked={f.askSize}
+                        onChange={(e) => updateField(f.id, { askSize: e.target.checked })}
+                      />
+                      사이즈 받기
+                    </label>
+                    {f.askSize && (
+                      <textarea
+                        placeholder={"사이즈 선택지 (줄바꿈으로 구분, 비우면 직접 입력)\n예: S\nM\nL"}
+                        value={f.sizeOptionsText}
+                        onChange={(e) => updateField(f.id, { sizeOptionsText: e.target.value })}
+                        rows={3}
+                        className="border border-line-strong bg-transparent px-3 py-2 text-xs outline-none placeholder:text-ink-faint"
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="flex items-center gap-1.5 text-xs text-ink-muted">
+                      <input
+                        type="checkbox"
+                        checked={f.askColor}
+                        onChange={(e) => updateField(f.id, { askColor: e.target.checked })}
+                      />
+                      색상 받기
+                    </label>
+                    {f.askColor && (
+                      <textarea
+                        placeholder={"색상 선택지 (줄바꿈으로 구분, 비우면 직접 입력)\n예: 블랙\n화이트"}
+                        value={f.colorOptionsText}
+                        onChange={(e) => updateField(f.id, { colorOptionsText: e.target.value })}
+                        rows={3}
+                        className="border border-line-strong bg-transparent px-3 py-2 text-xs outline-none placeholder:text-ink-faint"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             {(f.type === "select" || f.type === "radio" || f.type === "checkbox") && (
               <textarea
                 placeholder={"선택지 (줄바꿈으로 구분)\n예: S\nM\nL"}

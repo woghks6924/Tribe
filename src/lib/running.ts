@@ -4,7 +4,7 @@ import { getEffectiveRunningFormStatus, type RunningFormCategory, type RunningFo
 export { normalizeExternalUrl } from "@/lib/url";
 export { getEffectiveRunningFormStatus, type RunningFormCategory, type RunningFormStatus };
 
-export type RunningFormFieldType = "text" | "textarea" | "select" | "radio" | "checkbox";
+export type RunningFormFieldType = "text" | "textarea" | "select" | "radio" | "checkbox" | "item";
 
 export type RunningFormField = {
   id: string;
@@ -13,6 +13,13 @@ export type RunningFormField = {
   type: RunningFormFieldType;
   required: boolean;
   options?: string[]; // select/radio/checkbox일 때만 사용
+  // type이 "item"(협찬 품목)일 때만 사용: label = 품목 이름, url = 품목 링크,
+  // 신청자가 사이즈·색상을 고르거나(선택지가 있을 때) 직접 입력한다.
+  url?: string;
+  askSize?: boolean;
+  askColor?: boolean;
+  sizeOptions?: string[];
+  colorOptions?: string[];
 };
 
 export type RunningFormCollabBrand = {

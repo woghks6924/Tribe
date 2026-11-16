@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import type { RunningFormField, RunningFormStatus } from "@/lib/running";
+import { asksColor, asksSize, buildItemAnswer, parseItemAnswer, safeHttpUrl } from "@/lib/running-item";
 
 const inputClass =
   "border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint";
@@ -49,10 +50,22 @@ export function RunningSignupForm({
     });
   }
 
+  // 협찬 품목: 사이즈·색상을 각각 바꿀 때마다 하나의 답변(["사이즈: M", "색상: 블랙"])으로 합친다.
+  function setItemPart(field: RunningFormField, part: "size" | "color", value: string) {
+    const cur = parseItemAnswer(answers[field.id]);
+    const next = { ...cur, [part]: value };
+    setAnswer(field.id, buildItemAnswer(next.size, next.color));
+  }
+
   function findMissingRequiredField(): string | null {
     // 객관식/체크박스 질문은 버튼으로 렌더링돼 브라우저 기본 required 검증이 통하지
     // 않으므로, 개인정보 동의와 마찬가지로 제출 전에 직접 확인한다.
     for (const field of fields) {
+      if (field.required && field.type === "item") {
+        const { size, color } = parseItemAnswer(answers[field.id]);
+        if ((asksSize(field) && !size) || (asksColor(field) && !color)) return field.label;
+        continue;
+      }
       if (!field.required || (field.type !== "radio" && field.type !== "checkbox")) continue;
       const value = answers[field.id];
       const isEmpty = value == null || (Array.isArray(value) && value.length === 0);
@@ -181,11 +194,82 @@ export function RunningSignupForm({
       {fields.map((field) => (
         <div key={field.id} className="flex flex-col gap-1.5">
           <span className="text-xs text-ink-muted">
-            {field.label}
+            {field.type === "item" && safeHttpUrl(field.url) ? (
+              <a
+                href={safeHttpUrl(field.url)!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-ink underline underline-offset-2"
+              >
+                {field.label} ↗
+              </a>
+            ) : (
+              field.label
+            )}
             {field.required && <span className="text-red-400"> *</span>}
           </span>
           {field.description && (
             <p className="text-xs whitespace-pre-line text-ink-faint">{field.description}</p>
+          )}
+          {field.type === "item" && (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {asksSize(field) && (
+                <label className="flex flex-col gap-1 text-xs text-ink-faint">
+                  사이즈
+                  {(field.sizeOptions ?? []).length > 0 ? (
+                    <select
+                      required={field.required}
+                      value={parseItemAnswer(answers[field.id]).size}
+                      onChange={(e) => setItemPart(field, "size", e.target.value)}
+                      className="border border-line-strong bg-base px-4 py-3 text-sm text-ink outline-none"
+                    >
+                      <option value="">선택해주세요</option>
+                      {(field.sizeOptions ?? []).map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      required={field.required}
+                      value={parseItemAnswer(answers[field.id]).size}
+                      onChange={(e) => setItemPart(field, "size", e.target.value)}
+                      placeholder="예: M, 270"
+                      className={`${inputClass} text-ink`}
+                    />
+                  )}
+                </label>
+              )}
+              {asksColor(field) && (
+                <label className="flex flex-col gap-1 text-xs text-ink-faint">
+                  색상
+                  {(field.colorOptions ?? []).length > 0 ? (
+                    <select
+                      required={field.required}
+                      value={parseItemAnswer(answers[field.id]).color}
+                      onChange={(e) => setItemPart(field, "color", e.target.value)}
+                      className="border border-line-strong bg-base px-4 py-3 text-sm text-ink outline-none"
+                    >
+                      <option value="">선택해주세요</option>
+                      {(field.colorOptions ?? []).map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      required={field.required}
+                      value={parseItemAnswer(answers[field.id]).color}
+                      onChange={(e) => setItemPart(field, "color", e.target.value)}
+                      placeholder="예: 블랙"
+                      className={`${inputClass} text-ink`}
+                    />
+                  )}
+                </label>
+              )}
+            </div>
           )}
           {field.type === "text" && (
             <input
