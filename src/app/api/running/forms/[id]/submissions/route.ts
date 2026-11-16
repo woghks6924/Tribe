@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getEffectiveRunningFormStatus, type RunningFormField } from "@/lib/running";
-import { itemAttrs, parseItemAnswer } from "@/lib/running-item";
-
-function normalizePhone(v: string): string {
-  return v.replace(/\D/g, "");
-}
-
-function normalizeInstagram(v: string): string {
-  return v.trim().replace(/^@/, "").toLowerCase();
-}
+import { normalizeInstagram, normalizePhone, validateAnswers } from "@/lib/running-validate";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -44,34 +36,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const fields = Array.isArray(form.fields) ? (form.fields as RunningFormField[]) : [];
   const answers = body.answers ?? {};
-  for (const field of fields) {
-    // 협찬 품목: 사이즈·기장·색상이 선택지에 있는 값인지(직접 입력을 허용한 항목은 자유 입력), 필수일 때는 빠진 게 없는지 서버에서도 확인한다.
-    if (field.type === "item") {
-      const values = parseItemAnswer(answers[field.id]);
-      for (const attr of itemAttrs(field)) {
-        const value = values[attr.key];
-        const particle = attr.label === "색상" ? "을" : "를";
-        if (!value) {
-          if (field.required) return NextResponse.json({ error: `${field.label}의 ${attr.label}${particle} 입력해주세요.` }, { status: 400 });
-          continue;
-        }
-        if (attr.options.length > 0 && !attr.allowCustom && !attr.options.includes(value)) {
-          return NextResponse.json({ error: `${field.label}의 ${attr.label} 선택이 올바르지 않아요.` }, { status: 400 });
-        }
-        if (value.length > 40) {
-          return NextResponse.json({ error: `${field.label}의 ${attr.label}${particle === "을" ? "이" : "가"} 너무 길어요.` }, { status: 400 });
-        }
-      }
-      continue;
-    }
-    if (!field.required) continue;
-    const value = answers[field.id];
-    const isEmpty =
-      value == null || (typeof value === "string" && !value.trim()) || (Array.isArray(value) && value.length === 0);
-    if (isEmpty) {
-      return NextResponse.json({ error: `${field.label}을(를) 입력해주세요.` }, { status: 400 });
-    }
-  }
+  const answerError = validateAnswers(fields, answers);
+  if (answerError) return NextResponse.json({ error: answerError }, { status: 400 });
 
   // 같은 폼에 전화번호 또는 인스타그램 계정이 겹치면 중복 신청으로 막는다.
   const normPhone = normalizePhone(body.phone);

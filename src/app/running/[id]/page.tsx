@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEffectiveRunningFormStatus, getPublishedRunningForm, normalizeExternalUrl } from "@/lib/running";
 import { RunningSignupForm } from "@/components/running/running-signup-form";
@@ -161,6 +162,12 @@ export default async function RunningFormPage({ params }: { params: Promise<{ id
           privacyPurpose={form.privacyPurpose}
           privacyRetention={form.privacyRetention}
         />
+
+        {form.fields.length > 0 && (
+          <Link href={`/running/${form.id}/edit`} className="w-fit text-xs text-ink-faint underline hover:text-ink">
+            이미 신청하셨나요? 신청 내용 수정하기
+          </Link>
+        )}
       </div>
     </div>
   );
