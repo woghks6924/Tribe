@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RunningSubmissionsManager } from "@/components/admin/running-submissions-manager";
+import type { RunningFormField } from "@/lib/running";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,7 @@ export default async function RunningFormSubmissionsPage({
             ? (form.collabBrands as { name: string; url: string }[])
             : [],
         }}
-        fields={Array.isArray(form.fields) ? (form.fields as { id: string; label: string }[]) : []}
+        fields={Array.isArray(form.fields) ? (form.fields as RunningFormField[]) : []}
         submissions={submissions.map((s) => ({
           id: s.id,
           name: s.name,

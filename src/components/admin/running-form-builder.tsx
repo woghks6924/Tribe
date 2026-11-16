@@ -24,6 +24,11 @@ type FieldInput = {
   askColor: boolean;
   sizeOptionsText: string;
   colorOptionsText: string;
+  askLength: boolean;
+  lengthOptionsText: string;
+  customSize: boolean;
+  customColor: boolean;
+  customLength: boolean;
 };
 
 const STATUS_LABEL: Record<RunningFormStatus, string> = {
@@ -52,7 +57,18 @@ const FIELD_TYPE_LABEL: Record<RunningFormFieldType, string> = {
 };
 
 function itemDefaults() {
-  return { url: "", askSize: true, askColor: true, sizeOptionsText: "", colorOptionsText: "" };
+  return {
+    url: "",
+    askSize: true,
+    askColor: true,
+    sizeOptionsText: "",
+    colorOptionsText: "",
+    askLength: false,
+    lengthOptionsText: "",
+    customSize: false,
+    customColor: false,
+    customLength: false,
+  };
 }
 
 function splitLines(text: string): string[] {
@@ -108,6 +124,11 @@ function fieldsToInput(fields: RunningFormField[]): FieldInput[] {
     askColor: f.askColor !== false,
     sizeOptionsText: (f.sizeOptions ?? []).join("\n"),
     colorOptionsText: (f.colorOptions ?? []).join("\n"),
+    askLength: f.askLength === true,
+    lengthOptionsText: (f.lengthOptions ?? []).join("\n"),
+    customSize: f.customSize === true,
+    customColor: f.customColor === true,
+    customLength: f.customLength === true,
   }));
 }
 
@@ -306,6 +327,11 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
                   askColor: f.askColor,
                   sizeOptions: f.askSize ? splitLines(f.sizeOptionsText) : undefined,
                   colorOptions: f.askColor ? splitLines(f.colorOptionsText) : undefined,
+                  askLength: f.askLength,
+                  lengthOptions: f.askLength ? splitLines(f.lengthOptionsText) : undefined,
+                  customSize: f.askSize && f.customSize ? true : undefined,
+                  customColor: f.askColor && f.customColor ? true : undefined,
+                  customLength: f.askLength && f.customLength ? true : undefined,
                 }
               : {}),
           })),
@@ -721,45 +747,49 @@ export function RunningFormBuilder({ initial }: { initial?: RunningFormInitial }
                   onChange={(e) => updateField(f.id, { url: e.target.value })}
                   className="border border-line-strong bg-transparent px-3 py-2 text-xs outline-none placeholder:text-ink-faint"
                 />
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="flex items-center gap-1.5 text-xs text-ink-muted">
-                      <input
-                        type="checkbox"
-                        checked={f.askSize}
-                        onChange={(e) => updateField(f.id, { askSize: e.target.checked })}
-                      />
-                      사이즈 받기
-                    </label>
-                    {f.askSize && (
-                      <textarea
-                        placeholder={"사이즈 선택지 (줄바꿈으로 구분, 비우면 직접 입력)\n예: S\nM\nL"}
-                        value={f.sizeOptionsText}
-                        onChange={(e) => updateField(f.id, { sizeOptionsText: e.target.value })}
-                        rows={3}
-                        className="border border-line-strong bg-transparent px-3 py-2 text-xs outline-none placeholder:text-ink-faint"
-                      />
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="flex items-center gap-1.5 text-xs text-ink-muted">
-                      <input
-                        type="checkbox"
-                        checked={f.askColor}
-                        onChange={(e) => updateField(f.id, { askColor: e.target.checked })}
-                      />
-                      색상 받기
-                    </label>
-                    {f.askColor && (
-                      <textarea
-                        placeholder={"색상 선택지 (줄바꿈으로 구분, 비우면 직접 입력)\n예: 블랙\n화이트"}
-                        value={f.colorOptionsText}
-                        onChange={(e) => updateField(f.id, { colorOptionsText: e.target.value })}
-                        rows={3}
-                        className="border border-line-strong bg-transparent px-3 py-2 text-xs outline-none placeholder:text-ink-faint"
-                      />
-                    )}
-                  </div>
+                <p className="text-[11px] text-ink-faint">
+                  선택지를 적으면 드롭다운, 비워 두면 신청자가 직접 입력해요. 선택지를 적고 &quot;직접 입력도 허용&quot;을 켜면 목록에 없는 값도 적을 수 있어요(색상이 많을 때 유용해요).
+                </p>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  {(
+                    [
+                      { name: "사이즈", ask: "askSize", options: "sizeOptionsText", custom: "customSize", example: "S\nM\nL" },
+                      { name: "기장", ask: "askLength", options: "lengthOptionsText", custom: "customLength", example: "크롭\n레귤러\n롱" },
+                      { name: "색상", ask: "askColor", options: "colorOptionsText", custom: "customColor", example: "블랙\n화이트" },
+                    ] as const
+                  ).map((a) => (
+                    <div key={a.name} className="flex flex-col gap-1.5">
+                      <label className="flex items-center gap-1.5 text-xs text-ink-muted">
+                        <input
+                          type="checkbox"
+                          checked={f[a.ask]}
+                          onChange={(e) => updateField(f.id, { [a.ask]: e.target.checked })}
+                        />
+                        {a.name} 받기
+                      </label>
+                      {f[a.ask] && (
+                        <>
+                          <textarea
+                            placeholder={`${a.name} 선택지 (줄바꿈으로 구분, 비우면 직접 입력)\n예: ${a.example}`}
+                            value={f[a.options]}
+                            onChange={(e) => updateField(f.id, { [a.options]: e.target.value })}
+                            rows={3}
+                            className="border border-line-strong bg-transparent px-3 py-2 text-xs outline-none placeholder:text-ink-faint"
+                          />
+                          {f[a.options].trim() !== "" && (
+                            <label className="flex items-center gap-1.5 text-[11px] text-ink-faint">
+                              <input
+                                type="checkbox"
+                                checked={f[a.custom]}
+                                onChange={(e) => updateField(f.id, { [a.custom]: e.target.checked })}
+                              />
+                              직접 입력도 허용
+                            </label>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

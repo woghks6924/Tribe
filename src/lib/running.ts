@@ -18,8 +18,13 @@ export type RunningFormField = {
   url?: string;
   askSize?: boolean;
   askColor?: boolean;
+  askLength?: boolean; // 기장 받기(기본 꺼짐)
   sizeOptions?: string[];
   colorOptions?: string[];
+  lengthOptions?: string[];
+  customSize?: boolean; // 선택지가 있어도 직접 입력 허용
+  customColor?: boolean;
+  customLength?: boolean;
 };
 
 export type RunningFormCollabBrand = {

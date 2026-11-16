@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { RunningFormField } from "@/lib/running";
 import { RunningMessageGenerator, type RunningMessageFormInfo } from "./running-message-generator";
+import { RunningAnswersEditor } from "./running-answers-editor";
 
 type Submission = {
   id: string;
@@ -22,7 +24,7 @@ type Submission = {
   personalDataPurgedAt: string | null;
 };
 
-type Field = { id: string; label: string };
+type Field = RunningFormField;
 
 const STATUSES = ["PENDING", "WINNER", "NOT_WINNER", "CONFIRMED", "CANCELLED", "DECLINED"] as const;
 const STATUS_LABEL: Record<Submission["status"], string> = {
@@ -138,6 +140,34 @@ export function RunningSubmissionsManager({
       body: JSON.stringify({ memo }),
     });
     router.refresh();
+  }
+
+  // 설문 답변 수정(예: 나중에 추가한 협찬 품목의 사이즈·기장·색상을 DM으로 받아 입력)
+  const [editingAnswersId, setEditingAnswersId] = useState<string | null>(null);
+  const [savingAnswers, setSavingAnswers] = useState(false);
+  const [answersError, setAnswersError] = useState<string | null>(null);
+
+  async function saveAnswers(id: string, answers: Record<string, string | string[]>) {
+    setSavingAnswers(true);
+    setAnswersError(null);
+    try {
+      const res = await fetch(`/api/admin/running-forms/${formId}/submissions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setAnswersError(data.error ?? "저장에 실패했어요.");
+        return;
+      }
+      setEditingAnswersId(null);
+      router.refresh();
+    } catch {
+      setAnswersError("문제가 발생했어요.");
+    } finally {
+      setSavingAnswers(false);
+    }
   }
 
   async function deleteSubmission(id: string) {
@@ -453,20 +483,43 @@ export function RunningSubmissionsManager({
                   </button>
                 </div>
               </div>
-              {fields.length > 0 && (
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-muted">
-                  {fields.map((f) => {
-                    const v = s.answers[f.id];
-                    if (v == null || (Array.isArray(v) && v.length === 0) || v === "") return null;
-                    return (
-                      <span key={f.id}>
-                        <span className="text-ink-faint">{f.label}:</span>{" "}
-                        {Array.isArray(v) ? v.join(", ") : v}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
+              {fields.length > 0 &&
+                (editingAnswersId === s.id ? (
+                  <RunningAnswersEditor
+                    fields={fields}
+                    initial={s.answers}
+                    saving={savingAnswers}
+                    error={answersError}
+                    onSave={(answers) => saveAnswers(s.id, answers)}
+                    onCancel={() => {
+                      setEditingAnswersId(null);
+                      setAnswersError(null);
+                    }}
+                  />
+                ) : (
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
+                    {fields.map((f) => {
+                      const v = s.answers[f.id];
+                      if (v == null || (Array.isArray(v) && v.length === 0) || v === "") return null;
+                      return (
+                        <span key={f.id}>
+                          <span className="text-ink-faint">{f.label}:</span>{" "}
+                          {Array.isArray(v) ? v.join(", ") : v}
+                        </span>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAnswersError(null);
+                        setEditingAnswersId(s.id);
+                      }}
+                      className="cursor-pointer text-ink-faint underline hover:text-ink"
+                    >
+                      답변 수정
+                    </button>
+                  </div>
+                ))}
               <span className="text-xs text-ink-faint">
                 마케팅 수신 동의: {s.marketingConsent ? "Y" : "N"}
               </span>

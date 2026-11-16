@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import type { RunningFormField, RunningFormStatus } from "@/lib/running";
-import { asksColor, asksSize, buildItemAnswer, parseItemAnswer, safeHttpUrl } from "@/lib/running-item";
+import { buildItemAnswer, itemAttrs, parseItemAnswer, safeHttpUrl, type ItemAttrKey } from "@/lib/running-item";
+import { ItemAttrInput } from "@/components/running/item-attr-input";
 
 const inputClass =
   "border border-line-strong bg-transparent px-4 py-3 text-sm outline-none placeholder:text-ink-faint";
@@ -50,11 +51,9 @@ export function RunningSignupForm({
     });
   }
 
-  // 협찬 품목: 사이즈·색상을 각각 바꿀 때마다 하나의 답변(["사이즈: M", "색상: 블랙"])으로 합친다.
-  function setItemPart(field: RunningFormField, part: "size" | "color", value: string) {
-    const cur = parseItemAnswer(answers[field.id]);
-    const next = { ...cur, [part]: value };
-    setAnswer(field.id, buildItemAnswer(next.size, next.color));
+  // 협찬 품목: 사이즈·기장·색상을 각각 바꿀 때마다 하나의 답변(["사이즈: M", "색상: 블랙"])으로 합친다.
+  function setItemPart(field: RunningFormField, part: ItemAttrKey, value: string) {
+    setAnswer(field.id, buildItemAnswer({ ...parseItemAnswer(answers[field.id]), [part]: value }));
   }
 
   function findMissingRequiredField(): string | null {
@@ -62,8 +61,8 @@ export function RunningSignupForm({
     // 않으므로, 개인정보 동의와 마찬가지로 제출 전에 직접 확인한다.
     for (const field of fields) {
       if (field.required && field.type === "item") {
-        const { size, color } = parseItemAnswer(answers[field.id]);
-        if ((asksSize(field) && !size) || (asksColor(field) && !color)) return field.label;
+        const values = parseItemAnswer(answers[field.id]);
+        if (itemAttrs(field).some((a) => !values[a.key])) return field.label;
         continue;
       }
       if (!field.required || (field.type !== "radio" && field.type !== "checkbox")) continue;
@@ -213,62 +212,21 @@ export function RunningSignupForm({
           )}
           {field.type === "item" && (
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {asksSize(field) && (
-                <label className="flex flex-col gap-1 text-xs text-ink-faint">
-                  사이즈
-                  {(field.sizeOptions ?? []).length > 0 ? (
-                    <select
-                      required={field.required}
-                      value={parseItemAnswer(answers[field.id]).size}
-                      onChange={(e) => setItemPart(field, "size", e.target.value)}
-                      className="border border-line-strong bg-base px-4 py-3 text-sm text-ink outline-none"
-                    >
-                      <option value="">선택해주세요</option>
-                      {(field.sizeOptions ?? []).map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      required={field.required}
-                      value={parseItemAnswer(answers[field.id]).size}
-                      onChange={(e) => setItemPart(field, "size", e.target.value)}
-                      placeholder="예: M, 270"
-                      className={`${inputClass} text-ink`}
-                    />
-                  )}
-                </label>
-              )}
-              {asksColor(field) && (
-                <label className="flex flex-col gap-1 text-xs text-ink-faint">
-                  색상
-                  {(field.colorOptions ?? []).length > 0 ? (
-                    <select
-                      required={field.required}
-                      value={parseItemAnswer(answers[field.id]).color}
-                      onChange={(e) => setItemPart(field, "color", e.target.value)}
-                      className="border border-line-strong bg-base px-4 py-3 text-sm text-ink outline-none"
-                    >
-                      <option value="">선택해주세요</option>
-                      {(field.colorOptions ?? []).map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      required={field.required}
-                      value={parseItemAnswer(answers[field.id]).color}
-                      onChange={(e) => setItemPart(field, "color", e.target.value)}
-                      placeholder="예: 블랙"
-                      className={`${inputClass} text-ink`}
-                    />
-                  )}
-                </label>
-              )}
+              {itemAttrs(field).map((attr) => (
+                <ItemAttrInput
+                  key={attr.key}
+                  label={attr.label}
+                  options={attr.options}
+                  allowCustom={attr.allowCustom}
+                  value={parseItemAnswer(answers[field.id])[attr.key]}
+                  onChange={(v) => setItemPart(field, attr.key, v)}
+                  required={field.required}
+                  placeholder={attr.placeholder}
+                  labelClass="flex flex-col gap-1 text-xs text-ink-faint"
+                  selectClass="border border-line-strong bg-base px-4 py-3 text-sm text-ink outline-none"
+                  inputClass={`${inputClass} text-ink`}
+                />
+              ))}
             </div>
           )}
           {field.type === "text" && (
